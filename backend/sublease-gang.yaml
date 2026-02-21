@@ -1,0 +1,1078 @@
+openapi: 3.0.0
+info:
+  title: Sublease Marketplace API
+  version: 1.0.0
+  description: API for sublease marketplace for college students.
+
+servers:
+  - url: http://localhost:8000
+
+paths:
+  /listings:
+    post:
+      summary: Create a new listing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+                - price
+                - location
+                - start_date
+                - end_date
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+                location:
+                  type: string
+                room_type:
+                  type: string
+                sqft:
+                  type: integer
+                start_date:
+                  type: string
+                  format: date-time
+                end_date:
+                  type: string
+                  format: date-time
+                thumbnail_url:
+                  type: string
+                college_id:
+                  type: integer
+      responses:
+        "201":
+          description: Listing created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+    get:
+      summary: Search listings with filters and sorting
+      parameters:
+        - name: college_id
+          in: query
+          schema:
+            type: integer
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: min_price
+          in: query
+          schema:
+            type: number
+        - name: max_price
+          in: query
+          schema:
+            type: number
+        - name: room_type
+          in: query
+          schema:
+            type: string
+        - name: min_sqft
+          in: query
+          schema:
+            type: integer
+        - name: max_sqft
+          in: query
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: available_only
+          in: query
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of listings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Listing"
+        "400":
+          description: Invalid query parameters
+
+  /listings/filters:
+    get:
+      summary: Get available filter options
+      responses:
+        "200":
+          description: Filter options returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  room_types:
+                    type: array
+                    items:
+                      type: string
+                  colleges:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                  price_min:
+                    type: number
+                  price_max:
+                    type: number
+                  sqft_min:
+                    type: integer
+                  sqft_max:
+                    type: integer
+
+  /listings/{listing_id}:
+    get:
+      summary: View an existing listing
+      parameters:
+        - name: listing_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Listing returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "404":
+          description: Listing not found
+    put:
+      summary: Edit an existing listing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: listing_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                price:
+                  type: number
+                location:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "200":
+          description: Listing updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Listing not found
+    delete:
+      summary: Delete an existing listing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: listing_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Listing deleted
+        "401":
+          description: Unauthorized
+        "404":
+          description: Listing not found
+
+  /auth/signup:
+    post:
+      summary: Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - username
+                - password
+              properties:
+                email:
+                  type: string
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "201":
+          description: User created successfully
+        "400":
+          description: Invalid input
+
+  /auth/login:
+    post:
+      summary: Login to an existing user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: User logged in successfully
+        "400":
+          description: Invalid credentials
+
+  /auth/refresh:
+    post:
+      summary: Refresh tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        "200":
+          description: Tokens refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+        "400":
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid refresh token"
+
+  /auth/logout:
+    post:
+      summary: Logout of current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        "200":
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        "401":
+          description: Logout failed, Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Unauthorized
+
+  /auth/forgot_password:
+    post:
+      summary: Send email to reset password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  example: "example@mail.com"
+      responses:
+        "200":
+          description: Successfully sent password reset email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        "400":
+          description: Failed to send password reset email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid"
+
+  /auth/reset_password:
+    put:
+      summary: Change current password to new password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - new_password
+              properties:
+                new_password:
+                  type: string
+                  example: "secret-password"
+      responses:
+        "200":
+          description: Successfully changed password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        "400":
+          description: Failed to change password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid input"
+  /users:
+    post:
+      summary: Create a new user account (register)
+      description: Registers a new user with name, email, and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict (email already exists)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/me:
+    get:
+      summary: Authenticate and return current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      summary: Edit current user profile information
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict (email already in use)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: Delete the current user account (and related data)
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Account deleted (no body)
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{user_id}:
+    get:
+      summary: Get a specific user's public profile information
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Public user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublicMinimal"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/me/password:
+    put:
+      summary: Change password for the logged in user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordChange"
+      responses:
+        "204":
+          description: Password changed (no body)
+        "400":
+          description: "Invalid input (ex: weak password)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (invalid token or current password wrong)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /conversations:
+    get:
+      summary: Retrieve all conversations for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConversationPreview"
+        "401":
+          description: Unauthorized
+
+    post:
+      summary: Create a new conversation or return existing one
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - listing_id
+                - recipient_id
+              properties:
+                listing_id:
+                  type: integer
+                recipient_id:
+                  type: integer
+      responses:
+        "201":
+          description: Conversation created or returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
+  /conversations/{conversation_id}/messages:
+    get:
+      summary: Retrieve all messages in a conversation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Conversation not found
+
+    post:
+      summary: Send a message in a conversation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "400":
+          description: Message cannot be empty
+        "401":
+          description: Unauthorized
+        "404":
+          description: Conversation not found
+
+  /map/listings:
+    get:
+      summary: Get map pins inside current map bounds
+      parameters:
+        - in: query
+          name: north
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: south
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: east
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: west
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Map listings within bounds
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MapListingsResponse"
+        "400":
+          description: Invalid bounds
+
+  /map/geocode:
+    get:
+      summary: Convert text location into coordinates
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Geocoding results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeocodeResponse"
+        "400":
+          description: Query required
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    PasswordChange:
+      type: object
+      required: [current_password, new_password]
+      properties:
+        current_password:
+          type: string
+          minLength: 8
+          maxLength: 128
+        new_password:
+          type: string
+          minLength: 8
+          maxLength: 128
+
+    UserPublic:
+      type: object
+      required: [id, name, email, created_at]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          maxLength: 80
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        bio:
+          type: string
+          maxLength: 500
+          nullable: true
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    UserPublicMinimal:
+      type: object
+      required: [id, name, created_at]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          maxLength: 80
+        bio:
+          type: string
+          maxLength: 500
+          nullable: true
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        bio:
+          type: string
+          maxLength: 500
+          nullable: true
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+
+    UserCreate:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: validation_error
+            message:
+              type: string
+              example: One or more fields are invalid.
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    example: email
+                  issue:
+                    type: string
+                    example: already in use
+    Listing:
+      type: object
+      properties:
+        id:
+          type: integer
+        host_id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        location:
+          type: string
+        room_type:
+          type: string
+        sqft:
+          type: integer
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        college_id:
+          type: integer
+        thumbnail_url:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        latitude:
+          type: number
+        longitude:
+          type: number
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        listing_id:
+          type: integer
+        user_one_id:
+          type: integer
+        user_two_id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    ConversationPreview:
+      type: object
+      properties:
+        id:
+          type: integer
+        listing_id:
+          type: integer
+        listing_title:
+          type: string
+        other_user:
+          type: string
+        last_message:
+          type: string
+        last_message_time:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      required:
+        - id
+        - conversation_id
+        - sender_id
+        - content
+        - created_at
+      properties:
+        id:
+          type: integer
+        conversation_id:
+          type: integer
+        sender_id:
+          type: integer
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    ListingSearchItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        price:
+          type: number
+        college:
+          type: string
+        location_text:
+          type: string
+        room_type:
+          type: string
+        sqft:
+          type: integer
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        thumbnail_url:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    ListingSearchResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ListingSearchItem"
+
+    ListingFiltersResponse:
+      type: object
+      properties:
+        room_types:
+          type: array
+          items:
+            type: string
+        colleges:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+        price_min:
+          type: number
+        price_max:
+          type: number
+        sqft_min:
+          type: integer
+        sqft_max:
+          type: integer
+
+    MapListingsResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              lat:
+                type: number
+              lng:
+                type: number
+              price:
+                type: number
+              title:
+                type: string
+              start_date:
+                type: string
+                format: date
+              end_date:
+                type: string
+                format: date
+
+    GeocodeResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              lat:
+                type: number
+              lng:
+                type: number
