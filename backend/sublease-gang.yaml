@@ -735,7 +735,7 @@ paths:
       summary: Convert text location into coordinates
       parameters:
         - in: query
-          name: q
+          name: address
           required: true
           schema:
             type: string
