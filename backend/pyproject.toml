@@ -4,4 +4,35 @@ version = "0.1.0"
 description = "The backend for sublease gang's platform to find subleased housing."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastapi[all]>=0.128.8",
+    "pwdlib[argon2]>=0.3.0",
+    "pyjwt>=2.11.0",
+    "python-multipart>=0.0.22",
+    "requests>=2.32.5",
+    "sqlalchemy>=2.0.46",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.15.0",
+]
+
+[tool.ruff]
+line-length = 88
+lint.select = ["ALL"]
+
+lint.ignore = [
+    "E501", # line too long (handled by line-length)
+    "D107", # missing docstring in init
+    "D104", # missing docstring in package
+    "D", # missing docstring in public modules, classes, functions, and methods
+]
+fix = true
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.ruff.lint.per-file-ignores]
+"init.py" = ["F401"] # ignore unused imports in init.py files
