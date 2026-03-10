@@ -1,13 +1,14 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
-from collections.abc import Generator
 
 from app.core.settings import settings
 
 if TYPE_CHECKING:
-    pass
+    from collections.abc import Generator
 
 # create DB engine
 engine = create_engine(
@@ -20,7 +21,7 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-def get_db() -> Generator[Session]:
+def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
         yield db
