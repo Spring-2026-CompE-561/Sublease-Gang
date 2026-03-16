@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.database import Base, engine
 from app.core.settings import settings
 
+# create DB tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title = settings.app_name, 
