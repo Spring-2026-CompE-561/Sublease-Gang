@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import Base, engine
 from app.core.settings import settings
 
-from app.models import User, Profile
+from app.models import User, Token, Profile
 
 # create DB tables
 Base.metadata.create_all(bind=engine)
