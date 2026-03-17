@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, DateTime, ForeignKey, UniqueConstraint, CheckConstraint
 
+from sqlalchemy import func
 from sqlalchemy.orm import relationship
 
 import datetime
@@ -18,8 +19,8 @@ class Conversation(Base):
     listing_id = Column(Integer, ForeignKey("listings.id"), nullable=False)
     user_one_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user_two_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
-
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
     listing = relationship("Listing", back_populates="conversations")
     user_one = relationship("User", foreign_keys=[user_one_id])
     user_two = relationship("User", foreign_keys=[user_two_id])
