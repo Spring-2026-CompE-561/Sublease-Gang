@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, ForeignKey, Numeric
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
 import datetime
@@ -15,11 +16,11 @@ class Listing(Base):
     price = Column(Float, nullable=False)
     location = Column(String, nullable=False)
     room_type = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
-    updated_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
     sqft = Column(Integer, nullable=True)
-    start_date = Column(DateTime, nullable=True)
-    end_date = Column(DateTime, nullable=True)
+    start_date = Column(DateTime(timezone=True), nullable=True)
+    end_date = Column(DateTime(timezone=True), nullable=True)
     college_id = Column(Integer, ForeignKey("colleges.id"), nullable=True)
     thumbnail_url = Column(String, nullable=False, default=True)
     latitude = Column(Numeric(9,6), nullable=False)
