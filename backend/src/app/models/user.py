@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
 import datetime
@@ -13,6 +14,6 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     account_disabled = Column(Boolean, default=False) 
-    time_created = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+    time_created = Column(DateTime(timezone=True), default=func.now())
 
     profile = relationship("Profile", back_populates="user")
