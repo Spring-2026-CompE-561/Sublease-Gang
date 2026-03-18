@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Field
 
 from pydantic import BaseModel
 
@@ -11,7 +11,7 @@ class Token(BaseModel):
     refresh_token: Optional[str] = None
     expiration_time: Optional[datetime] = None
     scope: Optional[str] = None
-    token_type: str
+    token_type: str = Field(..., alias="tokenType")
 
 
 
