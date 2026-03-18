@@ -21,7 +21,7 @@ class Listing(Base):
     sqft = Column(Integer, nullable=True)
     start_date = Column(DateTime(timezone=True), nullable=True)
     end_date = Column(DateTime(timezone=True), nullable=True)
-    college_id = Column(Integer, ForeignKey("colleges.id"), nullable=True)
+    college_id = Column(Integer, nullable=True)
     thumbnail_url = Column(String, nullable=False, default=True)
     latitude = Column(Numeric(9,6), nullable=False)
     longitude = Column(Numeric(9,6), nullable=False)
