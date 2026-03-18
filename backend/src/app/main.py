@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1.routes import api_router
 from app.core.database import Base, engine
 from app.core.settings import settings
 
-from app.models import Conversation, Listing, Token, User
+from app.models import User, Token, Listing, Profile, Conversation
 
 # create DB tables
 Base.metadata.create_all(bind=engine)
@@ -24,4 +25,4 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+app.include_router(api_router)
