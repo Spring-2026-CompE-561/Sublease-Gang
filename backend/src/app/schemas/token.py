@@ -18,6 +18,7 @@ class Token(TokenBase):
     id: int
     time_created: datetime
 
+    # Validate SQLAlchemy model attributes
     class Config:
         from_attributes = True
 
