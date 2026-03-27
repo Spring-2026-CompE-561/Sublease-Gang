@@ -1,7 +1,20 @@
 from sqlalchemy.orm import Session
-from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate
+
 from app.core.auth import hash_password
+from app.models.conversations import Conversation
+from app.models.messages import Message as MessageModel
+from app.models.user import User
+from app.schemas.message import MessageCreate, MessageUpdate
+from app.schemas.user import UserCreate, UserUpdate
+
+
+class ResourceNotFoundError(Exception):
+    """Raised when a referenced or requested resource does not exist."""
+
+    def __init__(self, detail: str) -> None:
+        self.detail = detail
+        super().__init__(detail)
+
 
 # USER CRUD operations
 def create_user(db: Session, user: UserCreate) -> User:
@@ -46,4 +59,70 @@ def disable_user(db: Session, user: User) -> User:
 
 def delete_user(db: Session, user: User) -> None:
     db.delete(user)
+    db.commit()
+
+
+# MESSAGE CRUD operations
+def create_message(db: Session, message: MessageCreate) -> MessageModel:
+    if db.get(User, message.sender_id) is None:
+        raise ResourceNotFoundError("User not found")
+    if db.get(Conversation, message.conversation_id) is None:
+        raise ResourceNotFoundError("Conversation not found")
+    db_message = MessageModel(
+        conversation_id=message.conversation_id,
+        sender_id=message.sender_id,
+        content=message.content,
+    )
+    db.add(db_message)
+    db.commit()
+    db.refresh(db_message)
+    return db_message
+
+
+def get_message(db: Session, message_id: int) -> MessageModel | None:
+    return db.query(MessageModel).filter(MessageModel.id == message_id).first()
+
+
+def get_message_or_raise(db: Session, message_id: int) -> MessageModel:
+    db_message = get_message(db, message_id)
+    if db_message is None:
+        raise ResourceNotFoundError("Message not found")
+    return db_message
+
+
+def get_messages_by_conversation(
+    db: Session,
+    conversation_id: int,
+    *,
+    skip: int = 0,
+    limit: int = 100,
+) -> list[MessageModel]:
+    if db.get(Conversation, conversation_id) is None:
+        raise ResourceNotFoundError("Conversation not found")
+    return (
+        db.query(MessageModel)
+        .filter(MessageModel.conversation_id == conversation_id)
+        .order_by(MessageModel.created_at.asc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def update_message(db: Session, message_id: int, payload: MessageUpdate) -> MessageModel:
+    db_message = get_message(db, message_id)
+    if db_message is None:
+        raise ResourceNotFoundError("Message not found")
+    if payload.content is not None:
+        db_message.content = payload.content
+    db.commit()
+    db.refresh(db_message)
+    return db_message
+
+
+def delete_message(db: Session, message_id: int) -> None:
+    db_message = get_message(db, message_id)
+    if db_message is None:
+        raise ResourceNotFoundError("Message not found")
+    db.delete(db_message)
     db.commit()
