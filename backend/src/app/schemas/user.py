@@ -20,6 +20,8 @@ class UserResponse(BaseModel):
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     username: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 class UserPasswordUpdate(BaseModel):
     current_password: str
