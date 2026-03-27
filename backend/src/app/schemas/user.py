@@ -15,9 +15,17 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     """Schema for updating user fields."""
 
+    name: Optional[str] = None
     email: Optional[str] = None
-    username: Optional[str] = None
-    password: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+class PasswordChange(BaseModel):
+    """Schema for changing password."""
+
+    current_password: str
+    new_password: str
 
 
 class UserResponse(BaseModel):
