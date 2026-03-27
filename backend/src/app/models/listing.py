@@ -19,10 +19,10 @@ class Listing(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
     sqft = Column(Integer, nullable=True)
-    start_date = Column(DateTime(timezone=True), nullable=True)
-    end_date = Column(DateTime(timezone=True), nullable=True)
+    start_date = Column(DateTime(timezone=True), nullable=False)
+    end_date = Column(DateTime(timezone=True), nullable=False)
     college_id = Column(Integer, nullable=True)
-    thumbnail_url = Column(String, nullable=False, default=True)
+    thumbnail_url = Column(String, nullable=True, default=None)
     latitude = Column(Numeric(9,6), nullable=False)
     longitude = Column(Numeric(9,6), nullable=False)
 
