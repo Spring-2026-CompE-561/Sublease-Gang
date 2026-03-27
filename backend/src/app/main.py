@@ -5,7 +5,7 @@ from app.api.v1.routes import api_router
 from app.core.database import Base, engine
 from app.core.settings import settings
 
-from app.models import User, Token, Listing, Profile
+from app.models import User, Token, Listing, Profile, Conversation
 
 # create DB tables
 Base.metadata.create_all(bind=engine)
