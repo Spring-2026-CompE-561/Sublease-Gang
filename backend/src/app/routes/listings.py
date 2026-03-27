@@ -25,48 +25,6 @@ async def create_listing(
     # TODO: get host_id from auth token via get_current_user
     raise HTTPException(status_code=501, detail="Auth required to create listing")
 
-@router.get("/{listing_id}", response_model=ListingResponse)
-async def get_listing(listing_id: int, db: Session = Depends(get_db)):
-    """View an existing listing."""
-    listing = db.query(Listing).filter(Listing.id == listing_id).first()
-    if not listing:
-        raise HTTPException(status_code=404, detail="Listing not found")
-    return listing
-
-
-@router.put("/{listing_id}", response_model=ListingResponse)
-async def update_listing(
-    listing_id: int,
-    payload: ListingUpdate,
-    db: Session = Depends(get_db),
-):
-    """Edit an existing listing."""
-    listing = db.query(Listing).filter(Listing.id == listing_id).first()
-    if not listing:
-        raise HTTPException(status_code=404, detail="Listing not found")
-
-    # TODO: verify current user is the listing owner via auth
-    update_data = payload.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(listing, field, value)
-
-    db.commit()
-    db.refresh(listing)
-    return listing
-
-@router.delete("/{listing_id}", status_code=200)
-async def delete_listing(listing_id: int, db: Session = Depends(get_db)):
-    """Delete an existing listing."""
-    listing = db.query(Listing).filter(Listing.id == listing_id).first()
-    if not listing:
-        raise HTTPException(status_code=404, detail="Listing not found")
-
-    # TODO: verify current user is the listing owner via auth
-    db.delete(listing)
-    db.commit()
-    return {"message": "success"}
-
-
 @router.get("/", response_model=dict)
 async def search_listings(
     college_id: Optional[int] = None,
@@ -144,3 +102,43 @@ async def get_filters(db: Session = Depends(get_db)):
         "price_min": price_min, "price_max": price_max,
         "sqft_min": sqft_min, "sqft_max": sqft_max,
     }
+
+@router.get("/{listing_id}", response_model=ListingResponse)
+async def get_listing(listing_id: int, db: Session = Depends(get_db)):
+    """View an existing listing."""
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    return listing
+
+
+@router.put("/{listing_id}", response_model=ListingResponse)
+async def update_listing(
+    listing_id: int,
+    payload: ListingUpdate,
+    db: Session = Depends(get_db),
+):
+    """Edit an existing listing."""
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+
+    # TODO: verify current user is the listing owner via auth
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(listing, field, value)
+
+    db.commit()
+    db.refresh(listing)
+    return listing
+
+@router.delete("/{listing_id}", status_code=204, response_model=None)
+async def delete_listing(listing_id: int, db: Session = Depends(get_db)):
+    """Delete an existing listing."""
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+
+    # TODO: verify current user is the listing owner via auth
+    db.delete(listing)
+    db.commit()
