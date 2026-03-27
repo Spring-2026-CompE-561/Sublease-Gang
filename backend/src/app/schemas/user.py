@@ -1,40 +1,33 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
-
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 class UserCreate(BaseModel):
-    """Schema for creating a new user."""
-
-    email: str
-    username: str
-    password: str
-
-
-class UserUpdate(BaseModel):
-    """Schema for updating user fields."""
-
-    name: Optional[str] = None
-    email: Optional[str] = None
-    bio: Optional[str] = None
-    avatar_url: Optional[str] = None
-
-
-class PasswordChange(BaseModel):
-    """Schema for changing password."""
-
-    current_password: str
-    new_password: str
-
+    email: EmailStr
+    username: str = Field(min_length=3, max_length=50)
+    password: str = Field(min_length=8)
 
 class UserResponse(BaseModel):
-    """Schema for user response."""
-
     id: int
-    email: str
+    email: EmailStr
     username: str
-    account_disabled: bool
+    account_disabled: Optional[bool] = False
     created_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = { "from_attributes": True }
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None
+
+class UserPasswordUpdate(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8)
+    confirm_new_password: str
+
+    @model_validator(mode="after")
+    def passwords_match(self):
+        if self.new_password != self.confirm_new_password:
+            raise ValueError("passwords do not match")
+        return self
