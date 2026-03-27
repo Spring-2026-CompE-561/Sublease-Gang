@@ -7,17 +7,16 @@ from pydantic import BaseModel
 class ListingCreate(BaseModel):
     """Schema for creating a new listing."""
 
-    host_id: int
     title: str
     description: str
     price: float
     location: str
     room_type: Optional[str] = None
     sqft: Optional[int] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime
+    end_date: datetime
     college_id: Optional[int] = None
-    thumbnail_url: str
+    thumbnail_url: Optional[str] = None
     latitude: float
     longitude: float
 
@@ -42,6 +41,7 @@ class ListingUpdate(BaseModel):
 class ListingResponse(ListingCreate):
     """Schema for listing response."""
 
+    host_id: int
     id: int
     created_at: datetime
     updated_at: datetime
