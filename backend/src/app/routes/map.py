@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -18,8 +19,8 @@ async def get_map_listings(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     room_type: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
