@@ -84,6 +84,7 @@ name = "backend"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "email-validator" },
     { name = "fastapi", extra = ["all"] },
     { name = "pwdlib", extra = ["argon2"] },
     { name = "pyjwt" },
@@ -100,6 +101,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "email-validator", specifier = ">=2.3.0" },
     { name = "fastapi", extras = ["all"], specifier = ">=0.128.8" },
     { name = "pwdlib", extras = ["argon2"], specifier = ">=0.3.0" },
     { name = "pyjwt", specifier = ">=2.11.0" },

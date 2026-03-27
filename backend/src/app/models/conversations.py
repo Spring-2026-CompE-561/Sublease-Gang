@@ -3,8 +3,6 @@ from sqlalchemy import Column, Integer, DateTime, ForeignKey, UniqueConstraint, 
 from sqlalchemy import func
 from sqlalchemy.orm import relationship
 
-import datetime
-
 from app.core.database import Base
 
 class Conversation(Base):
@@ -13,6 +11,7 @@ class Conversation(Base):
     __table_args__ = (
         UniqueConstraint("listing_id", "user_one_id", "user_two_id", name="uq_conversation_listing_users"),
         CheckConstraint("user_one_id <> user_two_id", name="ck_conversation_distinct_users"),
+        CheckConstraint("user_one_id < user_two_id", name="ck_user_order"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -22,6 +21,6 @@ class Conversation(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     listing = relationship("Listing", back_populates="conversations")
+    messages = relationship("Message", back_populates="conversation")
     user_one = relationship("User", foreign_keys=[user_one_id])
     user_two = relationship("User", foreign_keys=[user_two_id])
-    messages = relationship("Message", back_populates="conversation")
