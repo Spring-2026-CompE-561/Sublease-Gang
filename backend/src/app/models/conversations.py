@@ -23,4 +23,3 @@ class Conversation(Base):
     listing = relationship("Listing", back_populates="conversations")
     user_one = relationship("User", foreign_keys=[user_one_id])
     user_two = relationship("User", foreign_keys=[user_two_id])
-    messages = relationship("Message", back_populates="conversation")
