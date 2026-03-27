@@ -15,7 +15,7 @@ class Token(Base):
     refresh_token = Column(String, nullable=True)
     expiration_time = Column(DateTime(timezone=True), nullable=True)
     scope = Column(String, nullable=True)
-    tokenType = Column(String, nullable=False)
+    token_type = Column(String, nullable=False)
 
 
     user = relationship("User", back_populates="tokens")
