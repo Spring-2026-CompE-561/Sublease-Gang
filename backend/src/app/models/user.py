@@ -19,3 +19,4 @@ class User(Base):
     profile = relationship("Profile", back_populates="user")
     tokens = relationship("Token", back_populates="user")
     listings = relationship("Listing", back_populates="user")
+    sent_messages = relationship("Message", back_populates="sender")
