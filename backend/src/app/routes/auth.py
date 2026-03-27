@@ -7,13 +7,11 @@ from app.models.token import Token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-
 @router.post("/signup", status_code=201)
 async def signup(db: Session = Depends(get_db)):
     """Create a new user account."""
     # TODO: implement signup logic
     raise HTTPException(status_code=501, detail="Not implemented")
-
 
 @router.post("/login")
 async def login(db: Session = Depends(get_db)):
@@ -28,7 +26,6 @@ async def refresh(db: Session = Depends(get_db)):
     # TODO: implement token refresh logic
     raise HTTPException(status_code=501, detail="Not implemented")
 
-
 @router.post("/logout")
 async def logout(db: Session = Depends(get_db)):
     """Logout and invalidate refresh token."""
@@ -41,7 +38,6 @@ async def forgot_password(db: Session = Depends(get_db)):
     """Send password reset email."""
     # TODO: implement forgot password logic
     raise HTTPException(status_code=501, detail="Not implemented")
-
 
 @router.put("/reset_password")
 async def reset_password(db: Session = Depends(get_db)):
