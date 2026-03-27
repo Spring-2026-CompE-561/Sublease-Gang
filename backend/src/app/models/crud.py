@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
-from app.core.security import hash_password
+from app.core.auth import hash_password
 
 # USER CRUD operations
 def create_user(db: Session, user: UserCreate) -> User:
