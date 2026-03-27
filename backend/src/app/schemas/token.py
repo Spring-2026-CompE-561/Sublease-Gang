@@ -1,27 +1,32 @@
 from datetime import datetime
-from typing import Optional, Field
+from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
+# what is stored in db
 class TokenBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     user_id: int 
-    access_token: Optional[str] = None
-    refresh_token: Optional[str] = None
-    expiration_time: Optional[datetime] = None
+    expiration_time: datetime
     scope: Optional[str] = None
-    token_type: str = Field(..., alias="tokenType")
+    token_type: str
 
-class TokenCreate(TokenBase):
-    pass
+# creating a token
+class TokenCreate(BaseModel):
+    user_id: int
+    scope: Optional[str] = None
 
+# for db reading
 class Token(TokenBase):
     id: int
-    time_created: datetime
+    created_at: datetime
 
-    # Validate SQLAlchemy model attributes
-    class Config:
-        from_attributes = True
-
-
+# schema that returns tokens on login/refresh
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: Optional[str] = None
+    token_type: str
+    expiration_time: datetime
 
 
