@@ -1,16 +1,14 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import Optional
-
 from sqlalchemy import func as sql_func
+from typing import Optional
 
 from app.core.database import get_db
 from app.models.listing import Listing
 from app.schemas.listing import ListingCreate, ListingUpdate, ListingResponse
 
 router = APIRouter(prefix="/listings", tags=["listings"])
-
 
 # TODO: replace with real auth dependency once auth is implemented
 def get_current_user(db: Session = Depends(get_db)):
@@ -26,7 +24,6 @@ async def create_listing(
     """Create a new room listing."""
     # TODO: get host_id from auth token via get_current_user
     raise HTTPException(status_code=501, detail="Auth required to create listing")
-
 
 @router.get("/{listing_id}", response_model=ListingResponse)
 async def get_listing(listing_id: int, db: Session = Depends(get_db)):
@@ -49,7 +46,6 @@ async def update_listing(
         raise HTTPException(status_code=404, detail="Listing not found")
 
     # TODO: verify current user is the listing owner via auth
-
     update_data = payload.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(listing, field, value)
@@ -57,7 +53,6 @@ async def update_listing(
     db.commit()
     db.refresh(listing)
     return listing
-
 
 @router.delete("/{listing_id}", status_code=200)
 async def delete_listing(listing_id: int, db: Session = Depends(get_db)):
@@ -67,7 +62,6 @@ async def delete_listing(listing_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Listing not found")
 
     # TODO: verify current user is the listing owner via auth
-
     db.delete(listing)
     db.commit()
     return {"message": "success"}
@@ -115,8 +109,9 @@ async def search_listings(
     count = query.count()
     listings = query.offset(offset).limit(limit).all()
 
-    results = [
-        {
+    results = []
+    for l in listings:
+        results.append({
             "id": l.id,
             "title": l.title,
             "price": l.price,
@@ -128,16 +123,13 @@ async def search_listings(
             "end_date": str(l.end_date) if l.end_date else None,
             "thumbnail_url": l.thumbnail_url,
             "created_at": str(l.created_at) if l.created_at else None,
-        }
-        for l in listings
-    ]
+        })
 
     return {"count": count, "limit": limit, "offset": offset, "results": results}
 
-
 @router.get("/filters")
 async def get_filters(db: Session = Depends(get_db)):
-    """Get available filter options (room types, colleges, price and sqft ranges)."""
+    """Get available filter options."""
     room_types = [r[0] for r in db.query(Listing.room_type).distinct().filter(Listing.room_type.isnot(None)).all()]
     colleges = [{"id": c[0], "name": c[0]} for c in db.query(Listing.college_id).distinct().filter(Listing.college_id.isnot(None)).all()]
 
@@ -149,8 +141,6 @@ async def get_filters(db: Session = Depends(get_db)):
     return {
         "room_types": room_types,
         "colleges": colleges,
-        "price_min": price_min,
-        "price_max": price_max,
-        "sqft_min": sqft_min,
-        "sqft_max": sqft_max,
+        "price_min": price_min, "price_max": price_max,
+        "sqft_min": sqft_min, "sqft_max": sqft_max,
     }
