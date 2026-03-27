@@ -21,5 +21,6 @@ class Conversation(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     listing = relationship("Listing", back_populates="conversations")
+    messages = relationship("Message", back_populates="conversation")
     user_one = relationship("User", foreign_keys=[user_one_id])
     user_two = relationship("User", foreign_keys=[user_two_id])
