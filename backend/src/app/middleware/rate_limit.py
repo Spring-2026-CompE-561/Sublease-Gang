@@ -1,5 +1,4 @@
 import time
-from collections import defaultdict
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -12,6 +11,9 @@ RATE_LIMIT_RULES: dict[str, tuple[int, int]] = {
     "/api/v1/conversations": (30, 60),    # 30 messages per minute
     "/api/v1/listings": (10, 60),         # 10 posts per minute
 }
+
+# Buckets inactive for longer than this (in seconds) are pruned
+_BUCKET_TTL = 3600
 
 
 class _TokenBucket:
@@ -42,7 +44,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.rules = rules or RATE_LIMIT_RULES
         # key: (client_ip, rule_prefix) -> _TokenBucket
-        self.buckets: dict[tuple[str, str], _TokenBucket] = defaultdict()
+        self.buckets: dict[tuple[str, str], _TokenBucket] = {}
+
+    def _cleanup(self) -> None:
+        """Remove buckets that have been inactive for longer than _BUCKET_TTL."""
+        now = time.monotonic()
+        stale = [k for k, b in self.buckets.items() if now - b.last_refill > _BUCKET_TTL]
+        for k in stale:
+            del self.buckets[k]
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
@@ -55,6 +64,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 key = (client_ip, prefix)
                 bucket = self.buckets.get(key)
                 if bucket is None:
+                    # Periodically prune stale buckets before adding new ones
+                    self._cleanup()
                     refill_rate = max_req / window_sec
                     bucket = _TokenBucket(max_tokens=max_req, refill_rate=refill_rate)
                     self.buckets[key] = bucket

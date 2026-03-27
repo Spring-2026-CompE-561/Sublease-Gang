@@ -20,6 +20,11 @@ class Settings(BaseSettings):
         description="Database connection URL",
     )
 
+    environment: str = Field(
+        default="development",
+        description="Deployment environment (development or production)",
+    )
+
     cors_origins: list[str] = Field(
         default=["http://localhost:3000"],
         description="Allowed CORS origins for the frontend",
