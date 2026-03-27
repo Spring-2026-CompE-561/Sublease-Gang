@@ -7,7 +7,12 @@ class Settings(BaseSettings):
 
     secret_key: str = Field(
         default="your_secret_key",
-        description="The algorithm used for JWT",
+        description="Secret key for JWT",
+    )
+
+    algorithm: str = Field(
+        default="HS256",
+        description="Algorithm used for JWT",
     )
 
     access_token_expire_minutes: int = Field(
