@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
-
+from pydantic import BaseModel, model_validator
 
 class ListingCreate(BaseModel):
     """Schema for creating a new listing."""
@@ -21,6 +20,13 @@ class ListingCreate(BaseModel):
     longitude: float
 
 
+    @model_validator(mode="after")
+    def check_dates(self):
+        if self.end_date <= self.start_date:
+            raise ValueError("end_date must be after start_date")
+        return self
+
+
 class ListingUpdate(BaseModel):
     """Schema for updating a listing."""
 
@@ -36,6 +42,14 @@ class ListingUpdate(BaseModel):
     thumbnail_url: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+
+
+    @model_validator(mode="after")
+    def check_dates(self):
+        if self.start_date and self.end_date:
+            if self.end_date <= self.start_date:
+                raise ValueError("end_date must be after start_date")
+        return self
 
 
 class ListingResponse(ListingCreate):
