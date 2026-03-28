@@ -32,7 +32,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         expire = datetime.now(UTC) + expires_delta
     else:
         expire = datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "type": "access"})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -76,11 +76,12 @@ def verify_token(token: str) -> dict | None:
     try:
         payload = jwt.decode(
             token,
-            settings.secret_key,
-            algorithms=[settings.algorithm],
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
         )
     except PyJWTError:
         return None
-    else:
-        return payload
+    if "sub" not in payload:
+        return None
+    return payload
     
