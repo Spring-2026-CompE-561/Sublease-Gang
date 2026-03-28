@@ -1,13 +1,10 @@
 from datetime import UTC, datetime, timedelta
 
 import jwt
-from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jwt import PyJWTError
 from pwdlib import PasswordHash
-from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.settings import settings
 
 SECRET_KEY = settings.secret_key
@@ -16,7 +13,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
 password_hash = PasswordHash.recommended()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/user/login")
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
@@ -35,22 +32,6 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         expire = datetime.now(UTC) + expires_delta
     else:
         expire = datetime.now(UTC) + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-
-def create_refresh_token(data: dict) -> str:
-    """
-    Create a JWT refresh token.
-
-    Args:
-        data: The data to encode in the token
-
-    Returns:
-        str: The encoded refresh token
-    """
-    to_encode = data.copy()
-    expire = datetime.now(UTC) + timedelta(days=7)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -102,34 +83,3 @@ def verify_token(token: str) -> dict | None:
         return None
     else:
         return payload
-
-
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """
-    Get the currently authenticated user from JWT token.
-
-    Args:
-        token: JWT token from request header
-        db: Database session
-
-    Returns:
-        User: The authenticated user object
-
-    Raises:
-        HTTPException: If token is invalid or user not found
-    """
-    from app.models.user import User
-
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user = db.query(User).filter(User.id == int(user_id)).first()
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-
-    return user
