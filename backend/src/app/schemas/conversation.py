@@ -1,6 +1,11 @@
 from datetime import datetime
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
+
+
+class ConversationStartRequest(BaseModel):
+    listing_id: int
+    other_user_id: int
 
 
 class ConversationCreate(BaseModel):
@@ -16,5 +21,7 @@ class ConversationCreate(BaseModel):
 
 
 class Conversation(ConversationCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     created_at: datetime
