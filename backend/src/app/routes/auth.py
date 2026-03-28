@@ -1,46 +1,60 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.dependencies import get_current_user
 from app.models.user import User
-from app.models.token import Token
+from app.repository.exceptions import ResourceConflictError, ResourceNotFoundError
+from app.services.user import UserService
+from app.schemas.auth import LoginRequest, TokenResponse
+from app.schemas.user import UserCreate, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/signup", status_code=201)
-async def signup(db: Session = Depends(get_db)):
-    """Create a new user account."""
-    # TODO: implement signup logic
-    raise HTTPException(status_code=501, detail="Not implemented")
 
-@router.post("/login")
-async def login(db: Session = Depends(get_db)):
-    """Login and return access + refresh tokens."""
-    # TODO: implement login logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+@router.post("/signup", response_model=UserResponse, status_code=201)
+async def signup(payload: UserCreate, db: Session = Depends(get_db)):
+    """Create a new user account."""
+    try:
+        user = UserService.register(db, payload)
+    except ResourceConflictError as e:
+        raise HTTPException(status_code=409, detail=e.detail) from e
+    return user
+
+
+@router.post("/login", response_model=TokenResponse)
+async def login(payload: LoginRequest, db: Session = Depends(get_db)):
+    """Login and return an access token."""
+    try:
+        token_data = UserService.authenticate(db, payload.email, payload.password)
+    except ResourceNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=e.detail,
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e
+    return token_data
+
+
+@router.post("/logout", status_code=204)
+async def logout(current_user: User = Depends(get_current_user)):
+    """Logout (client should discard the token)."""
+    return None
 
 
 @router.post("/refresh")
-async def refresh(db: Session = Depends(get_db)):
+async def refresh():
     """Exchange refresh token for a new access token."""
-    # TODO: implement token refresh logic
-    raise HTTPException(status_code=501, detail="Not implemented")
-
-@router.post("/logout")
-async def logout(db: Session = Depends(get_db)):
-    """Logout and invalidate refresh token."""
-    # TODO: implement logout logic
     raise HTTPException(status_code=501, detail="Not implemented")
 
 
 @router.post("/forgot_password")
-async def forgot_password(db: Session = Depends(get_db)):
+async def forgot_password():
     """Send password reset email."""
-    # TODO: implement forgot password logic
     raise HTTPException(status_code=501, detail="Not implemented")
 
+
 @router.put("/reset_password")
-async def reset_password(db: Session = Depends(get_db)):
+async def reset_password():
     """Reset password using token from email."""
-    # TODO: implement reset password logic
     raise HTTPException(status_code=501, detail="Not implemented")

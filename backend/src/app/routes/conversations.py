@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
-from app.repository.message import create_message, get_messages_by_conversation
+from app.core.dependencies import get_current_user
 from app.models.user import User
-from app.routes.users import get_current_user
+from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
+from app.services.message import MessageService
 from app.schemas.message import Message, MessageCreate, MessageSend
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
@@ -39,7 +39,7 @@ async def list_messages(
 ):
     """GET /conversations/{id}/messages - Retrieve messages in a conversation."""
     try:
-        return get_messages_by_conversation(
+        return MessageService.list_by_conversation(
             db,
             conversation_id,
             user_id=current_user.id,
@@ -68,6 +68,6 @@ async def send_message(
         content=payload.content,
     )
     try:
-        return create_message(db, body)
+        return MessageService.create(db, body)
     except (ResourceNotFoundError, PermissionDeniedError) as e:
         raise _http_from_repo(e) from e
