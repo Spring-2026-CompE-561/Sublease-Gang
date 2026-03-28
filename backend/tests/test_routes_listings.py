@@ -1,3 +1,7 @@
+from app.core.dependencies import get_current_user
+from app.main import app
+
+
 class TestSearchListings:
     def test_empty(self, client):
         resp = client.get("/api/v1/listings/")
@@ -153,33 +157,59 @@ class TestUpdateListing:
     def test_success(self, client, make_user, make_listing):
         user = make_user()
         listing = make_listing(user.id, title="Old Title")
-        resp = client.put(
-            f"/api/v1/listings/{listing.id}",
-            json={"title": "New Title"},
-        )
-        assert resp.status_code == 200
-        assert resp.json()["title"] == "New Title"
+        app.dependency_overrides[get_current_user] = lambda: user
+        try:
+            resp = client.put(
+                f"/api/v1/listings/{listing.id}",
+                json={"title": "New Title"},
+            )
+            assert resp.status_code == 200
+            assert resp.json()["title"] == "New Title"
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
 
-    def test_not_found(self, client):
-        resp = client.put("/api/v1/listings/9999", json={"title": "X"})
-        assert resp.status_code == 404
+    def test_not_found(self, client, make_user):
+        user = make_user()
+        app.dependency_overrides[get_current_user] = lambda: user
+        try:
+            resp = client.put("/api/v1/listings/9999", json={"title": "X"})
+            assert resp.status_code == 404
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+
+    def test_requires_auth(self, client):
+        resp = client.put("/api/v1/listings/1", json={"title": "X"})
+        assert resp.status_code == 401
 
 
 class TestDeleteListing:
     def test_success(self, client, make_user, make_listing):
         user = make_user()
         listing = make_listing(user.id)
-        resp = client.delete(f"/api/v1/listings/{listing.id}")
-        assert resp.status_code == 204
-        assert client.get(f"/api/v1/listings/{listing.id}").status_code == 404
+        app.dependency_overrides[get_current_user] = lambda: user
+        try:
+            resp = client.delete(f"/api/v1/listings/{listing.id}")
+            assert resp.status_code == 204
+            assert client.get(f"/api/v1/listings/{listing.id}").status_code == 404
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
 
-    def test_not_found(self, client):
-        resp = client.delete("/api/v1/listings/9999")
-        assert resp.status_code == 404
+    def test_not_found(self, client, make_user):
+        user = make_user()
+        app.dependency_overrides[get_current_user] = lambda: user
+        try:
+            resp = client.delete("/api/v1/listings/9999")
+            assert resp.status_code == 404
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+
+    def test_requires_auth(self, client):
+        resp = client.delete("/api/v1/listings/1")
+        assert resp.status_code == 401
 
 
 class TestCreateListing:
-    def test_returns_501(self, client):
+    def test_requires_auth(self, client):
         resp = client.post(
             "/api/v1/listings/",
             json={
@@ -193,4 +223,28 @@ class TestCreateListing:
                 "longitude": -74.0,
             },
         )
-        assert resp.status_code == 501
+        assert resp.status_code == 401
+
+    def test_success(self, client, make_user):
+        user = make_user()
+        app.dependency_overrides[get_current_user] = lambda: user
+        try:
+            resp = client.post(
+                "/api/v1/listings/",
+                json={
+                    "title": "My Listing",
+                    "description": "A great place",
+                    "price": 1000,
+                    "location": "Test City",
+                    "start_date": "2026-01-01T00:00:00Z",
+                    "end_date": "2026-02-01T00:00:00Z",
+                    "latitude": 40.0,
+                    "longitude": -74.0,
+                },
+            )
+            assert resp.status_code == 201
+            data = resp.json()
+            assert data["title"] == "My Listing"
+            assert data["host_id"] == user.id
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)

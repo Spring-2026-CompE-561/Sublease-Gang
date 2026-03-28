@@ -23,6 +23,16 @@ class Settings(BaseSettings):
         description="Access token expiration time in minutes",
     )
 
+    refresh_token_expire_days: int = Field(
+        default=7,
+        description="Refresh token expiration time in days",
+    )
+
+    reset_token_expire_minutes: int = Field(
+        default=15,
+        description="Password reset token expiration time in minutes",
+    )
+
     database_url: str = Field(
         default="sqlite:///./sublease_marketplace.db",
         description="Database connection URL",

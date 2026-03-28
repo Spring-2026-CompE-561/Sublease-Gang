@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.core.database import get_db
-from app.models.listing import Listing
+from app.services.listing import ListingService
 
 router = APIRouter(prefix="/map", tags=["map"])
 
@@ -32,27 +32,20 @@ async def get_map_listings(
     if not (-180 <= west <= 180 and -180 <= east <= 180):
         raise HTTPException(status_code=400, detail="longitude out of range")
 
-    query = db.query(Listing).filter(
-        Listing.latitude <= north,
-        Listing.latitude >= south,
-        Listing.longitude <= east,
-        Listing.longitude >= west,
+    listings = ListingService.get_in_bounds(
+        db,
+        north=north,
+        south=south,
+        east=east,
+        west=west,
+        college_id=college_id,
+        min_price=min_price,
+        max_price=max_price,
+        room_type=room_type,
+        start_date=start_date,
+        end_date=end_date,
+        limit=limit,
     )
-
-    if college_id is not None:
-        query = query.filter(Listing.college_id == college_id)
-    if min_price is not None:
-        query = query.filter(Listing.price >= min_price)
-    if max_price is not None:
-        query = query.filter(Listing.price <= max_price)
-    if room_type is not None:
-        query = query.filter(Listing.room_type == room_type)
-    if start_date is not None:
-        query = query.filter(Listing.start_date >= start_date)
-    if end_date is not None:
-        query = query.filter(Listing.end_date <= end_date)
-
-    listings = query.limit(limit).all()
 
     results = [
         {
