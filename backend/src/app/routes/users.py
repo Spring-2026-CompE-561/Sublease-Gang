@@ -3,6 +3,15 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.user import User
+from app.repository.user import (
+    create_user as repo_create_user,
+    delete_user as repo_delete_user,
+    get_user_by_email,
+    get_user_by_id,
+    get_user_by_username,
+    update_password,
+    update_user as repo_update_user,
+)
 from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserPasswordUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -24,29 +33,17 @@ async def get_me(current_user: User = Depends(get_current_user)):
 async def update_me(payload: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Update the currently authenticated user's profile."""
     if payload.email is not None:
-        if db.query(User).filter(User.email == payload.email, User.id != current_user.id).first():
+        existing = get_user_by_email(db, payload.email)
+        if existing and existing.id != current_user.id:
             raise HTTPException(status_code=409, detail="Email already registered")
-        current_user.email = payload.email
 
-    if payload.name is not None:
-        current_user.username = payload.name
-
-    if payload.bio is not None:
-        current_user.bio = payload.bio
-
-    if payload.avatar_url is not None:
-        current_user.avatar_url = payload.avatar_url
-
-    db.commit()
-    db.refresh(current_user)
-    return current_user
+    return repo_update_user(db, current_user, payload)
 
 
 @router.delete("/me", status_code=204)
 async def delete_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Delete the currently authenticated user's account."""
-    db.delete(current_user)
-    db.commit()
+    repo_delete_user(db, current_user)
     return None
 
 
@@ -57,15 +54,14 @@ async def change_password(payload: UserPasswordUpdate, current_user: User = Depe
     if current_user.password_hash != payload.current_password:
         raise HTTPException(status_code=400, detail="Invalid current password")
 
-    current_user.password_hash = payload.new_password  # TODO: hash password
-    db.commit()
+    update_password(db, current_user, payload.new_password)  # TODO: hash password
     return None
 
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(user_id: int, db: Session = Depends(get_db)):
     """Get a specific user's public profile."""
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -74,17 +70,9 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
 @router.post("/", response_model=UserResponse, status_code=201)
 async def create_user(payload: UserCreate, db: Session = Depends(get_db)):
     """Create a new user account."""
-    if db.query(User).filter(User.email == payload.email).first():
+    if get_user_by_email(db, payload.email):
         raise HTTPException(status_code=409, detail="Email already registered")
-    if db.query(User).filter(User.username == payload.username).first():
+    if get_user_by_username(db, payload.username):
         raise HTTPException(status_code=409, detail="Username already taken")
 
-    user = User(
-        email=payload.email,
-        username=payload.username,
-        password_hash=payload.password,  # TODO: hash password when auth is implemented
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+    return repo_create_user(db, payload)
