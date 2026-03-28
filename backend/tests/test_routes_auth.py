@@ -1,6 +1,6 @@
 import pytest
 
-from app.core.auth import hash_password
+from app.core.auth import create_reset_token, hash_password
 
 
 class TestSignup:
@@ -48,6 +48,7 @@ class TestLogin:
         assert resp.status_code == 200
         data = resp.json()
         assert "access_token" in data
+        assert "refresh_token" in data
         assert data["token_type"] == "bearer"
 
     def test_wrong_password(self, client):
@@ -72,16 +73,113 @@ class TestLogout:
         assert resp.status_code in (401, 403)
 
 
-STUB_ENDPOINTS = [
-    ("POST", "/api/v1/auth/refresh"),
-    ("POST", "/api/v1/auth/forgot_password"),
-    ("PUT", "/api/v1/auth/reset_password"),
-]
+class TestRefresh:
+    def _login(self, client):
+        client.post(
+            "/api/v1/auth/signup",
+            json={"email": "ref@example.com", "username": "refuser", "password": "password123"},
+        )
+        resp = client.post(
+            "/api/v1/auth/login",
+            json={"email": "ref@example.com", "password": "password123"},
+        )
+        return resp.json()
+
+    def test_success(self, client):
+        tokens = self._login(client)
+        resp = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": tokens["refresh_token"]},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert data["token_type"] == "bearer"
+
+    def test_invalid_token(self, client):
+        resp = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": "not.a.valid.token"},
+        )
+        assert resp.status_code == 401
+
+    def test_access_token_rejected(self, client):
+        tokens = self._login(client)
+        resp = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": tokens["access_token"]},
+        )
+        assert resp.status_code == 401
+
+    def test_missing_body(self, client):
+        resp = client.post("/api/v1/auth/refresh")
+        assert resp.status_code == 400
 
 
-class TestAuthStubs:
-    @pytest.mark.parametrize("method,path", STUB_ENDPOINTS)
-    def test_returns_501(self, client, method, path):
-        resp = client.request(method, path)
-        assert resp.status_code == 501
-        assert resp.json()["detail"] == "Not implemented"
+class TestForgotPassword:
+    def test_registered_email(self, client):
+        client.post(
+            "/api/v1/auth/signup",
+            json={"email": "forgot@example.com", "username": "forgotuser", "password": "password123"},
+        )
+        resp = client.post(
+            "/api/v1/auth/forgot_password",
+            json={"email": "forgot@example.com"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "message" in data
+        assert "reset_token" in data
+
+    def test_unknown_email_still_200(self, client):
+        resp = client.post(
+            "/api/v1/auth/forgot_password",
+            json={"email": "unknown@example.com"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "message" in data
+        assert "reset_token" not in data
+
+
+class TestResetPassword:
+    def _get_reset_token(self, client):
+        client.post(
+            "/api/v1/auth/signup",
+            json={"email": "reset@example.com", "username": "resetuser", "password": "password123"},
+        )
+        resp = client.post(
+            "/api/v1/auth/forgot_password",
+            json={"email": "reset@example.com"},
+        )
+        return resp.json()["reset_token"]
+
+    def test_success(self, client):
+        token = self._get_reset_token(client)
+        resp = client.put(
+            "/api/v1/auth/reset_password",
+            json={"token": token, "new_password": "newpassword123"},
+        )
+        assert resp.status_code == 200
+        assert "message" in resp.json()
+        login_resp = client.post(
+            "/api/v1/auth/login",
+            json={"email": "reset@example.com", "password": "newpassword123"},
+        )
+        assert login_resp.status_code == 200
+
+    def test_invalid_token(self, client):
+        resp = client.put(
+            "/api/v1/auth/reset_password",
+            json={"token": "bad.token.value", "new_password": "newpassword123"},
+        )
+        assert resp.status_code == 400
+
+    def test_password_too_short(self, client):
+        token = self._get_reset_token(client)
+        resp = client.put(
+            "/api/v1/auth/reset_password",
+            json={"token": token, "new_password": "short"},
+        )
+        assert resp.status_code == 400

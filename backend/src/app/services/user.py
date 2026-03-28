@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from app.core.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
+    create_refresh_token,
+    create_reset_token,
     hash_password,
     verify_password,
 )
@@ -46,8 +48,10 @@ class UserService:
             data={"sub": str(user.id)},
             expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
         )
+        refresh_token = create_refresh_token(data={"sub": str(user.id)})
         return {
             "access_token": access_token,
+            "refresh_token": refresh_token,
             "token_type": "bearer",
         }
 
@@ -67,6 +71,14 @@ class UserService:
     def change_password(db: Session, user: User, current_password: str, new_password: str) -> None:
         if not verify_password(current_password, user.password_hash):
             raise ValueError("Invalid current password")
+        update_password(db, user, hash_password(new_password))
+
+    @staticmethod
+    def get_by_email(db: Session, email: str) -> User | None:
+        return get_user_by_email(db, email)
+
+    @staticmethod
+    def reset_password(db: Session, user: User, new_password: str) -> None:
         update_password(db, user, hash_password(new_password))
 
     @staticmethod
