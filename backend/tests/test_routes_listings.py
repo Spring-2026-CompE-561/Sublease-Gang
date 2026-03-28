@@ -49,6 +49,54 @@ class TestSearchListings:
         data = resp.json()
         assert data["count"] == 1
 
+    def test_college_id_filter(self, client, make_user, make_listing):
+        user = make_user()
+        make_listing(user.id, college_id=1)
+        make_listing(user.id, college_id=2)
+        resp = client.get("/api/v1/listings/", params={"college_id": 1})
+        data = resp.json()
+        assert data["count"] == 1
+
+    def test_min_sqft_filter(self, client, make_user, make_listing):
+        user = make_user()
+        make_listing(user.id, sqft=400)
+        make_listing(user.id, sqft=800)
+        resp = client.get("/api/v1/listings/", params={"min_sqft": 600})
+        data = resp.json()
+        assert data["count"] == 1
+
+    def test_max_sqft_filter(self, client, make_user, make_listing):
+        user = make_user()
+        make_listing(user.id, sqft=400)
+        make_listing(user.id, sqft=800)
+        resp = client.get("/api/v1/listings/", params={"max_sqft": 600})
+        data = resp.json()
+        assert data["count"] == 1
+
+    def test_date_range_filter(self, client, make_user, make_listing):
+        from datetime import datetime, timezone
+
+        user = make_user()
+        make_listing(
+            user.id,
+            start_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            end_date=datetime(2026, 2, 1, tzinfo=timezone.utc),
+        )
+        make_listing(
+            user.id,
+            start_date=datetime(2026, 6, 1, tzinfo=timezone.utc),
+            end_date=datetime(2026, 7, 1, tzinfo=timezone.utc),
+        )
+        resp = client.get(
+            "/api/v1/listings/",
+            params={
+                "start_date": "2026-05-01T00:00:00Z",
+                "end_date": "2026-08-01T00:00:00Z",
+            },
+        )
+        data = resp.json()
+        assert data["count"] == 1
+
     def test_pagination(self, client, make_user, make_listing):
         user = make_user()
         for _ in range(5):

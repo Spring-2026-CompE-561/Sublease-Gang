@@ -259,6 +259,17 @@ class TestProfileCRUD:
                 self._profile_schema(username="other_user"),
             )
 
+    def test_create_profile_duplicate_username(self, db_session, make_user):
+        user1 = make_user()
+        user2 = make_user()
+        create_profile(db_session, user1.id, self._profile_schema(username="taken"))
+        with pytest.raises(ResourceConflictError, match="Username already taken"):
+            create_profile(
+                db_session,
+                user2.id,
+                self._profile_schema(username="taken"),
+            )
+
     def test_get_profile(self, db_session, make_user):
         user = make_user()
         create_profile(db_session, user.id, self._profile_schema())
@@ -297,6 +308,20 @@ class TestProfileCRUD:
     def test_update_profile_not_found(self, db_session):
         with pytest.raises(ResourceNotFoundError, match="Profile not found"):
             update_profile(db_session, 9999, ProfileUpdate(firstname="Jane"))
+
+    def test_update_profile_duplicate_username(self, db_session, make_user):
+        user1 = make_user()
+        user2 = make_user()
+        create_profile(
+            db_session, user1.id, self._profile_schema(username="alice")
+        )
+        create_profile(
+            db_session, user2.id, self._profile_schema(username="bob")
+        )
+        with pytest.raises(ResourceConflictError, match="Username already taken"):
+            update_profile(
+                db_session, user2.id, ProfileUpdate(username="alice")
+            )
 
     def test_update_profile_removes_all_contacts(self, db_session, make_user):
         user = make_user()
@@ -454,6 +479,45 @@ class TestMessageCRUD:
         assert len(messages) == 2
         assert messages[0].content == "First"
         assert messages[1].content == "Second"
+
+    def test_get_messages_by_conversation_with_skip(
+        self, db_session, make_user, make_listing, make_conversation
+    ):
+        user1, _user2, convo = self._setup(
+            make_user, make_listing, make_conversation
+        )
+        for i in range(5):
+            create_message(
+                db_session,
+                MessageCreate(
+                    conversation_id=convo.id,
+                    sender_id=user1.id,
+                    content=f"Msg {i}",
+                ),
+            )
+        messages = get_messages_by_conversation(db_session, convo.id, skip=2)
+        assert len(messages) == 3
+        assert messages[0].content == "Msg 2"
+
+    def test_get_messages_by_conversation_with_limit(
+        self, db_session, make_user, make_listing, make_conversation
+    ):
+        user1, _user2, convo = self._setup(
+            make_user, make_listing, make_conversation
+        )
+        for i in range(5):
+            create_message(
+                db_session,
+                MessageCreate(
+                    conversation_id=convo.id,
+                    sender_id=user1.id,
+                    content=f"Msg {i}",
+                ),
+            )
+        messages = get_messages_by_conversation(db_session, convo.id, limit=2)
+        assert len(messages) == 2
+        assert messages[0].content == "Msg 0"
+        assert messages[1].content == "Msg 1"
 
     def test_get_messages_by_conversation_not_found(self, db_session):
         with pytest.raises(ResourceNotFoundError, match="Conversation not found"):
