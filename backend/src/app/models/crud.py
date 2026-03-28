@@ -70,15 +70,22 @@ def delete_user(db: Session, user: User) -> None:
     db.commit()
 
 
+def require_conversation_participant(
+    db: Session, conversation_id: int, user_id: int
+) -> Conversation:
+    conversation = db.get(Conversation, conversation_id)
+    if conversation is None:
+        raise ResourceNotFoundError("Conversation not found")
+    if user_id not in (conversation.user_one_id, conversation.user_two_id):
+        raise PermissionDeniedError("Not a participant in this conversation")
+    return conversation
+
+
 # MESSAGE CRUD operations
 def create_message(db: Session, message: MessageCreate) -> MessageModel:
     if db.get(User, message.sender_id) is None:
         raise ResourceNotFoundError("User not found")
-    conversation = db.get(Conversation, message.conversation_id)
-    if conversation is None:
-        raise ResourceNotFoundError("Conversation not found")
-    if message.sender_id not in (conversation.user_one_id, conversation.user_two_id):
-        raise PermissionDeniedError("Sender is not a participant in this conversation")
+    require_conversation_participant(db, message.conversation_id, message.sender_id)
     db_message = MessageModel(
         conversation_id=message.conversation_id,
         sender_id=message.sender_id,
@@ -105,11 +112,11 @@ def get_messages_by_conversation(
     db: Session,
     conversation_id: int,
     *,
+    user_id: int,
     skip: int = 0,
     limit: int = 100,
 ) -> list[MessageModel]:
-    if db.get(Conversation, conversation_id) is None:
-        raise ResourceNotFoundError("Conversation not found")
+    require_conversation_participant(db, conversation_id, user_id)
     return (
         db.query(MessageModel)
         .filter(MessageModel.conversation_id == conversation_id)
