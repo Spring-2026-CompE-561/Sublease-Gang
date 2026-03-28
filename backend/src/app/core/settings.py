@@ -1,13 +1,21 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
     app_name: str = "Sublease Marketplace API"
     app_version: str = "1.0.0"
 
     secret_key: str = Field(
         default="your_secret_key",
-        description="The algorithm used for JWT",
+        description="Secret key for JWT",
+    )
+
+    algorithm: str = Field(
+        default="HS256",
+        description="Algorithm used for JWT",
     )
 
     access_token_expire_minutes: int = Field(
@@ -30,9 +38,5 @@ class Settings(BaseSettings):
         description="Allowed CORS origins for the frontend",
     )
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 settings = Settings()
-    
