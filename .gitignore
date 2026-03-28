@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 *.egg-info/
 backend/sublease_marketplace.db
+.DS_Store
