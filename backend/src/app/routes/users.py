@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate, UserResponse, PasswordChange
+from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserPasswordUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -51,7 +51,7 @@ async def delete_me(current_user: User = Depends(get_current_user), db: Session 
 
 
 @router.put("/me/password", status_code=204)
-async def change_password(payload: PasswordChange, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def change_password(payload: UserPasswordUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Change password for the currently authenticated user."""
     # TODO: use proper password hashing verification once auth is implemented
     if current_user.password_hash != payload.current_password:
