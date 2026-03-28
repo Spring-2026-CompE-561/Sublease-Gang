@@ -50,8 +50,11 @@ from app.repository.listing import (
     create_listing,
     delete_listing,
     get_listing,
+    get_listing_filter_options,
     get_listing_or_raise,
     get_listings,
+    get_listings_in_bounds,
+    search_listings,
     update_listing,
 )
 
@@ -102,7 +105,10 @@ __all__ = [
     "create_listing",
     "delete_listing",
     "get_listing",
+    "get_listing_filter_options",
     "get_listing_or_raise",
     "get_listings",
+    "get_listings_in_bounds",
+    "search_listings",
     "update_listing",
 ]
