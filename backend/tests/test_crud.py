@@ -2,36 +2,44 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.models.crud import (
+from app.services.exceptions import (
     PermissionDeniedError,
     ResourceConflictError,
     ResourceNotFoundError,
+)
+from app.services.message_service import (
     create_message,
-    create_profile,
-    create_token,
-    create_user,
     delete_message,
-    delete_profile,
-    delete_token,
-    delete_tokens_by_user,
-    delete_user,
-    disable_user,
     get_message,
     get_message_or_raise,
     get_messages_by_conversation,
+    update_message,
+)
+from app.services.profile_service import (
+    create_profile,
+    delete_profile,
     get_profile,
     get_profile_by_username,
     get_profile_or_raise,
+    update_profile,
+)
+from app.services.token_service import (
+    create_token,
+    delete_token,
+    delete_tokens_by_user,
     get_token_by_access,
     get_token_by_id,
     get_token_by_refresh,
     get_tokens_by_user,
+)
+from app.services.user_service import (
+    create_user,
+    delete_user,
+    disable_user,
     get_user_by_email,
     get_user_by_id,
     get_user_by_username,
-    update_message,
     update_password,
-    update_profile,
     update_user,
 )
 from app.schemas.message import MessageCreate, MessageUpdate
