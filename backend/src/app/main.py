@@ -12,7 +12,7 @@ from app.middleware import (
     RequestIDMiddleware,
     SecurityHeadersMiddleware,
 )
-from app.models import Conversation, Listing, Profile, Token, User
+from app.models import Conversation, Listing, Message, Profile, Token, User
 
 # configure logging
 logging.basicConfig(
