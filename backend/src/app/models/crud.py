@@ -16,6 +16,14 @@ class ResourceNotFoundError(Exception):
         super().__init__(detail)
 
 
+class PermissionDeniedError(Exception):
+    """Raised when the caller is not allowed to perform the requested action."""
+
+    def __init__(self, detail: str) -> None:
+        self.detail = detail
+        super().__init__(detail)
+
+
 # USER CRUD operations
 def create_user(db: Session, user: UserCreate) -> User:
     db_user = User(
@@ -66,8 +74,11 @@ def delete_user(db: Session, user: User) -> None:
 def create_message(db: Session, message: MessageCreate) -> MessageModel:
     if db.get(User, message.sender_id) is None:
         raise ResourceNotFoundError("User not found")
-    if db.get(Conversation, message.conversation_id) is None:
+    conversation = db.get(Conversation, message.conversation_id)
+    if conversation is None:
         raise ResourceNotFoundError("Conversation not found")
+    if message.sender_id not in (conversation.user_one_id, conversation.user_two_id):
+        raise PermissionDeniedError("Sender is not a participant in this conversation")
     db_message = MessageModel(
         conversation_id=message.conversation_id,
         sender_id=message.sender_id,
@@ -109,10 +120,14 @@ def get_messages_by_conversation(
     )
 
 
-def update_message(db: Session, message_id: int, payload: MessageUpdate) -> MessageModel:
+def update_message(
+    db: Session, message_id: int, user_id: int, payload: MessageUpdate
+) -> MessageModel:
     db_message = get_message(db, message_id)
     if db_message is None:
         raise ResourceNotFoundError("Message not found")
+    if db_message.sender_id != user_id:
+        raise PermissionDeniedError("Not allowed to modify this message")
     if payload.content is not None:
         db_message.content = payload.content
     db.commit()
@@ -120,9 +135,11 @@ def update_message(db: Session, message_id: int, payload: MessageUpdate) -> Mess
     return db_message
 
 
-def delete_message(db: Session, message_id: int) -> None:
+def delete_message(db: Session, message_id: int, user_id: int) -> None:
     db_message = get_message(db, message_id)
     if db_message is None:
         raise ResourceNotFoundError("Message not found")
+    if db_message.sender_id != user_id:
+        raise PermissionDeniedError("Not allowed to delete this message")
     db.delete(db_message)
     db.commit()
