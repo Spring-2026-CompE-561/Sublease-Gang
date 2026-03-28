@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.core.database import get_db
-from app.repository.listing import get_listings_in_bounds
+from app.services.listing import ListingService
 
 router = APIRouter(prefix="/map", tags=["map"])
 
@@ -32,7 +32,7 @@ async def get_map_listings(
     if not (-180 <= west <= 180 and -180 <= east <= 180):
         raise HTTPException(status_code=400, detail="longitude out of range")
 
-    listings = get_listings_in_bounds(
+    listings = ListingService.get_in_bounds(
         db,
         north=north,
         south=south,

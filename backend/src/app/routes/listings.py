@@ -4,32 +4,26 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.core.database import get_db
+from app.core.dependencies import get_current_user
+from app.models.user import User
 from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
-from app.repository.listing import (
-    get_listing_or_raise,
-    search_listings,
-    get_listing_filter_options,
-    update_listing as repo_update_listing,
-    delete_listing as repo_delete_listing,
-)
+from app.services.listing import ListingService
 from app.schemas.listing import ListingCreate, ListingUpdate, ListingResponse
 
 router = APIRouter(prefix="/listings", tags=["listings"])
-
-# TODO: replace with real auth dependency once auth is implemented
-def get_current_user(db: Session = Depends(get_db)):
-    """Placeholder for auth dependency."""
-    raise HTTPException(status_code=401, detail="Authentication not implemented yet")
 
 
 @router.post("/", response_model=ListingResponse, status_code=201)
 async def create_listing(
     payload: ListingCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Create a new room listing."""
-    # TODO: get host_id from auth token via get_current_user
-    raise HTTPException(status_code=501, detail="Auth required to create listing")
+    try:
+        return ListingService.create(db, current_user.id, payload)
+    except ResourceNotFoundError as e:
+        raise HTTPException(status_code=404, detail=e.detail) from e
 
 @router.get("/", response_model=dict)
 async def list_listings(
@@ -49,7 +43,7 @@ async def list_listings(
     db: Session = Depends(get_db),
 ):
     """Search listings with filters and sorting."""
-    count, listings = search_listings(
+    count, listings = ListingService.search(
         db,
         college_id=college_id,
         location=location,
@@ -85,13 +79,13 @@ async def list_listings(
 @router.get("/filters")
 async def get_filters(db: Session = Depends(get_db)):
     """Get available filter options."""
-    return get_listing_filter_options(db)
+    return ListingService.get_filter_options(db)
 
 @router.get("/{listing_id}", response_model=ListingResponse)
 async def get_listing(listing_id: int, db: Session = Depends(get_db)):
     """View an existing listing."""
     try:
-        return get_listing_or_raise(db, listing_id)
+        return ListingService.get_or_raise(db, listing_id)
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.detail) from e
 
@@ -100,28 +94,27 @@ async def get_listing(listing_id: int, db: Session = Depends(get_db)):
 async def update_listing(
     listing_id: int,
     payload: ListingUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Edit an existing listing."""
     try:
-        listing = get_listing_or_raise(db, listing_id)
+        return ListingService.update(db, listing_id, host_id=current_user.id, updates=payload)
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.detail) from e
-    # TODO: verify current user is the listing owner via auth (use repo_update_listing with host_id)
-    try:
-        return repo_update_listing(db, listing_id, host_id=listing.host_id, updates=payload)
     except PermissionDeniedError as e:
         raise HTTPException(status_code=403, detail=e.detail) from e
 
 @router.delete("/{listing_id}", status_code=204, response_model=None)
-async def delete_listing(listing_id: int, db: Session = Depends(get_db)):
+async def delete_listing(
+    listing_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Delete an existing listing."""
     try:
-        listing = get_listing_or_raise(db, listing_id)
+        ListingService.delete(db, listing_id, host_id=current_user.id)
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.detail) from e
-    # TODO: verify current user is the listing owner via auth (use repo_delete_listing with host_id)
-    try:
-        repo_delete_listing(db, listing_id, host_id=listing.host_id)
     except PermissionDeniedError as e:
         raise HTTPException(status_code=403, detail=e.detail) from e

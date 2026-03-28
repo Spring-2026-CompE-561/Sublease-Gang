@@ -17,7 +17,7 @@ class TestCreateConversation:
 class TestListMessages:
     def test_returns_empty_list(self, client, db_session):
         from app.models.user import User
-        from app.routes.users import get_current_user
+        from app.core.dependencies import get_current_user
         from app.main import app
 
         user = User(email="msg@example.com", username="msguser", password_hash="fake")
@@ -36,7 +36,7 @@ class TestListMessages:
 class TestSendMessage:
     def test_returns_placeholder(self, client, db_session):
         from app.models.user import User
-        from app.routes.users import get_current_user
+        from app.core.dependencies import get_current_user
         from app.main import app
 
         user = User(email="msg2@example.com", username="msguser2", password_hash="fake")
