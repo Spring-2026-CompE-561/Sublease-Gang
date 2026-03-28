@@ -2,12 +2,12 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.services.exceptions import (
+from app.repository.exceptions import (
     PermissionDeniedError,
     ResourceConflictError,
     ResourceNotFoundError,
 )
-from app.services.message_service import (
+from app.repository.message_service import (
     create_message,
     delete_message,
     get_message,
@@ -15,7 +15,7 @@ from app.services.message_service import (
     get_messages_by_conversation,
     update_message,
 )
-from app.services.profile_service import (
+from app.repository.profile_service import (
     create_profile,
     delete_profile,
     get_profile,
@@ -23,7 +23,7 @@ from app.services.profile_service import (
     get_profile_or_raise,
     update_profile,
 )
-from app.services.token_service import (
+from app.repository.token_service import (
     create_token,
     delete_token,
     delete_tokens_by_user,
@@ -32,7 +32,7 @@ from app.services.token_service import (
     get_token_by_refresh,
     get_tokens_by_user,
 )
-from app.services.user_service import (
+from app.repository.user_service import (
     create_user,
     delete_user,
     disable_user,

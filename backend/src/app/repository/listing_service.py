@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.listing import Listing
 from app.models.user import User
 from app.schemas.listing import ListingCreate, ListingUpdate
-from app.services.exceptions import PermissionDeniedError, ResourceNotFoundError
+from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
 
 
 def create_listing(db: Session, host_id: int, listing: ListingCreate) -> Listing:

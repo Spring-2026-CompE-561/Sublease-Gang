@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.services.exceptions import PermissionDeniedError, ResourceNotFoundError
-from app.services.message_service import create_message, get_messages_by_conversation
+from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
+from app.repository.message_service import create_message, get_messages_by_conversation
 from app.models.user import User
 from app.routes.users import get_current_user
 from app.schemas.message import Message, MessageCreate, MessageSend
