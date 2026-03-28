@@ -2,10 +2,15 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import hash_password
 from app.models.conversations import Conversation
+from app.models.listing import Listing
 from app.models.messages import Message as MessageModel
+from app.models.profiles import Profile
 from app.models.token import Token
 from app.models.user import User
+from app.schemas.conversation import ConversationCreate
+from app.schemas.listing import ListingCreate, ListingUpdate
 from app.schemas.message import MessageCreate, MessageUpdate
+from app.schemas.profile import ProfileCreate
 from app.schemas.token import TokenCreate
 from app.schemas.user import UserCreate, UserUpdate
 
@@ -125,6 +130,125 @@ def delete_token(db: Session, token_id: int) -> None:
 def delete_tokens_by_user(db: Session, user_id: int) -> None:
     """Revoke all tokens for a user (e.g. on logout-all or account disable)."""
     db.query(Token).filter(Token.user_id == user_id).delete()
+    db.commit()
+
+
+# LISTING CRUD operations
+def create_listing(db: Session, host_id: int, listing: ListingCreate) -> Listing:
+    if db.get(User, host_id) is None:
+        raise ResourceNotFoundError("User not found")
+    db_listing = Listing(host_id=host_id, **listing.model_dump())
+    db.add(db_listing)
+    db.commit()
+    db.refresh(db_listing)
+    return db_listing
+
+
+def get_listing_by_id(db: Session, listing_id: int) -> Listing | None:
+    return db.query(Listing).filter(Listing.id == listing_id).first()
+
+
+def get_listings_by_host(db: Session, host_id: int) -> list[Listing]:
+    return db.query(Listing).filter(Listing.host_id == host_id).all()
+
+
+def update_listing(db: Session, listing_id: int, host_id: int, payload: ListingUpdate) -> Listing:
+    db_listing = get_listing_by_id(db, listing_id)
+    if db_listing is None:
+        raise ResourceNotFoundError("Listing not found")
+    if db_listing.host_id != host_id:
+        raise PermissionDeniedError("Not allowed to modify this listing")
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_listing, field, value)
+    db.commit()
+    db.refresh(db_listing)
+    return db_listing
+
+
+def delete_listing(db: Session, listing_id: int, host_id: int) -> None:
+    db_listing = get_listing_by_id(db, listing_id)
+    if db_listing is None:
+        raise ResourceNotFoundError("Listing not found")
+    if db_listing.host_id != host_id:
+        raise PermissionDeniedError("Not allowed to delete this listing")
+    db.delete(db_listing)
+    db.commit()
+
+
+# CONVERSATION CRUD operations
+def create_conversation(db: Session, convo: ConversationCreate) -> Conversation:
+    if db.get(User, convo.user_one_id) is None or db.get(User, convo.user_two_id) is None:
+        raise ResourceNotFoundError("User not found")
+    if db.get(Listing, convo.listing_id) is None:
+        raise ResourceNotFoundError("Listing not found")
+    # Enforce user_one_id < user_two_id ordering
+    u1, u2 = sorted([convo.user_one_id, convo.user_two_id])
+    existing = (
+        db.query(Conversation)
+        .filter(
+            Conversation.listing_id == convo.listing_id,
+            Conversation.user_one_id == u1,
+            Conversation.user_two_id == u2,
+        )
+        .first()
+    )
+    if existing:
+        return existing
+    db_convo = Conversation(listing_id=convo.listing_id, user_one_id=u1, user_two_id=u2)
+    db.add(db_convo)
+    db.commit()
+    db.refresh(db_convo)
+    return db_convo
+
+
+def get_conversation_by_id(db: Session, conversation_id: int) -> Conversation | None:
+    return db.query(Conversation).filter(Conversation.id == conversation_id).first()
+
+
+def get_conversations_by_user(db: Session, user_id: int) -> list[Conversation]:
+    return (
+        db.query(Conversation)
+        .filter(
+            (Conversation.user_one_id == user_id) | (Conversation.user_two_id == user_id)
+        )
+        .order_by(Conversation.created_at.desc())
+        .all()
+    )
+
+
+# PROFILE CRUD operations
+def create_profile(db: Session, user_id: int, profile: ProfileCreate) -> Profile:
+    if db.get(User, user_id) is None:
+        raise ResourceNotFoundError("User not found")
+    db_profile = Profile(user_id=user_id, **profile.model_dump())
+    db.add(db_profile)
+    db.commit()
+    db.refresh(db_profile)
+    return db_profile
+
+
+def get_profile_by_user_id(db: Session, user_id: int) -> Profile | None:
+    return db.query(Profile).filter(Profile.user_id == user_id).first()
+
+
+def update_profile(db: Session, user_id: int, profile: ProfileCreate) -> Profile:
+    db_profile = get_profile_by_user_id(db, user_id)
+    if db_profile is None:
+        raise ResourceNotFoundError("Profile not found")
+    update_data = profile.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_profile, field, value)
+    db.commit()
+    db.refresh(db_profile)
+    return db_profile
+
+
+def delete_profile(db: Session, user_id: int) -> None:
+    db_profile = get_profile_by_user_id(db, user_id)
+    if db_profile is None:
+        raise ResourceNotFoundError("Profile not found")
+    db.delete(db_profile)
     db.commit()
 
 
