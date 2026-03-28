@@ -207,46 +207,6 @@ def delete_tokens_by_user(db: Session, user_id: int) -> None:
     db.commit()
 
 
-# CONVERSATION CRUD operations
-def create_conversation(db: Session, convo: ConversationCreate) -> Conversation:
-    if db.get(User, convo.user_one_id) is None or db.get(User, convo.user_two_id) is None:
-        raise ResourceNotFoundError("User not found")
-    if db.get(Listing, convo.listing_id) is None:
-        raise ResourceNotFoundError("Listing not found")
-    u1, u2 = sorted([convo.user_one_id, convo.user_two_id])
-    existing = (
-        db.query(Conversation)
-        .filter(
-            Conversation.listing_id == convo.listing_id,
-            Conversation.user_one_id == u1,
-            Conversation.user_two_id == u2,
-        )
-        .first()
-    )
-    if existing:
-        return existing
-    db_convo = Conversation(listing_id=convo.listing_id, user_one_id=u1, user_two_id=u2)
-    db.add(db_convo)
-    db.commit()
-    db.refresh(db_convo)
-    return db_convo
-
-
-def get_conversation_by_id(db: Session, conversation_id: int) -> Conversation | None:
-    return db.query(Conversation).filter(Conversation.id == conversation_id).first()
-
-
-def get_conversations_by_user(db: Session, user_id: int) -> list[Conversation]:
-    return (
-        db.query(Conversation)
-        .filter(
-            (Conversation.user_one_id == user_id) | (Conversation.user_two_id == user_id)
-        )
-        .order_by(Conversation.created_at.desc())
-        .all()
-    )
-
-
 # PROFILE CRUD operations
 def create_profile(db: Session, user_id: int, profile_in: ProfileCreate) -> Profile:
     if db.get(User, user_id) is None:
