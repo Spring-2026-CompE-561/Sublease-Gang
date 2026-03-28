@@ -3,7 +3,7 @@ from app.repository.exceptions import (
     ResourceConflictError,
     ResourceNotFoundError,
 )
-from app.repository.user_service import (
+from app.repository.user import (
     create_user,
     delete_user,
     disable_user,
@@ -13,7 +13,7 @@ from app.repository.user_service import (
     update_password,
     update_user,
 )
-from app.repository.conversation_service import (
+from app.repository.conversation import (
     create_conversation,
     delete_conversation,
     get_conversation_by_id,
@@ -21,7 +21,7 @@ from app.repository.conversation_service import (
     list_conversations_for_user,
     require_conversation_participant,
 )
-from app.repository.token_service import (
+from app.repository.token import (
     create_token,
     delete_token,
     delete_tokens_by_user,
@@ -30,7 +30,7 @@ from app.repository.token_service import (
     get_token_by_refresh,
     get_tokens_by_user,
 )
-from app.repository.profile_service import (
+from app.repository.profile import (
     create_profile,
     delete_profile,
     get_profile,
@@ -38,7 +38,7 @@ from app.repository.profile_service import (
     get_profile_or_raise,
     update_profile,
 )
-from app.repository.message_service import (
+from app.repository.message import (
     create_message,
     delete_message,
     get_message,
@@ -46,7 +46,7 @@ from app.repository.message_service import (
     get_messages_by_conversation,
     update_message,
 )
-from app.repository.listing_service import (
+from app.repository.listing import (
     create_listing,
     delete_listing,
     get_listing,
