@@ -34,6 +34,22 @@ class ConversationService:
         return list_conversations_for_user(db, user_id)
 
     @staticmethod
+    def get_or_create(
+        db: Session, listing_id: int, user_a_id: int, user_b_id: int
+    ) -> Conversation:
+        existing = get_conversation_by_listing_and_users(
+            db, listing_id, user_a_id, user_b_id
+        )
+        if existing:
+            return existing
+        data = ConversationCreate(
+            listing_id=listing_id,
+            user_one_id=user_a_id,
+            user_two_id=user_b_id,
+        )
+        return create_conversation(db, data)
+
+    @staticmethod
     def delete(db: Session, conversation: Conversation) -> None:
         delete_conversation(db, conversation)
 
