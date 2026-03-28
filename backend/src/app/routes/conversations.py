@@ -5,8 +5,15 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
-from app.services.message import MessageService
+from app.schemas.conversation import (
+    Conversation,
+    ConversationStartRequest,
+)
 from app.schemas.message import Message, MessageCreate, MessageSend
+from app.services.conversation import ConversationService
+from app.services.listing import ListingService
+from app.services.message import MessageService
+from app.services.user import UserService
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
@@ -17,16 +24,34 @@ def _http_from_repo(exc: ResourceNotFoundError | PermissionDeniedError) -> HTTPE
     return HTTPException(status_code=404, detail=exc.detail)
 
 
-@router.get("/")
-async def list_conversations():
-    """GET /conversations - Retrieve all conversations for the current user. """
-    return []
+@router.get("/", response_model=list[Conversation])
+async def list_conversations(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Retrieve all conversations for the current user."""
+    return ConversationService.list_for_user(db, current_user.id)
 
 
-@router.post("/")
-async def create_conversation():
-    """POST /conversations - Create or return existing conversation."""
-    return {"id": 0, "listing_id": 0, "other_user": {"id": 0, "name": ""}, "created_at": None}
+@router.post("/", response_model=Conversation, status_code=201)
+async def create_conversation(
+    payload: ConversationStartRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create or return an existing conversation for a listing."""
+    if payload.other_user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot start a conversation with yourself")
+    other_user = UserService.get_by_id(db, payload.other_user_id)
+    if other_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        ListingService.get_or_raise(db, payload.listing_id)
+    except ResourceNotFoundError as e:
+        raise HTTPException(status_code=404, detail=e.detail) from e
+    return ConversationService.get_or_create(
+        db, payload.listing_id, current_user.id, payload.other_user_id
+    )
 
 
 @router.get("/{conversation_id}/messages", response_model=list[Message])
