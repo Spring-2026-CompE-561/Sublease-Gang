@@ -12,6 +12,14 @@ from app.middleware import (
     RequestIDMiddleware,
     SecurityHeadersMiddleware,
 )
+from fastapi.exceptions import RequestValidationError
+
+from app.errors.auth import AuthError, auth_exception_handler
+from app.errors.conflict import ConflictError, conflict_exception_handler
+from app.errors.not_found import NotFoundError, not_found_exception_handler
+from app.errors.permission import PermissionError, permission_exception_handler
+from app.errors.server import server_exception_handler
+from app.errors.validation import validation_exception_handler
 from app.models import Conversation, Listing, Message, Profile, Token, User
 
 # configure logging
@@ -49,5 +57,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Exception handlers
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(AuthError, auth_exception_handler)
+app.add_exception_handler(PermissionError, permission_exception_handler)
+app.add_exception_handler(NotFoundError, not_found_exception_handler)
+app.add_exception_handler(ConflictError, conflict_exception_handler)
+app.add_exception_handler(Exception, server_exception_handler)
 
 app.include_router(api_router)
