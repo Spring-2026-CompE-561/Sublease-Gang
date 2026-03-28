@@ -11,7 +11,7 @@ from app.schemas.message import Message, MessageCreate, MessageSend
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 
-def _http_from_crud(exc: ResourceNotFoundError | PermissionDeniedError) -> HTTPException:
+def _http_from_repo(exc: ResourceNotFoundError | PermissionDeniedError) -> HTTPException:
     if isinstance(exc, PermissionDeniedError):
         return HTTPException(status_code=403, detail=exc.detail)
     return HTTPException(status_code=404, detail=exc.detail)
@@ -47,7 +47,7 @@ async def list_messages(
             limit=limit,
         )
     except (ResourceNotFoundError, PermissionDeniedError) as e:
-        raise _http_from_crud(e) from e
+        raise _http_from_repo(e) from e
 
 
 @router.post(
@@ -70,4 +70,4 @@ async def send_message(
     try:
         return create_message(db, body)
     except (ResourceNotFoundError, PermissionDeniedError) as e:
-        raise _http_from_crud(e) from e
+        raise _http_from_repo(e) from e

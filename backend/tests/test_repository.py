@@ -48,10 +48,10 @@ from app.schemas.token import TokenCreate
 from app.schemas.user import UserCreate, UserUpdate
 
 
-# ── User CRUD ─────────────────────────────────────────────────────────────────
+# ── User Repository ──────────────────────────────────────────────────────────
 
 
-class TestUserCRUD:
+class TestUserRepository:
     def test_create_user(self, db_session):
         schema = UserCreate(
             email="new@example.com", username="newuser", password="password123"
@@ -114,10 +114,10 @@ class TestUserCRUD:
         assert get_user_by_id(db_session, uid) is None
 
 
-# ── Token CRUD ────────────────────────────────────────────────────────────────
+# ── Token Repository ─────────────────────────────────────────────────────────
 
 
-class TestTokenCRUD:
+class TestTokenRepository:
     def _expiration(self):
         return datetime.now(timezone.utc) + timedelta(hours=1)
 
@@ -233,10 +233,10 @@ class TestTokenCRUD:
         assert len(get_tokens_by_user(db_session, user.id)) == 0
 
 
-# ── Profile CRUD ──────────────────────────────────────────────────────────────
+# ── Profile Repository ────────────────────────────────────────────────────────
 
 
-class TestProfileCRUD:
+class TestProfileRepository:
     def _profile_schema(self, **overrides):
         defaults = {
             "firstname": "John",
@@ -356,10 +356,10 @@ class TestProfileCRUD:
             delete_profile(db_session, 9999)
 
 
-# ── Message CRUD ──────────────────────────────────────────────────────────────
+# ── Message Repository ────────────────────────────────────────────────────────
 
 
-class TestMessageCRUD:
+class TestMessageRepository:
     def _setup(self, make_user, make_listing, make_conversation):
         """Create two users, a listing, and a conversation for message tests."""
         user1 = make_user()
