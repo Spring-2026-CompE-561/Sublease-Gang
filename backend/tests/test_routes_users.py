@@ -66,7 +66,7 @@ class TestGetUser:
 
 
 class TestAuthProtectedEndpoints:
-    """Endpoints behind get_current_user should return 401."""
+    """Endpoints behind get_current_user should return 401 without a token."""
 
     def test_get_me(self, client):
         resp = client.get("/api/v1/users/me")

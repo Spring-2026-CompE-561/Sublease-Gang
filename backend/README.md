@@ -1,159 +1,209 @@
-# Sublease Marketplace API — Backend
+# Sublease Marketplace
 
-FastAPI backend for the Sublease Gang platform, providing REST endpoints for sublease listings, user accounts, messaging, and map search.
+A web marketplace for college students to list and find rooms for subleasing.
+
+There is no central place for college students to list or find subleases. This project creates a user-friendly website that allows students to find rooms available in their area within their desired time frame.
+
+The website is limited to matching people with available rooms. Payment processing and lease signing are left to the discretion of the current resident.
+
+## Features
+
+- Homepage with sublease listings (including pictures, room size, price, and time frame)
+- User authentication (JWT with Argon2 password hashing)
+- Page to create listings
+- Filtering options:
+  - College
+  - Time frame
+  - Room size
+  - Price
+- Messaging system between users
+- Map to display locations of listings
 
 ## Tech Stack
 
-- **Framework:** FastAPI
-- **Database:** SQLite (default) via SQLAlchemy ORM
-- **Package Manager:** [uv](https://docs.astral.sh/uv/)
-- **Linter:** Ruff
-- **Auth tokens:** PyJWT + Argon2 password hashing (pwdlib)
-- **Python:** 3.13+
+- **Backend:** Python 3.13+, FastAPI, SQLAlchemy, Pydantic v2
+- **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS v4
+- **Database:** SQLite (development)
+- **Package Management:** [uv](https://docs.astral.sh/uv/) (backend), npm (frontend)
 
-## Getting Started
+## Architecture
 
-### 1. Install dependencies
+The backend follows a **Routes → Services → Repository → Models** layered architecture:
 
-```bash
-cd backend
-uv sync
-```
-
-### 2. Configure environment (optional)
-
-Create a `.env` file in the `backend/` directory to override defaults:
-
-```env
-SECRET_KEY=your-secret-key
-DATABASE_URL=sqlite:///./sublease_marketplace.db
-CORS_ORIGINS=["http://localhost:3000"]
-ENVIRONMENT=development
-```
-
-### 3. Run the dev server
-
-```bash
-cd backend
-uv run uvicorn app.main:app --reload --app-dir src
-```
-
-The API will be available at **http://localhost:8000**.
-
-### 4. View API docs
-
-FastAPI auto-generates interactive docs:
-
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-### 5. Run tests
-
-```bash
-cd backend
-uv run pytest
-```
-
-### 6. Lint / format
-
-```bash
-cd backend
-uv run ruff check src/
-uv run ruff format src/
-```
+- **Routes** handle HTTP concerns (request parsing, response codes, error mapping)
+- **Services** contain business logic and orchestrate repository calls
+- **Repository** encapsulates all database queries and raises domain exceptions
+- **Models** define SQLAlchemy table schemas
 
 ## Project Structure
 
 ```
-backend/
-├── src/app/
-│   ├── main.py                  # FastAPI app, middleware registration
-│   ├── api/v1/routes.py         # Versioned API router (/api/v1)
-│   ├── core/
-│   │   ├── settings.py          # App config (pydantic-settings, reads .env)
-│   │   └── database.py          # SQLAlchemy engine, session, Base
-│   ├── models/
-│   │   ├── user.py              # User account
-│   │   ├── profiles.py          # User profile (1-to-1 with User)
-│   │   ├── listing.py           # Sublease listing
-│   │   ├── conversations.py     # Conversation (between two users on a listing)
-│   │   ├── messages.py          # Chat message
-│   │   ├── token.py             # JWT refresh/access token records
-│   │   └── crud.py              # Shared CRUD helpers
-│   ├── routes/
-│   │   ├── auth.py              # Signup, login, logout, password reset
-│   │   ├── listings.py          # CRUD + search/filter for listings
-│   │   ├── users.py             # User profile management
-│   │   ├── conversations.py     # Messaging / conversations
-│   │   └── map.py               # Map-based listing search + geocode
-│   ├── schemas/                 # Pydantic request/response schemas
-│   └── middleware/
-│       ├── request_id.py        # Adds X-Request-ID to every response
-│       ├── logging.py           # Logs method, path, status, duration
-│       ├── security_headers.py  # Security headers (HSTS, CSP, etc.)
-│       └── rate_limit.py        # Token-bucket rate limiting
-├── pyproject.toml
-└── uv.lock
+Sublease-Gang/
+├── backend/
+│   ├── src/
+│   │   └── app/
+│   │       ├── api/v1/          # API route registration
+│   │       ├── core/            # Settings, database, auth, dependencies
+│   │       ├── errors/          # Custom exception handlers (auth, conflict, not_found, permission, validation, server)
+│   │       ├── middleware/      # Request ID, logging, rate limiting, security headers
+│   │       ├── models/          # SQLAlchemy models (user, listing, profile, conversation, message, token)
+│   │       ├── repository/      # Database access layer with domain exceptions
+│   │       ├── routes/          # Route handlers (auth, users, listings, map, conversations)
+│   │       ├── schemas/         # Pydantic request/response schemas
+│   │       ├── services/        # Business logic (user, listing, profile, conversation, message, token)
+│   │       └── main.py          # FastAPI app entry point
+│   ├── tests/                   # Pytest test suite (repository, routes, schemas, auth)
+│   ├── pyproject.toml           # Python dependencies & tool config
+│   └── sublease-gang.yaml       # OpenAPI specification
+├── frontend/
+│   ├── app/                     # Next.js app directory
+│   ├── public/                  # Static assets
+│   ├── package.json             # Node dependencies
+│   └── ...
+└── README.md
 ```
 
-## API Routes
+## Prerequisites
 
-All routes are prefixed with `/api/v1`.
+- **Python 3.13+**
+- **Node.js 18+** and **npm**
+- **[uv](https://docs.astral.sh/uv/)** (Python package manager)
 
-### Auth (`/api/v1/auth`)
-| Method | Path                | Description                  | Status      |
-|--------|---------------------|------------------------------|-------------|
-| POST   | `/signup`           | Create a new account         | Stub (TODO) |
-| POST   | `/login`            | Login, returns tokens        | Stub (TODO) |
-| POST   | `/refresh`          | Refresh access token         | Stub (TODO) |
-| POST   | `/logout`           | Invalidate refresh token     | Stub (TODO) |
-| POST   | `/forgot_password`  | Send password reset email    | Stub (TODO) |
-| PUT    | `/reset_password`   | Reset password with token    | Stub (TODO) |
+Install uv if you don't have it:
 
-### Listings (`/api/v1/listings`)
-| Method | Path                | Description                          | Status      |
-|--------|---------------------|--------------------------------------|-------------|
-| GET    | `/`                 | Search listings with filters/sorting | Implemented |
-| GET    | `/filters`          | Get available filter options         | Implemented |
-| GET    | `/{listing_id}`     | View a single listing                | Implemented |
-| POST   | `/`                 | Create a new listing                 | Needs auth  |
-| PUT    | `/{listing_id}`     | Update a listing                     | Needs auth  |
-| DELETE | `/{listing_id}`     | Delete a listing                     | Needs auth  |
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
-### Users (`/api/v1/users`)
-| Method | Path              | Description                    | Status      |
-|--------|-------------------|--------------------------------|-------------|
-| GET    | `/me`             | Get current user's profile     | Needs auth  |
-| PATCH  | `/me`             | Update current user's profile  | Needs auth  |
-| DELETE | `/me`             | Delete current user's account  | Needs auth  |
-| PUT    | `/me/password`    | Change password                | Needs auth  |
-| GET    | `/{user_id}`      | Get a user's public profile    | Implemented |
-| POST   | `/`               | Create a new user              | Implemented |
+## Setup
 
-### Conversations (`/api/v1/conversations`)
-| Method | Path                              | Description              | Status      |
-|--------|-----------------------------------|--------------------------|-------------|
-| GET    | `/`                               | List user's conversations| Stub (TODO) |
-| POST   | `/`                               | Create a conversation    | Stub (TODO) |
-| GET    | `/{conversation_id}/messages`     | Get messages             | Stub (TODO) |
-| POST   | `/{conversation_id}/messages`     | Send a message           | Stub (TODO) |
+### Backend
 
-### Map (`/api/v1/map`)
-| Method | Path          | Description                           | Status      |
-|--------|---------------|---------------------------------------|-------------|
-| GET    | `/listings`   | Get listing pins within map bounds    | Implemented |
-| GET    | `/geocode`    | Convert address to coordinates        | Stub (TODO) |
+```bash
+cd backend
 
-## Middleware Stack
+# Install all dependencies (creates a virtual environment automatically)
+uv sync --group dev
+```
 
-Middleware executes in this order (top = outermost):
+Create a `.env` file in the `backend/` directory (optional — defaults are provided):
 
-1. **CORS** — Allows configured frontend origins
-2. **Rate Limiting** — Token-bucket per IP for auth/messaging/listing endpoints
-3. **Security Headers** — X-Content-Type-Options, X-Frame-Options, HSTS (production only), etc.
-4. **Logging** — Logs request method, path, status code, and duration
-5. **Request ID** — Attaches a unique `X-Request-ID` header to every response
+```env
+SECRET_KEY=your_secret_key
+DATABASE_URL=sqlite:///./sublease_marketplace.db
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+ENVIRONMENT=development
+```
 
-## Database
+### Frontend
 
-SQLite by default (file: `sublease_marketplace.db`). Tables are auto-created on startup via `Base.metadata.create_all()`. Override `DATABASE_URL` in `.env` to use PostgreSQL or another database.
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+```
+
+## Running the Application
+
+### Backend (API server)
+
+```bash
+cd backend
+
+# Start the FastAPI development server
+uv run fastapi dev src/app/main.py
+```
+
+The API will be available at **http://localhost:8000**.
+
+Interactive API docs (Swagger UI) are at **http://localhost:8000/docs**.
+
+### Frontend (Next.js)
+
+```bash
+cd frontend
+
+# Start the Next.js development server
+npm run dev
+```
+
+The frontend will be available at **http://localhost:3000**.
+
+## Running Tests
+
+```bash
+cd backend
+
+# Run the full test suite
+uv run pytest
+
+# Run with verbose output
+uv run pytest -v
+
+# Run a specific test file
+uv run pytest tests/test_repository.py
+
+# Run a specific test class or function
+uv run pytest tests/test_repository.py::TestUserRepository
+uv run pytest tests/test_schemas.py::TestUserCreate::test_valid
+```
+
+Tests use an **in-memory SQLite database** so no external database setup is required.
+
+## Linting
+
+### Backend
+
+```bash
+cd backend
+
+# Run ruff linter
+uv run ruff check .
+
+# Auto-fix lint issues
+uv run ruff check --fix .
+
+# Format code
+uv run ruff format .
+```
+
+### Frontend
+
+```bash
+cd frontend
+
+# Run ESLint
+npm run lint
+```
+
+## API Endpoints
+
+The full OpenAPI specification is available in [`backend/sublease-gang.yaml`](backend/sublease-gang.yaml).
+
+| Method | Endpoint                              | Description                      |
+| ------ | ------------------------------------- | -------------------------------- |
+| POST   | `/api/v1/auth/signup`                 | Create a new account             |
+| POST   | `/api/v1/auth/login`                  | Log in                           |
+| POST   | `/api/v1/auth/logout`                 | Log out (authenticated)          |
+| POST   | `/api/v1/auth/refresh`                | Refresh tokens (stub)            |
+| POST   | `/api/v1/auth/forgot_password`        | Request password reset (stub)    |
+| PUT    | `/api/v1/auth/reset_password`         | Reset password (stub)            |
+| POST   | `/api/v1/users/`                      | Create a new user                |
+| GET    | `/api/v1/users/me`                    | Get current user profile         |
+| PATCH  | `/api/v1/users/me`                    | Update current user profile      |
+| DELETE | `/api/v1/users/me`                    | Delete current user account      |
+| PUT    | `/api/v1/users/me/password`           | Change password                  |
+| GET    | `/api/v1/users/{id}`                  | Get user by ID                   |
+| POST   | `/api/v1/listings/`                   | Create a listing (authenticated) |
+| GET    | `/api/v1/listings/`                   | Search listings with filters     |
+| GET    | `/api/v1/listings/filters`            | Get available filter options     |
+| GET    | `/api/v1/listings/{id}`               | Get a specific listing           |
+| PUT    | `/api/v1/listings/{id}`               | Update a listing (owner only)    |
+| DELETE | `/api/v1/listings/{id}`               | Delete a listing (owner only)    |
+| GET    | `/api/v1/map/listings`                | Get listings within map bounds   |
+| GET    | `/api/v1/map/geocode`                 | Geocode an address               |
+| GET    | `/api/v1/conversations/`              | List conversations (stub)        |
+| POST   | `/api/v1/conversations/`              | Create a conversation (stub)     |
+| GET    | `/api/v1/conversations/{id}/messages` | List messages (authenticated)    |
+| POST   | `/api/v1/conversations/{id}/messages` | Send a message (authenticated)   |

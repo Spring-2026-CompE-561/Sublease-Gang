@@ -1,32 +1,32 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func as sql_func
 from typing import Optional
 
 from app.core.database import get_db
-from app.models.listing import Listing
+from app.core.dependencies import get_current_user
+from app.models.user import User
+from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
+from app.services.listing import ListingService
 from app.schemas.listing import ListingCreate, ListingUpdate, ListingResponse
 
 router = APIRouter(prefix="/listings", tags=["listings"])
-
-# TODO: replace with real auth dependency once auth is implemented
-def get_current_user(db: Session = Depends(get_db)):
-    """Placeholder for auth dependency."""
-    raise HTTPException(status_code=401, detail="Authentication not implemented yet")
 
 
 @router.post("/", response_model=ListingResponse, status_code=201)
 async def create_listing(
     payload: ListingCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Create a new room listing."""
-    # TODO: get host_id from auth token via get_current_user
-    raise HTTPException(status_code=501, detail="Auth required to create listing")
+    try:
+        return ListingService.create(db, current_user.id, payload)
+    except ResourceNotFoundError as e:
+        raise HTTPException(status_code=404, detail=e.detail) from e
 
 @router.get("/", response_model=dict)
-async def search_listings(
+async def list_listings(
     college_id: Optional[int] = None,
     location: Optional[str] = None,
     min_price: Optional[float] = None,
@@ -43,29 +43,20 @@ async def search_listings(
     db: Session = Depends(get_db),
 ):
     """Search listings with filters and sorting."""
-    query = db.query(Listing)
-
-    if college_id is not None:
-        query = query.filter(Listing.college_id == college_id)
-    if location is not None:
-        query = query.filter(Listing.location.ilike(f"%{location}%"))
-    if min_price is not None:
-        query = query.filter(Listing.price >= min_price)
-    if max_price is not None:
-        query = query.filter(Listing.price <= max_price)
-    if room_type is not None:
-        query = query.filter(Listing.room_type == room_type)
-    if min_sqft is not None:
-        query = query.filter(Listing.sqft >= min_sqft)
-    if max_sqft is not None:
-        query = query.filter(Listing.sqft <= max_sqft)
-    if start_date is not None:
-        query = query.filter(Listing.start_date >= start_date)
-    if end_date is not None:
-        query = query.filter(Listing.end_date <= end_date)
-
-    count = query.count()
-    listings = query.offset(offset).limit(limit).all()
+    count, listings = ListingService.search(
+        db,
+        college_id=college_id,
+        location=location,
+        min_price=min_price,
+        max_price=max_price,
+        room_type=room_type,
+        min_sqft=min_sqft,
+        max_sqft=max_sqft,
+        start_date=start_date,
+        end_date=end_date,
+        skip=offset,
+        limit=limit,
+    )
 
     results = []
     for l in listings:
@@ -88,57 +79,42 @@ async def search_listings(
 @router.get("/filters")
 async def get_filters(db: Session = Depends(get_db)):
     """Get available filter options."""
-    room_types = [r[0] for r in db.query(Listing.room_type).distinct().filter(Listing.room_type.isnot(None)).all()]
-    colleges = [{"id": c[0], "name": c[0]} for c in db.query(Listing.college_id).distinct().filter(Listing.college_id.isnot(None)).all()]
-
-    price_min = db.query(sql_func.min(Listing.price)).scalar()
-    price_max = db.query(sql_func.max(Listing.price)).scalar()
-    sqft_min = db.query(sql_func.min(Listing.sqft)).scalar()
-    sqft_max = db.query(sql_func.max(Listing.sqft)).scalar()
-
-    return {
-        "room_types": room_types,
-        "colleges": colleges,
-        "price_min": price_min, "price_max": price_max,
-        "sqft_min": sqft_min, "sqft_max": sqft_max,
-    }
+    return ListingService.get_filter_options(db)
 
 @router.get("/{listing_id}", response_model=ListingResponse)
 async def get_listing(listing_id: int, db: Session = Depends(get_db)):
     """View an existing listing."""
-    listing = db.query(Listing).filter(Listing.id == listing_id).first()
-    if not listing:
-        raise HTTPException(status_code=404, detail="Listing not found")
-    return listing
+    try:
+        return ListingService.get_or_raise(db, listing_id)
+    except ResourceNotFoundError as e:
+        raise HTTPException(status_code=404, detail=e.detail) from e
 
 
 @router.put("/{listing_id}", response_model=ListingResponse)
 async def update_listing(
     listing_id: int,
     payload: ListingUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Edit an existing listing."""
-    listing = db.query(Listing).filter(Listing.id == listing_id).first()
-    if not listing:
-        raise HTTPException(status_code=404, detail="Listing not found")
-
-    # TODO: verify current user is the listing owner via auth
-    update_data = payload.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(listing, field, value)
-
-    db.commit()
-    db.refresh(listing)
-    return listing
+    try:
+        return ListingService.update(db, listing_id, host_id=current_user.id, updates=payload)
+    except ResourceNotFoundError as e:
+        raise HTTPException(status_code=404, detail=e.detail) from e
+    except PermissionDeniedError as e:
+        raise HTTPException(status_code=403, detail=e.detail) from e
 
 @router.delete("/{listing_id}", status_code=204, response_model=None)
-async def delete_listing(listing_id: int, db: Session = Depends(get_db)):
+async def delete_listing(
+    listing_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Delete an existing listing."""
-    listing = db.query(Listing).filter(Listing.id == listing_id).first()
-    if not listing:
-        raise HTTPException(status_code=404, detail="Listing not found")
-
-    # TODO: verify current user is the listing owner via auth
-    db.delete(listing)
-    db.commit()
+    try:
+        ListingService.delete(db, listing_id, host_id=current_user.id)
+    except ResourceNotFoundError as e:
+        raise HTTPException(status_code=404, detail=e.detail) from e
+    except PermissionDeniedError as e:
+        raise HTTPException(status_code=403, detail=e.detail) from e
