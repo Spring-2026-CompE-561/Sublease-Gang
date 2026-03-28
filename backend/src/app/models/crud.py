@@ -2,8 +2,10 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import hash_password
 from app.models.conversations import Conversation
+from app.models.listing import Listing
 from app.models.messages import Message as MessageModel
 from app.models.user import User
+from app.schemas.listing import ListingCreate, ListingUpdate
 from app.schemas.message import MessageCreate, MessageUpdate
 from app.schemas.user import UserCreate, UserUpdate
 
@@ -142,4 +144,81 @@ def delete_message(db: Session, message_id: int, user_id: int) -> None:
     if db_message.sender_id != user_id:
         raise PermissionDeniedError("Not allowed to delete this message")
     db.delete(db_message)
+    db.commit()
+
+
+# LISTING CRUD operations
+def create_listing(db: Session, host_id: int, listing: ListingCreate) -> Listing:
+    if db.get(User, host_id) is None:
+        raise ResourceNotFoundError("User not found")
+    db_listing = Listing(
+        host_id=host_id,
+        title=listing.title,
+        description=listing.description,
+        price=listing.price,
+        location=listing.location,
+        room_type=listing.room_type,
+        sqft=listing.sqft,
+        start_date=listing.start_date,
+        end_date=listing.end_date,
+        college_id=listing.college_id,
+        thumbnail_url=listing.thumbnail_url,
+        latitude=listing.latitude,
+        longitude=listing.longitude,
+    )
+    db.add(db_listing)
+    db.commit()
+    db.refresh(db_listing)
+    return db_listing
+
+
+def get_listing(db: Session, listing_id: int) -> Listing | None:
+    return db.query(Listing).filter(Listing.id == listing_id).first()
+
+
+def get_listing_or_raise(db: Session, listing_id: int) -> Listing:
+    db_listing = get_listing(db, listing_id)
+    if db_listing is None:
+        raise ResourceNotFoundError("Listing not found")
+    return db_listing
+
+
+def get_listings(
+    db: Session,
+    *,
+    skip: int = 0,
+    limit: int = 100,
+) -> list[Listing]:
+    return (
+        db.query(Listing)
+        .order_by(Listing.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def update_listing(
+    db: Session, listing_id: int, host_id: int, updates: ListingUpdate
+) -> Listing:
+    db_listing = get_listing(db, listing_id)
+    if db_listing is None:
+        raise ResourceNotFoundError("Listing not found")
+    if db_listing.host_id != host_id:
+        raise PermissionDeniedError("Not allowed to modify this listing")
+    update_data = updates.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_listing, field, value)
+    db.commit()
+    db.refresh(db_listing)
+    return db_listing
+
+
+def delete_listing(db: Session, listing_id: int, host_id: int) -> None:
+    db_listing = get_listing(db, listing_id)
+    if db_listing is None:
+        raise ResourceNotFoundError("Listing not found")
+    if db_listing.host_id != host_id:
+        raise PermissionDeniedError("Not allowed to delete this listing")
+    db.delete(db_listing)
     db.commit()
