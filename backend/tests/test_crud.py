@@ -409,7 +409,7 @@ class TestMessageCRUD:
             make_user, make_listing, make_conversation
         )
         outsider = make_user()
-        with pytest.raises(PermissionDeniedError, match="not a participant"):
+        with pytest.raises(PermissionDeniedError, match="(?i)not a participant"):
             create_message(
                 db_session,
                 MessageCreate(
@@ -475,7 +475,7 @@ class TestMessageCRUD:
                 conversation_id=convo.id, sender_id=user2.id, content="Second"
             ),
         )
-        messages = get_messages_by_conversation(db_session, convo.id)
+        messages = get_messages_by_conversation(db_session, convo.id, user_id=user1.id)
         assert len(messages) == 2
         assert messages[0].content == "First"
         assert messages[1].content == "Second"
@@ -495,7 +495,7 @@ class TestMessageCRUD:
                     content=f"Msg {i}",
                 ),
             )
-        messages = get_messages_by_conversation(db_session, convo.id, skip=2)
+        messages = get_messages_by_conversation(db_session, convo.id, user_id=user1.id, skip=2)
         assert len(messages) == 3
         assert messages[0].content == "Msg 2"
 
@@ -514,14 +514,14 @@ class TestMessageCRUD:
                     content=f"Msg {i}",
                 ),
             )
-        messages = get_messages_by_conversation(db_session, convo.id, limit=2)
+        messages = get_messages_by_conversation(db_session, convo.id, user_id=user1.id, limit=2)
         assert len(messages) == 2
         assert messages[0].content == "Msg 0"
         assert messages[1].content == "Msg 1"
 
     def test_get_messages_by_conversation_not_found(self, db_session):
         with pytest.raises(ResourceNotFoundError, match="Conversation not found"):
-            get_messages_by_conversation(db_session, 9999)
+            get_messages_by_conversation(db_session, 9999, user_id=1)
 
     def test_update_message(
         self, db_session, make_user, make_listing, make_conversation
