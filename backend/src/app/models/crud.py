@@ -1,14 +1,18 @@
 from datetime import datetime
 
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.auth import hash_password
 from app.models.conversations import Conversation
+from app.models.listing import Listing
 from app.models.messages import Message as MessageModel
 from app.models.profiles import Profile
 from app.models.token import Token
 from app.models.user import User
+from app.schemas.conversation import ConversationCreate
+from app.schemas.listing import ListingCreate, ListingUpdate
 from app.schemas.message import MessageCreate, MessageUpdate
 from app.schemas.profile import ProfileCreate, ProfileUpdate
 from app.schemas.token import TokenCreate
@@ -42,23 +46,27 @@ class ResourceConflictError(Exception):
 # USER CRUD operations
 def create_user(db: Session, user: UserCreate) -> User:
     db_user = User(
-        email = user.email,
-        username = user.username,
-        password_hash = hash_password(user.password)
+        email=user.email,
+        username=user.username,
+        password_hash=hash_password(user.password),
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
 
+
 def get_user_by_id(db: Session, user_id: int) -> User | None:
     return db.query(User).filter(User.id == user_id).first()
+
 
 def get_user_by_email(db: Session, email: str) -> User | None:
     return db.query(User).filter(User.email == email).first()
 
+
 def get_user_by_username(db: Session, username: str) -> User | None:
     return db.query(User).filter(User.username == username).first()
+
 
 def update_user(db: Session, user: User, updates: UserUpdate) -> User:
     update_data = updates.model_dump(exclude_unset=True)
@@ -68,11 +76,13 @@ def update_user(db: Session, user: User, updates: UserUpdate) -> User:
     db.refresh(user)
     return user
 
+
 def update_password(db: Session, user: User, new_password_hash: str) -> User:
     user.password_hash = new_password_hash
     db.commit()
     db.refresh(user)
     return user
+
 
 def disable_user(db: Session, user: User) -> User:
     user.account_disabled = True
@@ -80,8 +90,64 @@ def disable_user(db: Session, user: User) -> User:
     db.refresh(user)
     return user
 
+
 def delete_user(db: Session, user: User) -> None:
     db.delete(user)
+    db.commit()
+
+
+# CONVERSATION CRUD operations
+def _canonical_user_pair(user_a_id: int, user_b_id: int) -> tuple[int, int]:
+    return tuple(sorted((user_a_id, user_b_id)))
+
+
+def create_conversation(db: Session, data: ConversationCreate) -> Conversation:
+    user_one_id, user_two_id = _canonical_user_pair(data.user_one_id, data.user_two_id)
+    db_conversation = Conversation(
+        listing_id=data.listing_id,
+        user_one_id=user_one_id,
+        user_two_id=user_two_id,
+    )
+    db.add(db_conversation)
+    db.commit()
+    db.refresh(db_conversation)
+    return db_conversation
+
+
+def get_conversation_by_id(db: Session, conversation_id: int) -> Conversation | None:
+    return db.query(Conversation).filter(Conversation.id == conversation_id).first()
+
+
+def get_conversation_by_listing_and_users(
+    db: Session, listing_id: int, user_a_id: int, user_b_id: int
+) -> Conversation | None:
+    user_one_id, user_two_id = _canonical_user_pair(user_a_id, user_b_id)
+    return (
+        db.query(Conversation)
+        .filter(
+            Conversation.listing_id == listing_id,
+            Conversation.user_one_id == user_one_id,
+            Conversation.user_two_id == user_two_id,
+        )
+        .first()
+    )
+
+
+def list_conversations_for_user(db: Session, user_id: int) -> list[Conversation]:
+    return (
+        db.query(Conversation)
+        .filter(
+            or_(
+                Conversation.user_one_id == user_id,
+                Conversation.user_two_id == user_id,
+            )
+        )
+        .all()
+    )
+
+
+def delete_conversation(db: Session, conversation: Conversation) -> None:
+    db.delete(conversation)
     db.commit()
 
 
@@ -284,4 +350,80 @@ def delete_message(db: Session, message_id: int, user_id: int) -> None:
     if db_message.sender_id != user_id:
         raise PermissionDeniedError("Not allowed to delete this message")
     db.delete(db_message)
+    db.commit()
+
+
+# LISTING CRUD operations
+def create_listing(db: Session, host_id: int, listing: ListingCreate) -> Listing:
+    if db.get(User, host_id) is None:
+        raise ResourceNotFoundError("User not found")
+    db_listing = Listing(host_id=host_id, **listing.model_dump())
+    db.add(db_listing)
+    db.commit()
+    db.refresh(db_listing)
+    return db_listing
+
+
+def get_listing(db: Session, listing_id: int) -> Listing | None:
+    return db.query(Listing).filter(Listing.id == listing_id).first()
+
+
+def get_listing_or_raise(db: Session, listing_id: int) -> Listing:
+    db_listing = get_listing(db, listing_id)
+    if db_listing is None:
+        raise ResourceNotFoundError("Listing not found")
+    return db_listing
+
+
+def get_listings(
+    db: Session,
+    *,
+    college_id: int | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    room_type: str | None = None,
+    start_date=None,
+    end_date=None,
+    skip: int = 0,
+    limit: int = 100,
+) -> list[Listing]:
+    query = db.query(Listing)
+    if college_id is not None:
+        query = query.filter(Listing.college_id == college_id)
+    if min_price is not None:
+        query = query.filter(Listing.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Listing.price <= max_price)
+    if room_type is not None:
+        query = query.filter(Listing.room_type == room_type)
+    if start_date is not None:
+        query = query.filter(Listing.start_date >= start_date)
+    if end_date is not None:
+        query = query.filter(Listing.end_date <= end_date)
+    return query.order_by(Listing.created_at.desc()).offset(skip).limit(limit).all()
+
+
+def update_listing(
+    db: Session, listing_id: int, host_id: int, updates: ListingUpdate
+) -> Listing:
+    db_listing = get_listing(db, listing_id)
+    if db_listing is None:
+        raise ResourceNotFoundError("Listing not found")
+    if db_listing.host_id != host_id:
+        raise PermissionDeniedError("Not allowed to modify this listing")
+    update_data = updates.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_listing, field, value)
+    db.commit()
+    db.refresh(db_listing)
+    return db_listing
+
+
+def delete_listing(db: Session, listing_id: int, host_id: int) -> None:
+    db_listing = get_listing(db, listing_id)
+    if db_listing is None:
+        raise ResourceNotFoundError("Listing not found")
+    if db_listing.host_id != host_id:
+        raise PermissionDeniedError("Not allowed to delete this listing")
+    db.delete(db_listing)
     db.commit()
