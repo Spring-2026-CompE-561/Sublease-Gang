@@ -152,6 +152,34 @@ def get_listings_by_host(db: Session, host_id: int) -> list[Listing]:
     return db.query(Listing).filter(Listing.host_id == host_id).all()
 
 
+def get_listings(
+    db: Session,
+    *,
+    college_id: int | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    room_type: str | None = None,
+    start_date=None,
+    end_date=None,
+    skip: int = 0,
+    limit: int = 20,
+) -> list[Listing]:
+    query = db.query(Listing)
+    if college_id is not None:
+        query = query.filter(Listing.college_id == college_id)
+    if min_price is not None:
+        query = query.filter(Listing.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Listing.price <= max_price)
+    if room_type is not None:
+        query = query.filter(Listing.room_type == room_type)
+    if start_date is not None:
+        query = query.filter(Listing.start_date >= start_date)
+    if end_date is not None:
+        query = query.filter(Listing.end_date <= end_date)
+    return query.offset(skip).limit(limit).all()
+
+
 def update_listing(db: Session, listing_id: int, host_id: int, payload: ListingUpdate) -> Listing:
     db_listing = get_listing_by_id(db, listing_id)
     if db_listing is None:
