@@ -25,8 +25,12 @@ async def get_map_listings(
     db: Session = Depends(get_db),
 ):
     """Get map pins for listings within the given bounds."""
-    if north <= south or east <= west:
+    if north <= south:
         raise HTTPException(status_code=400, detail="invalid bounds")
+    if not (-90 <= south <= 90 and -90 <= north <= 90):
+        raise HTTPException(status_code=400, detail="latitude out of range")
+    if not (-180 <= west <= 180 and -180 <= east <= 180):
+        raise HTTPException(status_code=400, detail="longitude out of range")
 
     query = db.query(Listing).filter(
         Listing.latitude <= north,
