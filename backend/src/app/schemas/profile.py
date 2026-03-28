@@ -124,3 +124,16 @@ class ProfileUpdate(BaseModel):
         if both_provided and self.contact_email is None and self.contact_phone is None:
             raise ValueError("At least one contact method (email or phone) is required")
         return self
+
+
+class ProfileResponse(BaseModel):
+    user_id: int
+    firstname: str
+    lastname: str
+    username: str
+    icon: str | None = None
+    description: str | None = None
+    contact_email: EmailStr | None = None
+    contact_phone: str | None = None
+
+    model_config = {"from_attributes": True}
