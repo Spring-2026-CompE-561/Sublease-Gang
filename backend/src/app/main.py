@@ -20,7 +20,7 @@ from app.errors.not_found import NotFoundError, not_found_exception_handler
 from app.errors.permission import PermissionError, permission_exception_handler
 from app.errors.server import server_exception_handler
 from app.errors.validation import validation_exception_handler
-from app.models import Conversation, Listing, Profile, Token, User
+from app.models import Conversation, Listing, Message, Profile, Token, User
 
 # configure logging
 logging.basicConfig(
