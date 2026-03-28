@@ -288,21 +288,7 @@ def delete_message(db: Session, message_id: int, user_id: int) -> None:
 def create_listing(db: Session, host_id: int, listing: ListingCreate) -> Listing:
     if db.get(User, host_id) is None:
         raise ResourceNotFoundError("User not found")
-    db_listing = Listing(
-        host_id=host_id,
-        title=listing.title,
-        description=listing.description,
-        price=listing.price,
-        location=listing.location,
-        room_type=listing.room_type,
-        sqft=listing.sqft,
-        start_date=listing.start_date,
-        end_date=listing.end_date,
-        college_id=listing.college_id,
-        thumbnail_url=listing.thumbnail_url,
-        latitude=listing.latitude,
-        longitude=listing.longitude,
-    )
+    db_listing = Listing(host_id=host_id, **listing.model_dump())
     db.add(db_listing)
     db.commit()
     db.refresh(db_listing)
@@ -323,16 +309,29 @@ def get_listing_or_raise(db: Session, listing_id: int) -> Listing:
 def get_listings(
     db: Session,
     *,
+    college_id: int | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    room_type: str | None = None,
+    start_date=None,
+    end_date=None,
     skip: int = 0,
     limit: int = 100,
 ) -> list[Listing]:
-    return (
-        db.query(Listing)
-        .order_by(Listing.created_at.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    query = db.query(Listing)
+    if college_id is not None:
+        query = query.filter(Listing.college_id == college_id)
+    if min_price is not None:
+        query = query.filter(Listing.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Listing.price <= max_price)
+    if room_type is not None:
+        query = query.filter(Listing.room_type == room_type)
+    if start_date is not None:
+        query = query.filter(Listing.start_date >= start_date)
+    if end_date is not None:
+        query = query.filter(Listing.end_date <= end_date)
+    return query.order_by(Listing.created_at.desc()).offset(skip).limit(limit).all()
 
 
 def update_listing(
