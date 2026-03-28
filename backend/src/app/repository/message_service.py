@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from app.models.messages import Message as MessageModel
 from app.models.user import User
 from app.schemas.message import MessageCreate, MessageUpdate
-from app.services.conversation_service import require_conversation_participant
-from app.services.exceptions import PermissionDeniedError, ResourceNotFoundError
+from app.repository.conversation_service import require_conversation_participant
+from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
 
 
 def create_message(db: Session, message: MessageCreate) -> MessageModel:

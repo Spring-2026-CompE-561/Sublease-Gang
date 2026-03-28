@@ -1,6 +1,6 @@
 """Backward-compatibility shim — all CRUD logic now lives in app.services.*"""
 
-from app.services import (  # noqa: F401
+from app.repository import (  # noqa: F401
     PermissionDeniedError,
     ResourceConflictError,
     ResourceNotFoundError,

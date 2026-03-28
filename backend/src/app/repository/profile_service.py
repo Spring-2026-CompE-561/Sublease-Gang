@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.profiles import Profile
 from app.models.user import User
 from app.schemas.profile import ProfileCreate, ProfileUpdate
-from app.services.exceptions import (
+from app.repository.exceptions import (
     ResourceConflictError,
     ResourceNotFoundError,
 )

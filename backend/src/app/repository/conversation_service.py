@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.models.conversations import Conversation
 from app.schemas.conversation import ConversationCreate
-from app.services.exceptions import PermissionDeniedError, ResourceNotFoundError
+from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
 
 
 def _canonical_user_pair(user_a_id: int, user_b_id: int) -> tuple[int, int]:
