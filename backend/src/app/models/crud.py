@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.orm import Session
 
 from app.core.auth import hash_password
@@ -80,7 +82,7 @@ def create_token(
     access_token: str,
     refresh_token: str | None = None,
     token_type: str = "bearer",
-    expiration_time,
+    expiration_time: datetime,
 ) -> Token:
     if db.get(User, token_data.user_id) is None:
         raise ResourceNotFoundError("User not found")
