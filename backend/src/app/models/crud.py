@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.auth import hash_password
@@ -10,7 +13,7 @@ from app.models.user import User
 from app.schemas.conversation import ConversationCreate
 from app.schemas.listing import ListingCreate, ListingUpdate
 from app.schemas.message import MessageCreate, MessageUpdate
-from app.schemas.profile import ProfileCreate
+from app.schemas.profile import ProfileCreate, ProfileUpdate
 from app.schemas.token import TokenCreate
 from app.schemas.user import UserCreate, UserUpdate
 
@@ -25,6 +28,14 @@ class ResourceNotFoundError(Exception):
 
 class PermissionDeniedError(Exception):
     """Raised when the caller is not allowed to perform the requested action."""
+
+    def __init__(self, detail: str) -> None:
+        self.detail = detail
+        super().__init__(detail)
+
+
+class ResourceConflictError(Exception):
+    """Raised when a create/update would violate a uniqueness or existence constraint."""
 
     def __init__(self, detail: str) -> None:
         self.detail = detail
@@ -85,7 +96,7 @@ def create_token(
     access_token: str,
     refresh_token: str | None = None,
     token_type: str = "bearer",
-    expiration_time,
+    expiration_time: datetime,
 ) -> Token:
     if db.get(User, token_data.user_id) is None:
         raise ResourceNotFoundError("User not found")
@@ -139,7 +150,6 @@ def create_conversation(db: Session, convo: ConversationCreate) -> Conversation:
         raise ResourceNotFoundError("User not found")
     if db.get(Listing, convo.listing_id) is None:
         raise ResourceNotFoundError("Listing not found")
-    # Enforce user_one_id < user_two_id ordering
     u1, u2 = sorted([convo.user_one_id, convo.user_two_id])
     existing = (
         db.query(Conversation)
@@ -175,34 +185,63 @@ def get_conversations_by_user(db: Session, user_id: int) -> list[Conversation]:
 
 
 # PROFILE CRUD operations
-def create_profile(db: Session, user_id: int, profile: ProfileCreate) -> Profile:
+def create_profile(db: Session, user_id: int, profile_in: ProfileCreate) -> Profile:
     if db.get(User, user_id) is None:
         raise ResourceNotFoundError("User not found")
-    db_profile = Profile(user_id=user_id, **profile.model_dump())
-    db.add(db_profile)
-    db.commit()
-    db.refresh(db_profile)
+    if db.get(Profile, user_id) is not None:
+        raise ResourceConflictError("Profile already exists for this user")
+    db_profile = Profile(user_id=user_id, **profile_in.model_dump())
+    try:
+        db.add(db_profile)
+        db.commit()
+        db.refresh(db_profile)
+    except IntegrityError:
+        db.rollback()
+        raise ResourceConflictError("Username already taken")
     return db_profile
 
 
-def get_profile_by_user_id(db: Session, user_id: int) -> Profile | None:
-    return db.query(Profile).filter(Profile.user_id == user_id).first()
+def get_profile(db: Session, user_id: int) -> Profile | None:
+    return db.get(Profile, user_id)
 
 
-def update_profile(db: Session, user_id: int, profile: ProfileCreate) -> Profile:
-    db_profile = get_profile_by_user_id(db, user_id)
+def get_profile_or_raise(db: Session, user_id: int) -> Profile:
+    db_profile = get_profile(db, user_id)
     if db_profile is None:
         raise ResourceNotFoundError("Profile not found")
-    update_data = profile.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_profile, field, value)
-    db.commit()
-    db.refresh(db_profile)
+    return db_profile
+
+
+def get_profile_by_username(db: Session, username: str) -> Profile | None:
+    return db.query(Profile).filter(Profile.username == username).first()
+
+
+def update_profile(db: Session, user_id: int, updates: ProfileUpdate) -> Profile:
+    db_profile = get_profile(db, user_id)
+    if db_profile is None:
+        raise ResourceNotFoundError("Profile not found")
+    update_data = updates.model_dump(exclude_unset=True)
+    new_email = db_profile.contact_email
+    new_phone = db_profile.contact_phone
+    if "contact_email" in update_data:
+        new_email = update_data["contact_email"]
+    if "contact_phone" in update_data:
+        new_phone = update_data["contact_phone"]
+    if new_email is None and new_phone is None:
+        raise ValueError("At least one contact method (email or phone) is required")
+    try:
+        for field, value in update_data.items():
+            setattr(db_profile, field, value)
+        db.commit()
+        db.refresh(db_profile)
+    except IntegrityError:
+        db.rollback()
+        raise ResourceConflictError("Username already taken")
     return db_profile
 
 
 def delete_profile(db: Session, user_id: int) -> None:
-    db_profile = get_profile_by_user_id(db, user_id)
+    db_profile = get_profile(db, user_id)
     if db_profile is None:
         raise ResourceNotFoundError("Profile not found")
     db.delete(db_profile)
