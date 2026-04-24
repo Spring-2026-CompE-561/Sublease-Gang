@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 import { Menu, Search, User } from "lucide-react";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export function Navbar() {
   return (
@@ -35,6 +36,7 @@ function DesktopNavbar() {
           <Link href="/list" className="text-sm">
             List your place
           </Link>
+          <ModeToggle />
           <Link
             href="/signin"
             aria-label="Sign in"
@@ -74,9 +76,12 @@ function MobileNavbar() {
 
         <Logo />
 
+        <div className="flex items-center gap-2">
+          <ModeToggle />
         <Button variant="ghost" size="icon">
           <User />
         </Button>
+        </div>
       </nav>
     </div>
   );
