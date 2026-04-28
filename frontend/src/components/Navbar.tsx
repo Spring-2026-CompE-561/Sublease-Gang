@@ -2,12 +2,13 @@
 
 import Logo from "@/components/Logo";
 import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 import { Menu, Search, User } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
+import UserButton from "@/components/UserButton";
 
 export function Navbar() {
   return (
@@ -39,13 +40,7 @@ function DesktopNavbar() {
             List your place
           </Link>
           <ModeToggle />
-          <Link
-            href="/signin"
-            aria-label="Sign in"
-            className={buttonVariants({ variant: "ghost", size: "icon" })}
-          >
-            <User />
-          </Link>
+          <UserButton />
         </div>
       </nav>
     </div>
@@ -68,9 +63,7 @@ function MobileNavbar() {
                 <Link href="/list" onClick={() => setIsOpen(false)}>
                   List your place
                 </Link>
-                <Link href="/signin" onClick={() => setIsOpen(false)}>
-                  Sign in
-                </Link>
+                <UserButton />
               </div>
             </div>
           </SheetContent>
