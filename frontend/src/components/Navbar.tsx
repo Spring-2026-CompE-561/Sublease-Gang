@@ -21,10 +21,12 @@ export function Navbar() {
 function DesktopNavbar() {
   return (
     <div className="hidden border-b bg-background md:block">
-      <nav className="container flex h-20 items-center justify-between px-8">
-        <Logo />
+      <nav className="mx-auto flex h-20 w-full max-w-7xl items-center gap-6 px-6 lg:px-8">
+        <div className="shrink-0">
+          <Logo />
+        </div>
 
-        <div className="relative w-full max-w-md">
+        <div className="relative mx-auto w-full max-w-xl flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by location, university..."
@@ -32,7 +34,7 @@ function DesktopNavbar() {
           />
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-3">
           <Link href="/list" className="text-sm">
             List your place
           </Link>
