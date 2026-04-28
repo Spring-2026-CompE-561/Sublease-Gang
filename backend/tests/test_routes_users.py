@@ -90,3 +90,66 @@ class TestAuthProtectedEndpoints:
             },
         )
         assert resp.status_code == 401
+
+
+class TestAuthenticatedUserRoutes:
+    def _register_and_login(self, client):
+        signup = {
+            "email": "me@example.com",
+            "username": "meuser",
+            "password": "password123",
+        }
+        client.post("/api/v1/auth/signup", json=signup)
+        login = client.post(
+            "/api/v1/auth/login",
+            json={"email": signup["email"], "password": signup["password"]},
+        )
+        token = login.json()["access_token"]
+        return {"Authorization": f"Bearer {token}"}
+
+    def test_get_me_success(self, client):
+        headers = self._register_and_login(client)
+        resp = client.get("/api/v1/users/me", headers=headers)
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["email"] == "me@example.com"
+        assert data["username"] == "meuser"
+
+    def test_patch_me_success(self, client):
+        headers = self._register_and_login(client)
+        resp = client.patch(
+            "/api/v1/users/me",
+            headers=headers,
+            json={"email": "updated@example.com"},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json()["email"] == "updated@example.com"
+
+    def test_change_password_then_login_with_new_password(self, client):
+        headers = self._register_and_login(client)
+        change_resp = client.put(
+            "/api/v1/users/me/password",
+            headers=headers,
+            json={
+                "current_password": "password123",
+                "new_password": "newpassword123",
+                "confirm_new_password": "newpassword123",
+            },
+        )
+        assert change_resp.status_code == 204
+
+        login_resp = client.post(
+            "/api/v1/auth/login",
+            json={"email": "me@example.com", "password": "newpassword123"},
+        )
+        assert login_resp.status_code == 200
+
+    def test_delete_me_then_me_is_unauthorized(self, client):
+        headers = self._register_and_login(client)
+        delete_resp = client.delete("/api/v1/users/me", headers=headers)
+        assert delete_resp.status_code == 204
+
+        me_resp = client.get("/api/v1/users/me", headers=headers)
+        assert me_resp.status_code == 401

@@ -250,3 +250,77 @@ class TestCreateListing:
             assert data["host_id"] == user.id
         finally:
             app.dependency_overrides.pop(get_current_user, None)
+
+
+class TestListingOwnershipWithAuth:
+    def _register_and_login(self, client, *, email: str, username: str, password: str):
+        client.post(
+            "/api/v1/auth/signup",
+            json={"email": email, "username": username, "password": password},
+        )
+        login = client.post(
+            "/api/v1/auth/login",
+            json={"email": email, "password": password},
+        )
+        token = login.json()["access_token"]
+        return {"Authorization": f"Bearer {token}"}
+
+    def _create_listing(self, client, headers, title: str):
+        resp = client.post(
+            "/api/v1/listings/",
+            headers=headers,
+            json={
+                "title": title,
+                "description": "Owned listing",
+                "price": 1200,
+                "location": "Campus",
+                "start_date": "2026-01-01T00:00:00Z",
+                "end_date": "2026-02-01T00:00:00Z",
+                "latitude": 40.0,
+                "longitude": -74.0,
+            },
+        )
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_non_owner_cannot_update_listing(self, client):
+        owner_headers = self._register_and_login(
+            client,
+            email="owner@example.com",
+            username="owneruser",
+            password="password123",
+        )
+        listing_id = self._create_listing(client, owner_headers, "Owner Listing")
+
+        other_headers = self._register_and_login(
+            client,
+            email="other@example.com",
+            username="otheruser",
+            password="password123",
+        )
+        resp = client.put(
+            f"/api/v1/listings/{listing_id}",
+            headers=other_headers,
+            json={"title": "Hijacked Title"},
+        )
+        assert resp.status_code == 403
+        assert resp.json()["detail"] == "Not allowed to modify this listing"
+
+    def test_non_owner_cannot_delete_listing(self, client):
+        owner_headers = self._register_and_login(
+            client,
+            email="owner2@example.com",
+            username="owneruser2",
+            password="password123",
+        )
+        listing_id = self._create_listing(client, owner_headers, "Owner Listing")
+
+        other_headers = self._register_and_login(
+            client,
+            email="other2@example.com",
+            username="otheruser2",
+            password="password123",
+        )
+        resp = client.delete(f"/api/v1/listings/{listing_id}", headers=other_headers)
+        assert resp.status_code == 403
+        assert resp.json()["detail"] == "Not allowed to delete this listing"
