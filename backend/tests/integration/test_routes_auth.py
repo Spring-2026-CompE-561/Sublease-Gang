@@ -1,3 +1,6 @@
+from app.models.user import User
+
+
 class TestSignup:
     def test_success(self, client):
         resp = client.post(
@@ -130,6 +133,20 @@ class TestRefresh:
     def test_missing_body(self, client):
         resp = client.post("/api/v1/auth/refresh")
         assert resp.status_code == 400
+
+    def test_disabled_user_rejected(self, client, db_session):
+        tokens = self._login(client)
+        user = db_session.query(User).filter(User.email == "ref@example.com").first()
+        assert user is not None
+        user.account_disabled = True
+        db_session.commit()
+
+        resp = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": tokens["refresh_token"]},
+        )
+        assert resp.status_code == 401
+        assert resp.json()["detail"] == "User not found or account disabled"
 
 
 class TestForgotPassword:
