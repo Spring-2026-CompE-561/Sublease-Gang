@@ -103,4 +103,3 @@ def verify_token(token: str) -> dict | None:
     if "sub" not in payload:
         return None
     return payload
-    
