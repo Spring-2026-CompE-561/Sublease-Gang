@@ -1,5 +1,7 @@
-from pydantic import BaseModel, EmailStr, model_validator, field_validator
 import re
+
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
+
 
 class ProfileCreate(BaseModel):
     # user_id — comes from JWT, not request body
@@ -31,7 +33,9 @@ class ProfileCreate(BaseModel):
             raise ValueError("Cannot be blank")
         # Alphanumeric + underscores only, 3-30 chars (standard username rules)
         if not re.match(r"^\w{3,30}$", v):
-            raise ValueError("Must be 3-30 characters, letters/numbers/underscores only")
+            raise ValueError(
+                "Must be 3-30 characters, letters/numbers/underscores only"
+            )
         return v
 
     @field_validator("contact_phone")
@@ -54,9 +58,8 @@ class ProfileCreate(BaseModel):
             raise ValueError("Description cannot exceed 500 characters")
         return v.strip()
 
-
     @model_validator(mode="after")
-    def validate_profile(self) -> "ProfileCreate":
+    def validate_profile(self) -> ProfileCreate:
         # Spec says contact info is optional, but if a student is listing
         # a sublease, having NO contact method makes the profile useless
         if self.contact_email is None and self.contact_phone is None:
@@ -94,7 +97,9 @@ class ProfileUpdate(BaseModel):
         if not v:
             raise ValueError("Cannot be blank")
         if not re.match(r"^\w{3,30}$", v):
-            raise ValueError("Must be 3-30 characters, letters/numbers/underscores only")
+            raise ValueError(
+                "Must be 3-30 characters, letters/numbers/underscores only"
+            )
         return v
 
     @field_validator("contact_phone")
@@ -117,10 +122,13 @@ class ProfileUpdate(BaseModel):
         return v.strip()
 
     @model_validator(mode="after")
-    def validate_contact_method(self) -> "ProfileUpdate":
+    def validate_contact_method(self) -> ProfileUpdate:
         # If both contact fields are explicitly set to None, reject it
         # Only enforce when at least one contact field was provided in the update
-        both_provided = "contact_email" in self.model_fields_set or "contact_phone" in self.model_fields_set
+        both_provided = (
+            "contact_email" in self.model_fields_set
+            or "contact_phone" in self.model_fields_set
+        )
         if both_provided and self.contact_email is None and self.contact_phone is None:
             raise ValueError("At least one contact method (email or phone) is required")
         return self

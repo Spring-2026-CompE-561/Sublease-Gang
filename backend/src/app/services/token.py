@@ -5,12 +5,12 @@ from sqlalchemy.orm import Session
 from app.models.token import Token
 from app.repository.token import (
     create_token,
-    get_token_by_id,
-    get_token_by_access,
-    get_token_by_refresh,
-    get_tokens_by_user,
     delete_token,
     delete_tokens_by_user,
+    get_token_by_access,
+    get_token_by_id,
+    get_token_by_refresh,
+    get_tokens_by_user,
 )
 from app.schemas.token import TokenCreate
 
@@ -29,7 +29,8 @@ class TokenService:
         expiration_time: datetime,
     ) -> Token:
         return create_token(
-            db, token_data,
+            db,
+            token_data,
             access_token=access_token,
             refresh_token=refresh_token,
             token_type=token_type,

@@ -18,7 +18,9 @@ class TestListConversations:
         finally:
             app.dependency_overrides.pop(get_current_user, None)
 
-    def test_returns_conversations(self, client, make_user, make_listing, make_conversation):
+    def test_returns_conversations(
+        self, client, make_user, make_listing, make_conversation
+    ):
         user1 = make_user()
         user2 = make_user()
         listing = make_listing(user1.id)
@@ -36,7 +38,9 @@ class TestListConversations:
 
 class TestCreateConversation:
     def test_requires_auth(self, client):
-        resp = client.post("/api/v1/conversations/", json={"listing_id": 1, "other_user_id": 2})
+        resp = client.post(
+            "/api/v1/conversations/", json={"listing_id": 1, "other_user_id": 2}
+        )
         assert resp.status_code == 401
 
     def test_success(self, client, make_user, make_listing):

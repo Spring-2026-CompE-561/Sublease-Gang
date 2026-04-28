@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -31,11 +30,11 @@ class MessageCreate(BaseModel):
 
 
 class MessageUpdate(BaseModel):
-    content: Optional[str] = None
+    content: str | None = None
 
     @field_validator("content")
     @classmethod
-    def content_cannot_be_empty(cls, v: Optional[str]) -> Optional[str]:
+    def content_cannot_be_empty(cls, v: str | None) -> str | None:
         if v is None:
             return None
         if not v.strip():

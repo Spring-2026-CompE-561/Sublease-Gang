@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 from app.models.messages import Message as MessageModel
 from app.repository.message import (
     create_message,
+    delete_message,
     get_message,
     get_message_or_raise,
     get_messages_by_conversation,
     update_message,
-    delete_message,
 )
 from app.schemas.message import MessageCreate, MessageUpdate
 
@@ -29,12 +29,21 @@ class MessageService:
 
     @staticmethod
     def list_by_conversation(
-        db: Session, conversation_id: int, *, user_id: int, skip: int = 0, limit: int = 100
+        db: Session,
+        conversation_id: int,
+        *,
+        user_id: int,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[MessageModel]:
-        return get_messages_by_conversation(db, conversation_id, user_id=user_id, skip=skip, limit=limit)
+        return get_messages_by_conversation(
+            db, conversation_id, user_id=user_id, skip=skip, limit=limit
+        )
 
     @staticmethod
-    def update(db: Session, message_id: int, user_id: int, payload: MessageUpdate) -> MessageModel:
+    def update(
+        db: Session, message_id: int, user_id: int, payload: MessageUpdate
+    ) -> MessageModel:
         return update_message(db, message_id, user_id, payload)
 
     @staticmethod

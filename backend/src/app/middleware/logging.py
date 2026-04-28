@@ -12,7 +12,9 @@ class LoggingMiddleware(BaseHTTPMiddleware):
     """Log method, path, status_code, duration_ms, and request_id for every request."""
 
     async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
     ) -> Response:
         start = time.perf_counter()
 

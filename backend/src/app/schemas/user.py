@@ -1,25 +1,28 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
+
 
 class UserCreate(BaseModel):
     email: EmailStr
     username: str = Field(min_length=3, max_length=50)
     password: str = Field(min_length=8)
 
+
 class UserResponse(BaseModel):
     id: int
     email: EmailStr
     username: str
-    account_disabled: Optional[bool] = False
+    account_disabled: bool | None = False
     created_at: datetime
 
-    model_config = { "from_attributes": True }
+    model_config = {"from_attributes": True}
+
 
 class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
-    username: Optional[str] = None
+    email: EmailStr | None = None
+    username: str | None = None
+
 
 class UserPasswordUpdate(BaseModel):
     current_password: str
