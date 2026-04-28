@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { QueryProvider } from "@/components/query-provider";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
 const geistSans = Geist({
@@ -47,10 +48,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <QueryProvider>
           <Navbar />
           {children}
           <Footer />
           <Toaster />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
