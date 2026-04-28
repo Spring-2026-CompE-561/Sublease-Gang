@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.models.token import Token
 from app.models.user import User
-from app.schemas.token import TokenCreate
 from app.repository.exceptions import ResourceNotFoundError
+from app.schemas.token import TokenCreate
 
 
 def create_token(

@@ -9,7 +9,9 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     """Generate a unique request_id per request for tracing in logs."""
 
     async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
     ) -> Response:
         request_id = str(uuid.uuid4())
         request.state.request_id = request_id

@@ -1,10 +1,9 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, ForeignKey, Numeric
-from sqlalchemy.sql import func
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import relationship
-
-import datetime
+from sqlalchemy.sql import func
 
 from app.core.database import Base
+
 
 class Listing(Base):
     __tablename__ = "listings"
@@ -23,9 +22,8 @@ class Listing(Base):
     end_date = Column(DateTime(timezone=True), nullable=False)
     college_id = Column(Integer, nullable=True)
     thumbnail_url = Column(String, nullable=True, default=None)
-    latitude = Column(Numeric(9,6), nullable=False)
-    longitude = Column(Numeric(9,6), nullable=False)
+    latitude = Column(Numeric(9, 6), nullable=False)
+    longitude = Column(Numeric(9, 6), nullable=False)
 
     user = relationship("User", back_populates="listings")
     conversations = relationship("Conversation", back_populates="listing")
-

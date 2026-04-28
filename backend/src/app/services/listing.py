@@ -3,14 +3,13 @@ from sqlalchemy.orm import Session
 from app.models.listing import Listing
 from app.repository.listing import (
     create_listing,
-    get_listing,
-    get_listing_or_raise,
-    get_listings,
-    search_listings,
-    get_listing_filter_options,
-    get_listings_in_bounds,
-    update_listing,
     delete_listing,
+    get_listing,
+    get_listing_filter_options,
+    get_listing_or_raise,
+    get_listings_in_bounds,
+    search_listings,
+    update_listing,
 )
 from app.schemas.listing import ListingCreate, ListingUpdate
 
@@ -43,7 +42,9 @@ class ListingService:
         return get_listings_in_bounds(db, **kwargs)
 
     @staticmethod
-    def update(db: Session, listing_id: int, host_id: int, updates: ListingUpdate) -> Listing:
+    def update(
+        db: Session, listing_id: int, host_id: int, updates: ListingUpdate
+    ) -> Listing:
         return update_listing(db, listing_id, host_id, updates)
 
     @staticmethod

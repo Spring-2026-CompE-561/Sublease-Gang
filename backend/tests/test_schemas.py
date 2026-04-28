@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from pydantic import ValidationError
@@ -9,14 +9,15 @@ from app.schemas.message import MessageCreate, MessageUpdate
 from app.schemas.profile import ProfileCreate, ProfileUpdate
 from app.schemas.user import UserCreate, UserPasswordUpdate, UserUpdate
 
-
 # ── User schemas ──────────────────────────────────────────────────────────────
 
 
 class TestUserCreate:
     def test_valid(self):
         u = UserCreate(
-            email="test@example.com", username="testuser", password="password123"
+            email="test@example.com",
+            username="testuser",
+            password="password123",
         )
         assert u.email == "test@example.com"
         assert u.username == "testuser"
@@ -24,13 +25,17 @@ class TestUserCreate:
     def test_password_too_short(self):
         with pytest.raises(ValidationError):
             UserCreate(
-                email="test@example.com", username="testuser", password="short"
+                email="test@example.com",
+                username="testuser",
+                password="short",
             )
 
     def test_username_too_short(self):
         with pytest.raises(ValidationError):
             UserCreate(
-                email="test@example.com", username="ab", password="password123"
+                email="test@example.com",
+                username="ab",
+                password="password123",
             )
 
     def test_username_too_long(self):
@@ -44,7 +49,9 @@ class TestUserCreate:
     def test_invalid_email(self):
         with pytest.raises(ValidationError):
             UserCreate(
-                email="not-an-email", username="testuser", password="password123"
+                email="not-an-email",
+                username="testuser",
+                password="password123",
             )
 
 
@@ -91,7 +98,7 @@ class TestUserPasswordUpdate:
 
 class TestListingCreate:
     def _defaults(self, **overrides):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         data = {
             "title": "Test",
             "description": "Desc",
@@ -110,12 +117,14 @@ class TestListingCreate:
         assert listing.title == "Test"
 
     def test_end_date_before_start_date(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with pytest.raises(ValidationError, match="end_date must be after start_date"):
-            ListingCreate(**self._defaults(start_date=now, end_date=now - timedelta(days=1)))
+            ListingCreate(
+                **self._defaults(start_date=now, end_date=now - timedelta(days=1))
+            )
 
     def test_end_date_equals_start_date(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with pytest.raises(ValidationError, match="end_date must be after start_date"):
             ListingCreate(**self._defaults(start_date=now, end_date=now))
 
@@ -127,12 +136,12 @@ class TestListingUpdate:
         assert u.price is None
 
     def test_invalid_dates_when_both_provided(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with pytest.raises(ValidationError, match="end_date must be after start_date"):
             ListingUpdate(start_date=now, end_date=now - timedelta(days=1))
 
     def test_single_date_ok(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         u = ListingUpdate(start_date=now)
         assert u.start_date == now
         assert u.end_date is None
@@ -195,7 +204,8 @@ class TestProfileCreate:
 
     def test_invalid_username_too_short(self):
         with pytest.raises(
-            ValidationError, match="Must be 3-30 characters"
+            ValidationError,
+            match="Must be 3-30 characters",
         ):
             ProfileCreate(
                 firstname="John",
@@ -206,7 +216,8 @@ class TestProfileCreate:
 
     def test_invalid_username_special_chars(self):
         with pytest.raises(
-            ValidationError, match="Must be 3-30 characters"
+            ValidationError,
+            match="Must be 3-30 characters",
         ):
             ProfileCreate(
                 firstname="John",
@@ -226,7 +237,8 @@ class TestProfileCreate:
 
     def test_description_too_long(self):
         with pytest.raises(
-            ValidationError, match="Description cannot exceed 500"
+            ValidationError,
+            match="Description cannot exceed 500",
         ):
             ProfileCreate(
                 firstname="John",

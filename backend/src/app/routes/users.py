@@ -5,8 +5,8 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.repository.exceptions import ResourceConflictError
+from app.schemas.user import UserCreate, UserPasswordUpdate, UserResponse, UserUpdate
 from app.services.user import UserService
-from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserPasswordUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -18,7 +18,11 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 
 @router.patch("/me", response_model=UserResponse)
-async def update_me(payload: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def update_me(
+    payload: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Update the currently authenticated user's profile."""
     try:
         return UserService.update(db, current_user, payload)
@@ -27,20 +31,26 @@ async def update_me(payload: UserUpdate, current_user: User = Depends(get_curren
 
 
 @router.delete("/me", status_code=204)
-async def delete_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def delete_me(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     """Delete the currently authenticated user's account."""
     UserService.delete(db, current_user)
-    return None
 
 
 @router.put("/me/password", status_code=204)
-async def change_password(payload: UserPasswordUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def change_password(
+    payload: UserPasswordUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Change password for the currently authenticated user."""
     try:
-        UserService.change_password(db, current_user, payload.current_password, payload.new_password)
+        UserService.change_password(
+            db, current_user, payload.current_password, payload.new_password
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
-    return None
 
 
 @router.get("/{user_id}", response_model=UserResponse)

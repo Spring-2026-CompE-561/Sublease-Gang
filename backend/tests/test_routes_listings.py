@@ -1,3 +1,5 @@
+from datetime import UTC
+
 from app.core.dependencies import get_current_user
 from app.main import app
 
@@ -78,18 +80,18 @@ class TestSearchListings:
         assert data["count"] == 1
 
     def test_date_range_filter(self, client, make_user, make_listing):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         user = make_user()
         make_listing(
             user.id,
-            start_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
-            end_date=datetime(2026, 2, 1, tzinfo=timezone.utc),
+            start_date=datetime(2026, 1, 1, tzinfo=UTC),
+            end_date=datetime(2026, 2, 1, tzinfo=UTC),
         )
         make_listing(
             user.id,
-            start_date=datetime(2026, 6, 1, tzinfo=timezone.utc),
-            end_date=datetime(2026, 7, 1, tzinfo=timezone.utc),
+            start_date=datetime(2026, 6, 1, tzinfo=UTC),
+            end_date=datetime(2026, 7, 1, tzinfo=UTC),
         )
         resp = client.get(
             "/api/v1/listings/",
