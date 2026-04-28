@@ -125,7 +125,7 @@ Interactive API docs (Swagger UI) are at **http://localhost:8000/docs**.
 cd frontend
 
 # Start the Next.js development server
-npm run dev
+bun run dev
 ```
 
 The frontend will be available at **http://localhost:3000**.
@@ -174,7 +174,7 @@ uv run ruff format .
 cd frontend
 
 # Run ESLint
-npm run lint
+bun run lint
 ```
 
 ## API Endpoints
