@@ -13,7 +13,9 @@ SECURITY_HEADERS = {
 }
 
 if settings.environment == "production":
-    SECURITY_HEADERS["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+    SECURITY_HEADERS["Strict-Transport-Security"] = (
+        "max-age=63072000; includeSubDomains"
+    )
 
 # Routes that should have Cache-Control: no-store
 _SENSITIVE_PREFIXES = ("/api/v1/auth/", "/api/v1/users/me")
@@ -23,7 +25,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add common security headers to every response for browser-level protection."""
 
     async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
     ) -> Response:
         response = await call_next(request)
         for header, value in SECURITY_HEADERS.items():

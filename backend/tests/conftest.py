@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
@@ -26,7 +26,7 @@ def _clear_rate_limiter(application) -> None:
         mw = getattr(mw, "app", None)
 
 
-@pytest.fixture()
+@pytest.fixture
 def db_session():
     """Yield a SQLAlchemy session connected to a fresh in-memory database."""
     engine = create_engine(
@@ -44,7 +44,7 @@ def db_session():
         engine.dispose()
 
 
-@pytest.fixture()
+@pytest.fixture
 def client(db_session):
     """Yield a FastAPI TestClient whose DB dependency points at the test session."""
 
@@ -65,7 +65,7 @@ def client(db_session):
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture()
+@pytest.fixture
 def make_user(db_session):
     counter = [0]
 
@@ -89,13 +89,13 @@ def make_user(db_session):
     return _factory
 
 
-@pytest.fixture()
+@pytest.fixture
 def make_listing(db_session):
     counter = [0]
 
     def _factory(host_id: int, **overrides) -> Listing:
         counter[0] += 1
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         defaults: dict = {
             "host_id": host_id,
             "title": f"Test Listing {counter[0]}",
@@ -120,14 +120,18 @@ def make_listing(db_session):
     return _factory
 
 
-@pytest.fixture()
+@pytest.fixture
 def make_conversation(db_session):
     def _factory(
-        listing_id: int, user_one_id: int, user_two_id: int
+        listing_id: int,
+        user_one_id: int,
+        user_two_id: int,
     ) -> Conversation:
         uid1, uid2 = sorted([user_one_id, user_two_id])
         convo = Conversation(
-            listing_id=listing_id, user_one_id=uid1, user_two_id=uid2
+            listing_id=listing_id,
+            user_one_id=uid1,
+            user_two_id=uid2,
         )
         db_session.add(convo)
         db_session.commit()

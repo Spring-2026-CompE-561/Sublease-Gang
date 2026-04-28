@@ -1,14 +1,14 @@
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import Optional
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
+from app.schemas.listing import ListingCreate, ListingResponse, ListingUpdate
 from app.services.listing import ListingService
-from app.schemas.listing import ListingCreate, ListingUpdate, ListingResponse
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
@@ -25,19 +25,20 @@ async def create_listing(
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.detail) from e
 
+
 @router.get("/", response_model=dict)
 async def list_listings(
-    college_id: Optional[int] = None,
-    location: Optional[str] = None,
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
-    room_type: Optional[str] = None,
-    min_sqft: Optional[int] = None,
-    max_sqft: Optional[int] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-    available_only: Optional[bool] = None,
-    sort: Optional[str] = None,
+    college_id: int | None = None,
+    location: str | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    room_type: str | None = None,
+    min_sqft: int | None = None,
+    max_sqft: int | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    available_only: bool | None = None,
+    sort: str | None = None,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
@@ -60,26 +61,30 @@ async def list_listings(
 
     results = []
     for l in listings:
-        results.append({
-            "id": l.id,
-            "title": l.title,
-            "price": l.price,
-            "college": l.college_id,
-            "location_text": l.location,
-            "room_type": l.room_type,
-            "sqft": l.sqft,
-            "start_date": str(l.start_date) if l.start_date else None,
-            "end_date": str(l.end_date) if l.end_date else None,
-            "thumbnail_url": l.thumbnail_url,
-            "created_at": str(l.created_at) if l.created_at else None,
-        })
+        results.append(
+            {
+                "id": l.id,
+                "title": l.title,
+                "price": l.price,
+                "college": l.college_id,
+                "location_text": l.location,
+                "room_type": l.room_type,
+                "sqft": l.sqft,
+                "start_date": str(l.start_date) if l.start_date else None,
+                "end_date": str(l.end_date) if l.end_date else None,
+                "thumbnail_url": l.thumbnail_url,
+                "created_at": str(l.created_at) if l.created_at else None,
+            }
+        )
 
     return {"count": count, "limit": limit, "offset": offset, "results": results}
+
 
 @router.get("/filters")
 async def get_filters(db: Session = Depends(get_db)):
     """Get available filter options."""
     return ListingService.get_filter_options(db)
+
 
 @router.get("/{listing_id}", response_model=ListingResponse)
 async def get_listing(listing_id: int, db: Session = Depends(get_db)):
@@ -99,11 +104,14 @@ async def update_listing(
 ):
     """Edit an existing listing."""
     try:
-        return ListingService.update(db, listing_id, host_id=current_user.id, updates=payload)
+        return ListingService.update(
+            db, listing_id, host_id=current_user.id, updates=payload
+        )
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.detail) from e
     except PermissionDeniedError as e:
         raise HTTPException(status_code=403, detail=e.detail) from e
+
 
 @router.delete("/{listing_id}", status_code=204, response_model=None)
 async def delete_listing(

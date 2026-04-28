@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.models.listing import Listing
 from app.models.user import User
-from app.schemas.listing import ListingCreate, ListingUpdate
 from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
+from app.schemas.listing import ListingCreate, ListingUpdate
 
 
 def create_listing(db: Session, host_id: int, listing: ListingCreate) -> Listing:
@@ -99,11 +99,18 @@ def search_listings(
 def get_listing_filter_options(db: Session) -> dict:
     """Return available filter options for listings."""
     room_types = [
-        r[0] for r in db.query(Listing.room_type).distinct().filter(Listing.room_type.isnot(None)).all()
+        r[0]
+        for r in db.query(Listing.room_type)
+        .distinct()
+        .filter(Listing.room_type.isnot(None))
+        .all()
     ]
     colleges = [
         {"id": c[0], "name": c[0]}
-        for c in db.query(Listing.college_id).distinct().filter(Listing.college_id.isnot(None)).all()
+        for c in db.query(Listing.college_id)
+        .distinct()
+        .filter(Listing.college_id.isnot(None))
+        .all()
     ]
     return {
         "room_types": room_types,
@@ -153,7 +160,10 @@ def get_listings_in_bounds(
 
 
 def update_listing(
-    db: Session, listing_id: int, host_id: int, updates: ListingUpdate
+    db: Session,
+    listing_id: int,
+    host_id: int,
+    updates: ListingUpdate,
 ) -> Listing:
     db_listing = get_listing(db, listing_id)
     if db_listing is None:

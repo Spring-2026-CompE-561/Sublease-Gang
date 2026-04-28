@@ -2,8 +2,8 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models.conversations import Conversation
-from app.schemas.conversation import ConversationCreate
 from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
+from app.schemas.conversation import ConversationCreate
 
 
 def _canonical_user_pair(user_a_id: int, user_b_id: int) -> tuple[int, int]:
@@ -28,7 +28,10 @@ def get_conversation_by_id(db: Session, conversation_id: int) -> Conversation | 
 
 
 def get_conversation_by_listing_and_users(
-    db: Session, listing_id: int, user_a_id: int, user_b_id: int
+    db: Session,
+    listing_id: int,
+    user_a_id: int,
+    user_b_id: int,
 ) -> Conversation | None:
     user_one_id, user_two_id = _canonical_user_pair(user_a_id, user_b_id)
     return (
@@ -49,7 +52,7 @@ def list_conversations_for_user(db: Session, user_id: int) -> list[Conversation]
             or_(
                 Conversation.user_one_id == user_id,
                 Conversation.user_two_id == user_id,
-            )
+            ),
         )
         .all()
     )
@@ -61,7 +64,9 @@ def delete_conversation(db: Session, conversation: Conversation) -> None:
 
 
 def require_conversation_participant(
-    db: Session, conversation_id: int, user_id: int
+    db: Session,
+    conversation_id: int,
+    user_id: int,
 ) -> Conversation:
     conversation = db.get(Conversation, conversation_id)
     if conversation is None:
