@@ -1,7 +1,7 @@
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import Optional
 
 from app.core.database import get_db
 from app.services.listing import ListingService
@@ -15,12 +15,12 @@ async def get_map_listings(
     south: float = Query(...),
     east: float = Query(...),
     west: float = Query(...),
-    college_id: Optional[int] = None,
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
-    room_type: Optional[str] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    college_id: int | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    room_type: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
@@ -65,7 +65,7 @@ async def get_map_listings(
 
 @router.get("/geocode")
 async def geocode(
-    address: Optional[str] = Query(None),
+    address: str | None = Query(None),
 ):
     """Convert a text location into coordinates."""
     if not address:

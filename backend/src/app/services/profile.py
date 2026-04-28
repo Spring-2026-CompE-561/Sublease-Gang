@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 from app.models.profiles import Profile
 from app.repository.profile import (
     create_profile,
-    get_profile,
-    get_profile_or_raise,
-    get_profile_by_username,
-    update_profile,
     delete_profile,
+    get_profile,
+    get_profile_by_username,
+    get_profile_or_raise,
+    update_profile,
 )
 from app.schemas.profile import ProfileCreate, ProfileUpdate
 

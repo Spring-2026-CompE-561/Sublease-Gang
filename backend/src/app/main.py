@@ -1,26 +1,24 @@
 import logging
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.routes import api_router
 from app.core.database import Base, engine
 from app.core.settings import settings
-from app.middleware import (
-    LoggingMiddleware,
-    RateLimitMiddleware,
-    RequestIDMiddleware,
-    SecurityHeadersMiddleware,
-)
-from fastapi.exceptions import RequestValidationError
-
 from app.errors.auth import AuthError, auth_exception_handler
 from app.errors.conflict import ConflictError, conflict_exception_handler
 from app.errors.not_found import NotFoundError, not_found_exception_handler
 from app.errors.permission import PermissionError, permission_exception_handler
 from app.errors.server import server_exception_handler
 from app.errors.validation import validation_exception_handler
-from app.models import Conversation, Listing, Message, Profile, Token, User
+from app.middleware import (
+    LoggingMiddleware,
+    RateLimitMiddleware,
+    RequestIDMiddleware,
+    SecurityHeadersMiddleware,
+)
 
 # configure logging
 logging.basicConfig(
@@ -37,19 +35,19 @@ app = FastAPI(
     version=settings.app_version,
 )
 
-# Request ID 
+# Request ID
 app.add_middleware(RequestIDMiddleware)
 
-# Logging 
+# Logging
 app.add_middleware(LoggingMiddleware)
 
 # Security headers
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Rate limiting 
+# Rate limiting
 app.add_middleware(RateLimitMiddleware)
 
-# CORS 
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,

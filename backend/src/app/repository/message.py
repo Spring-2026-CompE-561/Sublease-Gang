@@ -2,9 +2,9 @@ from sqlalchemy.orm import Session
 
 from app.models.messages import Message as MessageModel
 from app.models.user import User
-from app.schemas.message import MessageCreate, MessageUpdate
 from app.repository.conversation import require_conversation_participant
 from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
+from app.schemas.message import MessageCreate, MessageUpdate
 
 
 def create_message(db: Session, message: MessageCreate) -> MessageModel:
@@ -53,7 +53,10 @@ def get_messages_by_conversation(
 
 
 def update_message(
-    db: Session, message_id: int, user_id: int, payload: MessageUpdate
+    db: Session,
+    message_id: int,
+    user_id: int,
+    payload: MessageUpdate,
 ) -> MessageModel:
     db_message = get_message(db, message_id)
     if db_message is None:

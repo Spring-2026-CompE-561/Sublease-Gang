@@ -57,7 +57,7 @@ async def login(payload: LoginRequest, db: Session = Depends(get_db)):
 @router.post("/logout", status_code=204)
 async def logout(current_user: User = Depends(get_current_user)):
     """Logout (client should discard the token)."""
-    return None
+    return
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -91,7 +91,8 @@ async def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
 
 @router.post("/forgot_password")
 async def forgot_password(
-    payload: ForgotPasswordRequest, db: Session = Depends(get_db)
+    payload: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
 ):
     """Generate a password reset token.
 
@@ -102,7 +103,7 @@ async def forgot_password(
     from app.core.auth import create_reset_token
 
     response: dict = {
-        "message": "If that email is registered, a reset link has been sent."
+        "message": "If that email is registered, a reset link has been sent.",
     }
     user = UserService.get_by_email(db, payload.email)
     if user is None:
@@ -116,7 +117,8 @@ async def forgot_password(
 
 @router.put("/reset_password")
 async def reset_password(
-    payload: ResetPasswordRequest, db: Session = Depends(get_db)
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db),
 ):
     """Reset password using a token from forgot_password."""
     token_payload = verify_token(payload.token)

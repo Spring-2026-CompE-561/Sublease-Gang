@@ -6,7 +6,6 @@ from app.core.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
     create_refresh_token,
-    create_reset_token,
     hash_password,
     verify_password,
 )
@@ -14,13 +13,13 @@ from app.models.user import User
 from app.repository.exceptions import ResourceConflictError, ResourceNotFoundError
 from app.repository.user import (
     create_user,
+    delete_user,
+    disable_user,
     get_user_by_email,
     get_user_by_id,
     get_user_by_username,
     update_password,
     update_user,
-    delete_user,
-    disable_user,
 )
 from app.schemas.user import UserCreate, UserUpdate
 
@@ -68,7 +67,9 @@ class UserService:
         return update_user(db, user, updates)
 
     @staticmethod
-    def change_password(db: Session, user: User, current_password: str, new_password: str) -> None:
+    def change_password(
+        db: Session, user: User, current_password: str, new_password: str
+    ) -> None:
         if not verify_password(current_password, user.password_hash):
             raise ValueError("Invalid current password")
         update_password(db, user, hash_password(new_password))

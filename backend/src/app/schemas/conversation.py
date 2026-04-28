@@ -14,7 +14,7 @@ class ConversationCreate(BaseModel):
     user_two_id: int
 
     @model_validator(mode="after")
-    def user_ids_must_differ(self) -> "ConversationCreate":
+    def user_ids_must_differ(self) -> ConversationCreate:
         if self.user_one_id == self.user_two_id:
             raise ValueError("user_one_id and user_two_id must be different")
         return self

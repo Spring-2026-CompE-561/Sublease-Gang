@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.models.profiles import Profile
 from app.models.user import User
-from app.schemas.profile import ProfileCreate, ProfileUpdate
 from app.repository.exceptions import (
     ResourceConflictError,
     ResourceNotFoundError,
 )
+from app.schemas.profile import ProfileCreate, ProfileUpdate
 
 
 def create_profile(db: Session, user_id: int, profile_in: ProfileCreate) -> Profile:
