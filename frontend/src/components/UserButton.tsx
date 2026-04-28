@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 function UserButton() {
   const router = useRouter();
