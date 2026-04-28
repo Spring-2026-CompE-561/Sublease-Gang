@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
 
     secret_key: str = Field(
-        default="your_secret_key",
+        default="change_me_to_a_secure_32_byte_secret_key",
         description="Secret key for JWT",
     )
 
