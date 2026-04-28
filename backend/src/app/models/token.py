@@ -1,9 +1,9 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
-from sqlalchemy.sql import func
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
-import datetime
+from sqlalchemy.sql import func
 
 from app.core.database import Base
+
 
 class Token(Base):
     __tablename__ = "tokens"
@@ -16,6 +16,5 @@ class Token(Base):
     expiration_time = Column(DateTime(timezone=True), nullable=True)
     scope = Column(String, nullable=True)
     token_type = Column(String, nullable=False)
-
 
     user = relationship("User", back_populates="tokens")

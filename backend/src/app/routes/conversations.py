@@ -18,7 +18,9 @@ from app.services.user import UserService
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 
-def _http_from_repo(exc: ResourceNotFoundError | PermissionDeniedError) -> HTTPException:
+def _http_from_repo(
+    exc: ResourceNotFoundError | PermissionDeniedError,
+) -> HTTPException:
     if isinstance(exc, PermissionDeniedError):
         return HTTPException(status_code=403, detail=exc.detail)
     return HTTPException(status_code=404, detail=exc.detail)
@@ -41,7 +43,9 @@ async def create_conversation(
 ):
     """Create or return an existing conversation for a listing."""
     if payload.other_user_id == current_user.id:
-        raise HTTPException(status_code=400, detail="Cannot start a conversation with yourself")
+        raise HTTPException(
+            status_code=400, detail="Cannot start a conversation with yourself"
+        )
     other_user = UserService.get_by_id(db, payload.other_user_id)
     if other_user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -50,7 +54,10 @@ async def create_conversation(
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.detail) from e
     return ConversationService.get_or_create(
-        db, payload.listing_id, current_user.id, payload.other_user_id
+        db,
+        payload.listing_id,
+        current_user.id,
+        payload.other_user_id,
     )
 
 

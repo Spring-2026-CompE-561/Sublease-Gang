@@ -1,10 +1,9 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
-from sqlalchemy.sql import func
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import relationship
-
-import datetime
+from sqlalchemy.sql import func
 
 from app.core.database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -13,7 +12,7 @@ class User(Base):
     email = Column(String(254), unique=True, index=True, nullable=False)
     username = Column(String(50), unique=True, index=True, nullable=False)
     password_hash = Column(String(512), nullable=False)
-    account_disabled = Column(Boolean, default=False) 
+    account_disabled = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     profile = relationship("Profile", back_populates="user")

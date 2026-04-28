@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -47,14 +47,15 @@ from app.schemas.profile import ProfileCreate, ProfileUpdate
 from app.schemas.token import TokenCreate
 from app.schemas.user import UserCreate, UserUpdate
 
-
 # ── User Repository ──────────────────────────────────────────────────────────
 
 
 class TestUserRepository:
     def test_create_user(self, db_session):
         schema = UserCreate(
-            email="new@example.com", username="newuser", password="password123"
+            email="new@example.com",
+            username="newuser",
+            password="password123",
         )
         user = create_user(db_session, schema)
         assert user.id is not None
@@ -119,7 +120,7 @@ class TestUserRepository:
 
 class TestTokenRepository:
     def _expiration(self):
-        return datetime.now(timezone.utc) + timedelta(hours=1)
+        return datetime.now(UTC) + timedelta(hours=1)
 
     def test_create_token(self, db_session, make_user):
         user = make_user()
@@ -309,7 +310,9 @@ class TestProfileRepository:
         user = make_user()
         create_profile(db_session, user.id, self._profile_schema())
         updated = update_profile(
-            db_session, user.id, ProfileUpdate(firstname="Jane")
+            db_session,
+            user.id,
+            ProfileUpdate(firstname="Jane"),
         )
         assert updated.firstname == "Jane"
 
@@ -321,14 +324,20 @@ class TestProfileRepository:
         user1 = make_user()
         user2 = make_user()
         create_profile(
-            db_session, user1.id, self._profile_schema(username="alice")
+            db_session,
+            user1.id,
+            self._profile_schema(username="alice"),
         )
         create_profile(
-            db_session, user2.id, self._profile_schema(username="bob")
+            db_session,
+            user2.id,
+            self._profile_schema(username="bob"),
         )
         with pytest.raises(ResourceConflictError, match="Username already taken"):
             update_profile(
-                db_session, user2.id, ProfileUpdate(username="alice")
+                db_session,
+                user2.id,
+                ProfileUpdate(username="alice"),
             )
 
     def test_update_profile_removes_all_contacts(self, db_session, make_user):
@@ -369,15 +378,23 @@ class TestMessageRepository:
         return user1, user2, convo
 
     def test_create_message(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         user1, _user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         msg = create_message(
             db_session,
             MessageCreate(
-                conversation_id=convo.id, sender_id=user1.id, content="Hello!"
+                conversation_id=convo.id,
+                sender_id=user1.id,
+                content="Hello!",
             ),
         )
         assert msg.id is not None
@@ -385,36 +402,54 @@ class TestMessageRepository:
         assert msg.sender_id == user1.id
 
     def test_create_message_user_not_found(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         _user1, _user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         with pytest.raises(ResourceNotFoundError, match="User not found"):
             create_message(
                 db_session,
                 MessageCreate(
-                    conversation_id=convo.id, sender_id=9999, content="Hi"
+                    conversation_id=convo.id,
+                    sender_id=9999,
+                    content="Hi",
                 ),
             )
 
     def test_create_message_conversation_not_found(
-        self, db_session, make_user
+        self,
+        db_session,
+        make_user,
     ):
         user = make_user()
         with pytest.raises(ResourceNotFoundError, match="Conversation not found"):
             create_message(
                 db_session,
                 MessageCreate(
-                    conversation_id=9999, sender_id=user.id, content="Hi"
+                    conversation_id=9999,
+                    sender_id=user.id,
+                    content="Hi",
                 ),
             )
 
     def test_create_message_not_participant(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         _user1, _user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         outsider = make_user()
         with pytest.raises(PermissionDeniedError, match="(?i)not a participant"):
@@ -428,15 +463,23 @@ class TestMessageRepository:
             )
 
     def test_get_message(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         user1, _user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         msg = create_message(
             db_session,
             MessageCreate(
-                conversation_id=convo.id, sender_id=user1.id, content="Test"
+                conversation_id=convo.id,
+                sender_id=user1.id,
+                content="Test",
             ),
         )
         found = get_message(db_session, msg.id)
@@ -447,15 +490,23 @@ class TestMessageRepository:
         assert get_message(db_session, 9999) is None
 
     def test_get_message_or_raise_found(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         user1, _user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         msg = create_message(
             db_session,
             MessageCreate(
-                conversation_id=convo.id, sender_id=user1.id, content="Test"
+                conversation_id=convo.id,
+                sender_id=user1.id,
+                content="Test",
             ),
         )
         found = get_message_or_raise(db_session, msg.id)
@@ -466,21 +517,31 @@ class TestMessageRepository:
             get_message_or_raise(db_session, 9999)
 
     def test_get_messages_by_conversation(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         user1, user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         create_message(
             db_session,
             MessageCreate(
-                conversation_id=convo.id, sender_id=user1.id, content="First"
+                conversation_id=convo.id,
+                sender_id=user1.id,
+                content="First",
             ),
         )
         create_message(
             db_session,
             MessageCreate(
-                conversation_id=convo.id, sender_id=user2.id, content="Second"
+                conversation_id=convo.id,
+                sender_id=user2.id,
+                content="Second",
             ),
         )
         messages = get_messages_by_conversation(db_session, convo.id, user_id=user1.id)
@@ -489,10 +550,16 @@ class TestMessageRepository:
         assert messages[1].content == "Second"
 
     def test_get_messages_by_conversation_with_skip(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         user1, _user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         for i in range(5):
             create_message(
@@ -503,15 +570,23 @@ class TestMessageRepository:
                     content=f"Msg {i}",
                 ),
             )
-        messages = get_messages_by_conversation(db_session, convo.id, user_id=user1.id, skip=2)
+        messages = get_messages_by_conversation(
+            db_session, convo.id, user_id=user1.id, skip=2
+        )
         assert len(messages) == 3
         assert messages[0].content == "Msg 2"
 
     def test_get_messages_by_conversation_with_limit(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         user1, _user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         for i in range(5):
             create_message(
@@ -522,7 +597,9 @@ class TestMessageRepository:
                     content=f"Msg {i}",
                 ),
             )
-        messages = get_messages_by_conversation(db_session, convo.id, user_id=user1.id, limit=2)
+        messages = get_messages_by_conversation(
+            db_session, convo.id, user_id=user1.id, limit=2
+        )
         assert len(messages) == 2
         assert messages[0].content == "Msg 0"
         assert messages[1].content == "Msg 1"
@@ -532,10 +609,16 @@ class TestMessageRepository:
             get_messages_by_conversation(db_session, 9999, user_id=1)
 
     def test_update_message(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         user1, _user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         msg = create_message(
             db_session,
@@ -546,21 +629,33 @@ class TestMessageRepository:
             ),
         )
         updated = update_message(
-            db_session, msg.id, user1.id, MessageUpdate(content="Edited")
+            db_session,
+            msg.id,
+            user1.id,
+            MessageUpdate(content="Edited"),
         )
         assert updated.content == "Edited"
 
     def test_update_message_not_found(self, db_session):
         with pytest.raises(ResourceNotFoundError, match="Message not found"):
             update_message(
-                db_session, 9999, 1, MessageUpdate(content="Edit")
+                db_session,
+                9999,
+                1,
+                MessageUpdate(content="Edit"),
             )
 
     def test_update_message_wrong_sender(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         user1, user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         msg = create_message(
             db_session,
@@ -572,19 +667,30 @@ class TestMessageRepository:
         )
         with pytest.raises(PermissionDeniedError, match="Not allowed to modify"):
             update_message(
-                db_session, msg.id, user2.id, MessageUpdate(content="Hacked")
+                db_session,
+                msg.id,
+                user2.id,
+                MessageUpdate(content="Hacked"),
             )
 
     def test_delete_message(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         user1, _user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         msg = create_message(
             db_session,
             MessageCreate(
-                conversation_id=convo.id, sender_id=user1.id, content="Bye"
+                conversation_id=convo.id,
+                sender_id=user1.id,
+                content="Bye",
             ),
         )
         mid = msg.id
@@ -596,10 +702,16 @@ class TestMessageRepository:
             delete_message(db_session, 9999, 1)
 
     def test_delete_message_wrong_sender(
-        self, db_session, make_user, make_listing, make_conversation
+        self,
+        db_session,
+        make_user,
+        make_listing,
+        make_conversation,
     ):
         user1, user2, convo = self._setup(
-            make_user, make_listing, make_conversation
+            make_user,
+            make_listing,
+            make_conversation,
         )
         msg = create_message(
             db_session,

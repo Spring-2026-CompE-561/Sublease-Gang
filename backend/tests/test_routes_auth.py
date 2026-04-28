@@ -1,13 +1,12 @@
-import pytest
-
-from app.core.auth import create_reset_token, hash_password
-
-
 class TestSignup:
     def test_success(self, client):
         resp = client.post(
             "/api/v1/auth/signup",
-            json={"email": "new@example.com", "username": "newuser", "password": "password123"},
+            json={
+                "email": "new@example.com",
+                "username": "newuser",
+                "password": "password123",
+            },
         )
         assert resp.status_code == 201
         data = resp.json()
@@ -19,7 +18,11 @@ class TestSignup:
         make_user(email="dup@example.com")
         resp = client.post(
             "/api/v1/auth/signup",
-            json={"email": "dup@example.com", "username": "other", "password": "password123"},
+            json={
+                "email": "dup@example.com",
+                "username": "other",
+                "password": "password123",
+            },
         )
         assert resp.status_code == 409
 
@@ -27,7 +30,11 @@ class TestSignup:
         make_user(username="taken")
         resp = client.post(
             "/api/v1/auth/signup",
-            json={"email": "x@example.com", "username": "taken", "password": "password123"},
+            json={
+                "email": "x@example.com",
+                "username": "taken",
+                "password": "password123",
+            },
         )
         assert resp.status_code == 409
 
@@ -36,7 +43,11 @@ class TestLogin:
     def _create_user(self, client):
         client.post(
             "/api/v1/auth/signup",
-            json={"email": "login@example.com", "username": "loginuser", "password": "password123"},
+            json={
+                "email": "login@example.com",
+                "username": "loginuser",
+                "password": "password123",
+            },
         )
 
     def test_success(self, client):
@@ -77,7 +88,11 @@ class TestRefresh:
     def _login(self, client):
         client.post(
             "/api/v1/auth/signup",
-            json={"email": "ref@example.com", "username": "refuser", "password": "password123"},
+            json={
+                "email": "ref@example.com",
+                "username": "refuser",
+                "password": "password123",
+            },
         )
         resp = client.post(
             "/api/v1/auth/login",
@@ -121,7 +136,11 @@ class TestForgotPassword:
     def test_registered_email(self, client):
         client.post(
             "/api/v1/auth/signup",
-            json={"email": "forgot@example.com", "username": "forgotuser", "password": "password123"},
+            json={
+                "email": "forgot@example.com",
+                "username": "forgotuser",
+                "password": "password123",
+            },
         )
         resp = client.post(
             "/api/v1/auth/forgot_password",
@@ -147,7 +166,11 @@ class TestResetPassword:
     def _get_reset_token(self, client):
         client.post(
             "/api/v1/auth/signup",
-            json={"email": "reset@example.com", "username": "resetuser", "password": "password123"},
+            json={
+                "email": "reset@example.com",
+                "username": "resetuser",
+                "password": "password123",
+            },
         )
         resp = client.post(
             "/api/v1/auth/forgot_password",
