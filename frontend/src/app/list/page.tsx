@@ -1,11 +1,7 @@
-import { Navbar } from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import Link from "next/link";
 
 export default function ListPlacePage() {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <Navbar />
+  return (      
       <main className="container mx-auto flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
         <h1 className="text-3xl font-semibold">List your place</h1>
         <p className="mt-3 max-w-md text-sm text-muted-foreground">
@@ -19,7 +15,5 @@ export default function ListPlacePage() {
           Back to listings
         </Link>
       </main>
-      <Footer />
-    </div>
   );
 }
