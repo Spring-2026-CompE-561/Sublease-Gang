@@ -89,7 +89,7 @@ uv sync --group dev
 Create a `.env` file in the `backend/` directory (optional — defaults are provided):
 
 ```env
-SECRET_KEY=your_secret_key
+SECRET_KEY=change_me_to_a_secure_32_byte_secret_key
 DATABASE_URL=sqlite:///./sublease_marketplace.db
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ENVIRONMENT=development
