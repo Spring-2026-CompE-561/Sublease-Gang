@@ -13,12 +13,9 @@ import { useEffect, useState } from "react";
 
 function UserButton() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    setIsLoggedIn(Boolean(localStorage.getItem("access_token")));
-  }, []);
-
+  const [isLoggedIn, setIsLoggedIn] = useState(() =>
+  typeof window !== "undefined" && Boolean(localStorage.getItem("access_token"))
+);
   function handleSignOut() {
     localStorage.removeItem("access_token");
     setIsLoggedIn(false);

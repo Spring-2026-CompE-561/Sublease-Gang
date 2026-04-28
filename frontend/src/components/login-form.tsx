@@ -65,7 +65,8 @@ export function LoginForm({
       localStorage.setItem("access_token", returnedData.access_token);
     }
     toast.success("Login successful");
-    window.location.href = "/";
+    router.push("/");
+    router.refresh();
   }
 
   return (
