@@ -20,6 +20,8 @@ export function saveTokens(tokens: AuthTokens): void {
 	localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
 	if (tokens.refresh_token) {
 		localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
+	} else {
+		localStorage.removeItem(REFRESH_TOKEN_KEY);
 	}
 	window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
 }
