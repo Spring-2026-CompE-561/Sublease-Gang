@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL, readApiErrorMessage } from "@/lib/api";
+import { saveTokens } from "@/lib/auth";
 
 const NAME_REGEX = /^[A-Za-z\s\-']+$/;
 const USERNAME_REGEX = /^\w{3,30}$/;
@@ -166,8 +167,41 @@ export function SignupForm({
       return;
     }
 
-    toast.success("Account created successfully! You can now sign in.");
-    router.push("/signin");
+    const loginRes = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+      }),
+    });
+
+    if (!loginRes.ok) {
+      toast.success("Account created. Please sign in to continue.");
+      router.push("/signin");
+      return;
+    }
+
+    const tokens = (await loginRes.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+    };
+    if (!tokens.access_token) {
+      toast.success("Account created. Please sign in to continue.");
+      router.push("/signin");
+      return;
+    }
+
+    saveTokens({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    });
+    toast.success("Welcome to SubLease!");
+    router.push("/");
+    router.refresh();
   }
 
   return (
