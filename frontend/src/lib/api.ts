@@ -1,4 +1,5 @@
-export const API_BASE_URL = "http://localhost:8000";
+export const API_BASE_URL =
+	process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 export const ACCESS_TOKEN_KEY = "access_token";
 
 
@@ -14,7 +15,7 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-async function readApiErrorMessage(response: Response): Promise<string | null> {
+export async function readApiErrorMessage(response: Response): Promise<string | null> {
 	try {
 		const payload = (await response.json()) as unknown;
 

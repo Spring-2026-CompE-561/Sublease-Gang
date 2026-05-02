@@ -9,16 +9,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+
+import { clearTokens, useIsAuthenticated } from "@/lib/auth";
 
 function UserButton() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(() =>
-  typeof window !== "undefined" && Boolean(localStorage.getItem("access_token"))
-);
+  const isLoggedIn = useIsAuthenticated();
+
   function handleSignOut() {
-    localStorage.removeItem("access_token");
-    setIsLoggedIn(false);
+    clearTokens();
     router.push("/");
   }
 
