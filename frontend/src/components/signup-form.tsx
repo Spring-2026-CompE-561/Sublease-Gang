@@ -46,6 +46,13 @@ const signupSchema = z
       .min(8, "Password must be at least 8 characters.")
       .max(32, "Password must be at most 32 characters."),
     confirmPassword: z.string(),
+    contact_email: z
+      .union([z.literal(""), z.email("Invalid contact email.")])
+      .optional(),
+    contact_phone: z
+      .string()
+      .max(20, "Phone must be at most 20 characters.")
+      .optional(),
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: "Passwords do not match.",
@@ -67,6 +74,8 @@ export function SignupForm({
       username: "",
       password: "",
       confirmPassword: "",
+      contact_email: "",
+      contact_phone: "",
     },
   });
   const router = useRouter();
@@ -84,6 +93,8 @@ export function SignupForm({
         password: data.password,
         firstname: data.firstname,
         lastname: data.lastname,
+        contact_email: data.contact_email || undefined,
+        contact_phone: data.contact_phone || undefined,
       }),
     });
 
@@ -109,134 +120,194 @@ export function SignupForm({
         <CardContent>
           <form id="form-signup" onSubmit={form.handleSubmit(onSubmit)}>
             <FieldGroup>
-              <Controller
-                name="firstname"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="form-signup-firstname">
-                      First name
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      id="form-signup-firstname"
-                      aria-invalid={fieldState.invalid}
-                      placeholder="Jane"
-                      autoComplete="given-name"
-                      maxLength={50}
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-              <Controller
-                name="lastname"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="form-signup-lastname">
-                      Last name
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      id="form-signup-lastname"
-                      aria-invalid={fieldState.invalid}
-                      placeholder="Doe"
-                      autoComplete="family-name"
-                      maxLength={50}
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-              <Controller
-                name="email"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="form-signup-email">Email</FieldLabel>
-                    <Input
-                      {...field}
-                      id="form-signup-email"
-                      aria-invalid={fieldState.invalid}
-                      placeholder="you@example.com"
-                      autoComplete="email"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-              <Controller
-                name="username"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="form-signup-username">
-                      Username
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      id="form-signup-username"
-                      aria-invalid={fieldState.invalid}
-                      placeholder="yourname"
-                      autoComplete="username"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-              <Controller
-                name="password"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="form-signup-password">
-                      Password
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      id="form-signup-password"
-                      aria-invalid={fieldState.invalid}
-                      type="password"
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-              <Controller
-                name="confirmPassword"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="form-signup-confirm-password">
-                      Confirm password
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      id="form-signup-confirm-password"
-                      aria-invalid={fieldState.invalid}
-                      type="password"
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
+              <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 sm:gap-4">
+                <Controller
+                  name="firstname"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="form-signup-firstname">
+                        First name
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="form-signup-firstname"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="Jane"
+                        autoComplete="given-name"
+                        maxLength={50}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="lastname"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="form-signup-lastname">
+                        Last name
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="form-signup-lastname"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="Doe"
+                        autoComplete="family-name"
+                        maxLength={50}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 sm:gap-4">
+                <Controller
+                  name="email"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="form-signup-email">Email</FieldLabel>
+                      <Input
+                        {...field}
+                        id="form-signup-email"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="you@example.com"
+                        autoComplete="email"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="username"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="form-signup-username">
+                        Username
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="form-signup-username"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="yourname"
+                        autoComplete="username"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 sm:gap-4">
+                <Controller
+                  name="password"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="form-signup-password">
+                        Password
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="form-signup-password"
+                        aria-invalid={fieldState.invalid}
+                        type="password"
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="confirmPassword"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="form-signup-confirm-password">
+                        Confirm password
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="form-signup-confirm-password"
+                        aria-invalid={fieldState.invalid}
+                        type="password"
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 sm:gap-4">
+                <Controller
+                  name="contact_email"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="form-signup-contact-email">
+                        Contact email{" "}
+                        <span className="text-muted-foreground font-normal">
+                          (optional)
+                        </span>
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="form-signup-contact-email"
+                        aria-invalid={fieldState.invalid}
+                        type="email"
+                        placeholder="contact@example.com"
+                        autoComplete="email"
+                        maxLength={254}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="contact_phone"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="form-signup-contact-phone">
+                        Contact phone{" "}
+                        <span className="text-muted-foreground font-normal">
+                          (optional)
+                        </span>
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="form-signup-contact-phone"
+                        aria-invalid={fieldState.invalid}
+                        type="tel"
+                        placeholder="+1 (555) 555-5555"
+                        autoComplete="tel"
+                        maxLength={20}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
             </FieldGroup>
           </form>
         </CardContent>
