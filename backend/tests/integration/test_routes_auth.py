@@ -1,31 +1,41 @@
+from app.models.profiles import Profile
 from app.models.user import User
 
 
+def _signup_payload(**overrides) -> dict:
+    """Build a valid SignupRequest body for tests; overrides any field."""
+    payload = {
+        "email": "new@example.com",
+        "username": "newuser",
+        "password": "password123",
+        "firstname": "Jane",
+        "lastname": "Doe",
+    }
+    payload.update(overrides)
+    return payload
+
+
 class TestSignup:
-    def test_success(self, client):
-        resp = client.post(
-            "/api/v1/auth/signup",
-            json={
-                "email": "new@example.com",
-                "username": "newuser",
-                "password": "password123",
-            },
-        )
+    def test_success(self, client, db_session):
+        resp = client.post("/api/v1/auth/signup", json=_signup_payload())
         assert resp.status_code == 201
         data = resp.json()
         assert data["email"] == "new@example.com"
         assert data["username"] == "newuser"
         assert "password" not in data
+        # Profile row should have been created in the same transaction.
+        profile = (
+            db_session.query(Profile).filter(Profile.username == "newuser").first()
+        )
+        assert profile is not None
+        assert profile.firstname == "Jane"
+        assert profile.lastname == "Doe"
 
     def test_duplicate_email(self, client, make_user):
         make_user(email="dup@example.com")
         resp = client.post(
             "/api/v1/auth/signup",
-            json={
-                "email": "dup@example.com",
-                "username": "other",
-                "password": "password123",
-            },
+            json=_signup_payload(email="dup@example.com", username="other"),
         )
         assert resp.status_code == 409
 
@@ -33,11 +43,7 @@ class TestSignup:
         make_user(username="taken")
         resp = client.post(
             "/api/v1/auth/signup",
-            json={
-                "email": "x@example.com",
-                "username": "taken",
-                "password": "password123",
-            },
+            json=_signup_payload(email="x@example.com", username="taken"),
         )
         assert resp.status_code == 409
 
@@ -46,11 +52,7 @@ class TestLogin:
     def _create_user(self, client):
         client.post(
             "/api/v1/auth/signup",
-            json={
-                "email": "login@example.com",
-                "username": "loginuser",
-                "password": "password123",
-            },
+            json=_signup_payload(email="login@example.com", username="loginuser"),
         )
 
     def test_success(self, client):
@@ -91,11 +93,7 @@ class TestRefresh:
     def _login(self, client):
         client.post(
             "/api/v1/auth/signup",
-            json={
-                "email": "ref@example.com",
-                "username": "refuser",
-                "password": "password123",
-            },
+            json=_signup_payload(email="ref@example.com", username="refuser"),
         )
         resp = client.post(
             "/api/v1/auth/login",
@@ -153,11 +151,7 @@ class TestForgotPassword:
     def test_registered_email(self, client):
         client.post(
             "/api/v1/auth/signup",
-            json={
-                "email": "forgot@example.com",
-                "username": "forgotuser",
-                "password": "password123",
-            },
+            json=_signup_payload(email="forgot@example.com", username="forgotuser"),
         )
         resp = client.post(
             "/api/v1/auth/forgot_password",
@@ -183,11 +177,7 @@ class TestResetPassword:
     def _get_reset_token(self, client):
         client.post(
             "/api/v1/auth/signup",
-            json={
-                "email": "reset@example.com",
-                "username": "resetuser",
-                "password": "password123",
-            },
+            json=_signup_payload(email="reset@example.com", username="resetuser"),
         )
         resp = client.post(
             "/api/v1/auth/forgot_password",
