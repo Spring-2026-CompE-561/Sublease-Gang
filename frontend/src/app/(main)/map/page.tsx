@@ -71,6 +71,10 @@ export default function MapPage() {
 				id: String(l.id),
 				latitude: l.latitude,
 				longitude: l.longitude,
+				title: l.title,
+				price: l.price,
+				thumbnailUrl: l.thumbnail_url,
+				location: l.location,
 			})),
 		[filtered],
 	);
