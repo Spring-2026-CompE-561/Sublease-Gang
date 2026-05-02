@@ -1,10 +1,13 @@
 import Hero from "@/components/home/Hero";
+import Features from "@/components/home/features";
+import CtaBanner from "@/components/home/cta-banner";
 
 export default function Home() {
-  //return null;
   return (
     <main className="flex-1">
-      <Hero />    
+      <Hero />
+      <Features />
+      <CtaBanner />    
     </main>
-    );
+  );
 }
