@@ -171,6 +171,30 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		bedrooms: 1,
 		amenities: ["WiFi", "Furnished", "Kitchen", "Utilities Included"],
 	},
+	{
+		id: 7,
+		host_id: 7,
+		title: "Sunny 2BR Steps from SDSU",
+		description: "Light-filled apartment minutes from College Ave trolley stop.",
+		price: 1250,
+		location: "College Area",
+		room_type: "2 bedroom",
+		sqft: 720,
+		start_date: "2026-05-20T00:00:00Z",
+		end_date: "2026-08-25T00:00:00Z",
+		college_id: null,
+		thumbnail_url:
+			"https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80",
+		latitude: 32.7757,
+		longitude: -117.0719,
+		created_at: "2026-01-01T00:00:00Z",
+		updated_at: "2026-01-01T00:00:00Z",
+		rating: 4.7,
+		university: "San Diego State University",
+		verified: true,
+		bedrooms: 2,
+		amenities: ["WiFi", "Furnished", "Parking", "Air Conditioning", "Laundry"],
+	},
 ];
 
 export interface BrowseFiltersState {
@@ -178,7 +202,12 @@ export interface BrowseFiltersState {
 	priceMax: number;
 	bedrooms: number | null;
 	amenities: Set<string>;
+	university: string | null;
 }
+
+export const UNIVERSITY_OPTIONS = Array.from(
+	new Set(MOCK_BROWSE_LISTINGS.map((l) => l.university)),
+).sort();
 
 export function filterBrowseListings(
 	listings: BrowseListing[],
@@ -187,6 +216,7 @@ export function filterBrowseListings(
 	return listings.filter((l) => {
 		if (l.price < f.priceMin || l.price > f.priceMax) return false;
 		if (f.bedrooms != null && l.bedrooms !== f.bedrooms) return false;
+		if (f.university && l.university !== f.university) return false;
 		for (const a of f.amenities) {
 			if (!l.amenities.includes(a)) return false;
 		}

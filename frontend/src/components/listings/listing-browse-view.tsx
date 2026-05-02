@@ -4,18 +4,15 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Filter } from "lucide-react";
 import {
-	AMENITY_OPTIONS,
 	filterBrowseListings,
 	MOCK_BROWSE_LISTINGS,
 	PRICE_FILTER_MAX,
 	type BrowseFiltersState,
 } from "@/lib/listings";
 import { ListingBrowseCard } from "@/components/listings/listing-browse-card";
+import { FiltersBody } from "@/components/listings/filters-body";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import {
 	Sheet,
 	SheetContent,
@@ -24,89 +21,6 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
-
-function FiltersBody({
-	priceRange,
-	setPriceRange,
-	bedroomFilter,
-	setBedroomFilter,
-	selectedAmenities,
-	toggleAmenity,
-	onReset,
-}: {
-	priceRange: [number, number];
-	setPriceRange: (v: [number, number]) => void;
-	bedroomFilter: number | null;
-	setBedroomFilter: (v: number | null) => void;
-	selectedAmenities: Set<string>;
-	toggleAmenity: (id: string) => void;
-	onReset: () => void;
-}) {
-	const beds = [1, 2, 3, 4] as const;
-
-	return (
-		<div className="space-y-8">
-			<div className="space-y-3">
-				<h3 className="font-semibold">Price Range</h3>
-				<Slider
-					min={0}
-					max={PRICE_FILTER_MAX}
-					step={50}
-					value={priceRange}
-					onValueChange={(v) => setPriceRange(v as [number, number])}
-				/>
-				<div className="flex justify-between text-sm text-muted-foreground">
-					<span>${priceRange[0]}</span>
-					<span>${priceRange[1]}</span>
-				</div>
-			</div>
-
-			<div className="space-y-3">
-				<h3 className="font-semibold">Bedrooms</h3>
-				<div className="flex flex-wrap gap-2">
-					{beds.map((n) => (
-						<button
-							key={n}
-							type="button"
-							onClick={() => setBedroomFilter(bedroomFilter === n ? null : n)}
-							className={cn(
-								"rounded-full border px-3 py-1.5 text-sm transition",
-								bedroomFilter === n
-									? "border-foreground bg-muted font-medium"
-									: "border-input hover:bg-muted/60",
-							)}
-						>
-							{n} bed{n > 1 ? "s" : ""}
-						</button>
-					))}
-				</div>
-			</div>
-
-			<div className="space-y-3">
-				<h3 className="font-semibold">Amenities</h3>
-				<ul className="space-y-3">
-					{AMENITY_OPTIONS.map((id) => (
-						<li key={id} className="flex items-center gap-3">
-							<Checkbox
-								id={`amenity-${id}`}
-								checked={selectedAmenities.has(id)}
-								onCheckedChange={() => toggleAmenity(id)}
-							/>
-							<Label htmlFor={`amenity-${id}`} className="cursor-pointer font-normal leading-none">
-								{id}
-							</Label>
-						</li>
-					))}
-				</ul>
-			</div>
-
-			<Button type="button" variant="outline" className="w-full" onClick={onReset}>
-				Reset filters
-			</Button>
-		</div>
-	);
-}
 
 export function ListingBrowseView() {
 	const searchParams = useSearchParams();
@@ -114,6 +28,7 @@ export function ListingBrowseView() {
 	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
+	const [university, setUniversity] = useState<string | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	
 
@@ -123,8 +38,9 @@ export function ListingBrowseView() {
 			priceMax: priceRange[1],
 			bedrooms: bedroomFilter,
 			amenities: selectedAmenities,
+			university,
 		}),
-		[priceRange, bedroomFilter, selectedAmenities],
+		[priceRange, bedroomFilter, selectedAmenities, university],
 	);
 
 	const filtered = useMemo(() => {
@@ -139,12 +55,6 @@ export function ListingBrowseView() {
   		);
 	}, [filters, query]);
 
-	function resetFilters() {
-  		setPriceRange([0, PRICE_FILTER_MAX]);
-  		setBedroomFilter(null);
-  		setSelectedAmenities(new Set());
-	}
-
 	function toggleAmenity(id: string) {
 		setSelectedAmenities((prev) => {
 			const next = new Set(prev);
@@ -154,6 +64,13 @@ export function ListingBrowseView() {
 		});
 	}
 
+	function resetFilters() {
+		setPriceRange([0, PRICE_FILTER_MAX]);
+		setBedroomFilter(null);
+		setSelectedAmenities(new Set());
+		setUniversity(null);
+	}
+
 	const filterProps = {
 		priceRange,
 		setPriceRange,
@@ -161,6 +78,8 @@ export function ListingBrowseView() {
 		setBedroomFilter,
 		selectedAmenities,
 		toggleAmenity,
+		university,
+		setUniversity,
 		onReset: resetFilters,
 	};
 
