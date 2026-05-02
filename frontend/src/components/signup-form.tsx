@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +23,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL, readApiErrorMessage } from "@/lib/api";
@@ -53,6 +56,10 @@ const signupSchema = z
       .string()
       .max(20, "Phone must be at most 20 characters.")
       .optional(),
+    description: z
+      .string()
+      .max(500, "Bio must be at most 500 characters.")
+      .optional(),
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: "Passwords do not match.",
@@ -76,9 +83,47 @@ export function SignupForm({
       confirmPassword: "",
       contact_email: "",
       contact_phone: "",
+      description: "",
     },
   });
   const router = useRouter();
+
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const firstnameValue = form.watch("firstname");
+  const initials = firstnameValue
+    ? firstnameValue.charAt(0).toUpperCase()
+    : "?";
+
+  useEffect(() => {
+    if (!iconFile) {
+      setIconPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(iconFile);
+    setIconPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [iconFile]);
+
+  function handleIconChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    if (file && !file.type.startsWith("image/")) {
+      toast.error("Please select an image file.");
+      event.target.value = "";
+      return;
+    }
+    setIconFile(file);
+  }
+
+  function handleReset() {
+    form.reset();
+    setIconFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
 
   async function onSubmit(data: SignupValues) {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/signup`, {
@@ -95,6 +140,7 @@ export function SignupForm({
         lastname: data.lastname,
         contact_email: data.contact_email || undefined,
         contact_phone: data.contact_phone || undefined,
+        description: data.description || undefined,
       }),
     });
 
@@ -120,57 +166,89 @@ export function SignupForm({
         <CardContent>
           <form id="form-signup" onSubmit={form.handleSubmit(onSubmit)}>
             <FieldGroup>
-              <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 sm:gap-4">
-                <Controller
-                  name="firstname"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="form-signup-firstname">
-                        First name{" "}
-                        <span aria-hidden="true" className="text-destructive">
-                          *
-                        </span>
-                      </FieldLabel>
-                      <Input
-                        {...field}
-                        id="form-signup-firstname"
-                        aria-invalid={fieldState.invalid}
-                        placeholder="Jane"
-                        autoComplete="given-name"
-                        maxLength={50}
-                      />
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
-                <Controller
-                  name="lastname"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="form-signup-lastname">
-                        Last name{" "}
-                        <span aria-hidden="true" className="text-destructive">
-                          *
-                        </span>
-                      </FieldLabel>
-                      <Input
-                        {...field}
-                        id="form-signup-lastname"
-                        aria-invalid={fieldState.invalid}
-                        placeholder="Doe"
-                        autoComplete="family-name"
-                        maxLength={50}
-                      />
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
+              <div className="flex items-center gap-6">
+                <div className="flex shrink-0 flex-col items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    aria-label="Upload profile picture"
+                  >
+                    <Avatar className="size-24">
+                      {iconPreview ? <AvatarImage src={iconPreview} /> : null}
+                      <AvatarFallback className="text-2xl">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {iconFile ? "Change photo" : "Upload photo"}
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleIconChange}
+                    className="hidden"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col gap-7">
+                  <Controller
+                    name="firstname"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="form-signup-firstname">
+                          First name{" "}
+                          <span aria-hidden="true" className="text-destructive">
+                            *
+                          </span>
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="form-signup-firstname"
+                          aria-invalid={fieldState.invalid}
+                          placeholder="Jane"
+                          autoComplete="given-name"
+                          maxLength={50}
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    name="lastname"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="form-signup-lastname">
+                          Last name{" "}
+                          <span aria-hidden="true" className="text-destructive">
+                            *
+                          </span>
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="form-signup-lastname"
+                          aria-invalid={fieldState.invalid}
+                          placeholder="Doe"
+                          autoComplete="family-name"
+                          maxLength={50}
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 sm:gap-4">
                 <Controller
@@ -328,6 +406,31 @@ export function SignupForm({
                   )}
                 />
               </div>
+              <Controller
+                name="description"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="form-signup-description">
+                      About you{" "}
+                      <span className="text-muted-foreground font-normal">
+                        (optional)
+                      </span>
+                    </FieldLabel>
+                    <Textarea
+                      {...field}
+                      id="form-signup-description"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="Tell others a bit about yourself..."
+                      maxLength={500}
+                      rows={4}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
             </FieldGroup>
           </form>
         </CardContent>
@@ -337,7 +440,7 @@ export function SignupForm({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => form.reset()}
+                onClick={handleReset}
               >
                 Reset
               </Button>
