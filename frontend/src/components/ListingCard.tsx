@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { Listing } from "@/types/listing";
 
@@ -31,7 +32,11 @@ export function ListingCard({ listing }: Readonly<ListingCardProps>) {
 	const { title, location, price, start_date, end_date, thumbnail_url, room_type } = listing;
 
 	return (
-		<Card className="transition hover:ring-2 hover:ring-amber-500">
+		<Link
+			href={`/listings/${listing.id}`}
+			className="block rounded-2xl outline-none transition hover:ring-2 hover:ring-amber-500 focus-visible:ring-2 focus-visible:ring-ring"
+		>
+		<Card className="h-full transition-colors">
 			{thumbnail_url ? (
 				<Image
 					src={thumbnail_url}
@@ -63,5 +68,6 @@ export function ListingCard({ listing }: Readonly<ListingCardProps>) {
 				{formatRange(start_date, end_date)}
 			</CardContent>
 		</Card>
+		</Link>
 	);
 }
