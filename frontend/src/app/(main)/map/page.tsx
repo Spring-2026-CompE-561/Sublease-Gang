@@ -1,10 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Filter } from "lucide-react";
-import { PRICE_FILTER_MAX } from "@/lib/listings";
+import {
+	filterBrowseListings,
+	MOCK_BROWSE_LISTINGS,
+	PRICE_FILTER_MAX,
+	type BrowseFiltersState,
+} from "@/lib/listings";
 import { FiltersBody } from "@/components/listings/filters-body";
+import type { FlyToTarget } from "@/components/Map";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -18,17 +24,54 @@ import {
 
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
-const SAMPLE_PINS = [
-	{ id: "1", latitude: 32.8801, longitude: -117.234 },
-	{ id: "2", latitude: 32.7503, longitude: -117.1859 },
-	{ id: "3", latitude: 32.7157, longitude: -117.1611 },
-];
-
 export default function MapPage() {
 	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [flyTo, setFlyTo] = useState<FlyToTarget | undefined>();
+
+	useEffect(() => {
+		if (typeof window === "undefined" || !("geolocation" in navigator)) return;
+		navigator.geolocation.getCurrentPosition(
+			(pos) => {
+				setFlyTo({
+					latitude: pos.coords.latitude,
+					longitude: pos.coords.longitude,
+					zoom: 12,
+				});
+			},
+			() => {
+				// Permission denied or unavailable — keep the default San Diego view.
+			},
+			{ timeout: 10000 },
+		);
+	}, []);
+
+	const filters: BrowseFiltersState = useMemo(
+		() => ({
+			priceMin: priceRange[0],
+			priceMax: priceRange[1],
+			bedrooms: bedroomFilter,
+			amenities: selectedAmenities,
+		}),
+		[priceRange, bedroomFilter, selectedAmenities],
+	);
+
+	const filtered = useMemo(
+		() => filterBrowseListings(MOCK_BROWSE_LISTINGS, filters),
+		[filters],
+	);
+
+	const pins = useMemo(
+		() =>
+			filtered.map((l) => ({
+				id: String(l.id),
+				latitude: l.latitude,
+				longitude: l.longitude,
+			})),
+		[filtered],
+	);
 
 	function toggleAmenity(id: string) {
 		setSelectedAmenities((prev) => {
@@ -93,8 +136,12 @@ export default function MapPage() {
 						</Sheet>
 					</div>
 
+					<p className="mb-2 text-sm text-muted-foreground">
+						{pins.length} listing{pins.length !== 1 ? "s" : ""} on the map
+					</p>
+
 					<div className="h-[calc(100vh-9rem)] w-full overflow-hidden rounded-xl lg:h-[calc(100vh-7rem)]">
-						<Map pins={SAMPLE_PINS} />
+						<Map pins={pins} flyTo={flyTo} />
 					</div>
 				</div>
 			</div>
