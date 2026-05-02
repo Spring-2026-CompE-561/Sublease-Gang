@@ -7,6 +7,7 @@ import {
 	filterBrowseListings,
 	MOCK_BROWSE_LISTINGS,
 	PRICE_FILTER_MAX,
+	SQFT_FILTER_MAX,
 	type BrowseFiltersState,
 } from "@/lib/listings";
 import { FiltersBody } from "@/components/listings/filters-body";
@@ -26,6 +27,7 @@ const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
 export default function MapPage() {
 	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
+	const [sqftRange, setSqftRange] = useState<[number, number]>([0, SQFT_FILTER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
 	const [university, setUniversity] = useState<string | null>(null);
@@ -53,11 +55,13 @@ export default function MapPage() {
 		() => ({
 			priceMin: priceRange[0],
 			priceMax: priceRange[1],
+			sqftMin: sqftRange[0],
+			sqftMax: sqftRange[1],
 			bedrooms: bedroomFilter,
 			amenities: selectedAmenities,
 			university,
 		}),
-		[priceRange, bedroomFilter, selectedAmenities, university],
+		[priceRange, sqftRange, bedroomFilter, selectedAmenities, university],
 	);
 
 	const filtered = useMemo(
@@ -90,6 +94,7 @@ export default function MapPage() {
 
 	function resetFilters() {
 		setPriceRange([0, PRICE_FILTER_MAX]);
+		setSqftRange([0, SQFT_FILTER_MAX]);
 		setBedroomFilter(null);
 		setSelectedAmenities(new Set());
 		setUniversity(null);
@@ -98,6 +103,8 @@ export default function MapPage() {
 	const filterProps = {
 		priceRange,
 		setPriceRange,
+		sqftRange,
+		setSqftRange,
 		bedroomFilter,
 		setBedroomFilter,
 		selectedAmenities,
