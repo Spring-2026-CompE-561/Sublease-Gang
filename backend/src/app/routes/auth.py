@@ -20,9 +20,10 @@ from app.schemas.auth import (
     LoginRequest,
     RefreshRequest,
     ResetPasswordRequest,
+    SignupRequest,
     TokenResponse,
 )
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import UserResponse
 from app.services.user import UserService
 
 logger = logging.getLogger(__name__)
@@ -31,10 +32,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/signup", response_model=UserResponse, status_code=201)
-async def signup(payload: UserCreate, db: Session = Depends(get_db)):
-    """Create a new user account."""
+async def signup(payload: SignupRequest, db: Session = Depends(get_db)):
+    """Create a new user account and its associated profile."""
     try:
-        user = UserService.register(db, payload)
+        user = UserService.register_with_profile(db, payload)
     except ResourceConflictError as e:
         raise HTTPException(status_code=409, detail=e.detail) from e
     return user
