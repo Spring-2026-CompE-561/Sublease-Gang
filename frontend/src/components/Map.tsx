@@ -1,6 +1,7 @@
 "use client";
 
-import { Map as MapLibre, Marker, NavigationControl } from "react-map-gl/maplibre";
+import { useEffect, useRef } from "react";
+import { Map as MapLibre, type MapRef, Marker, NavigationControl } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 const OSM_STYLE = {
@@ -29,11 +30,18 @@ export type MapPin = {
 	longitude: number;
 };
 
+export type FlyToTarget = {
+	latitude: number;
+	longitude: number;
+	zoom?: number;
+};
+
 type MapProps = {
 	pins?: MapPin[];
 	initialLatitude?: number;
 	initialLongitude?: number;
 	initialZoom?: number;
+	flyTo?: FlyToTarget;
 };
 
 export default function Map({
@@ -41,9 +49,22 @@ export default function Map({
 	initialLatitude = 32.7157,
 	initialLongitude = -117.1611,
 	initialZoom = 12,
+	flyTo,
 }: MapProps) {
+	const mapRef = useRef<MapRef>(null);
+
+	useEffect(() => {
+		if (!flyTo) return;
+		mapRef.current?.flyTo({
+			center: [flyTo.longitude, flyTo.latitude],
+			zoom: flyTo.zoom ?? 11,
+			duration: 1500,
+		});
+	}, [flyTo]);
+
 	return (
 		<MapLibre
+			ref={mapRef}
 			initialViewState={{
 				latitude: initialLatitude,
 				longitude: initialLongitude,
