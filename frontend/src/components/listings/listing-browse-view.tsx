@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Filter } from "lucide-react";
 import {
 	AMENITY_OPTIONS,
@@ -108,10 +109,13 @@ function FiltersBody({
 }
 
 export function ListingBrowseView() {
+	const searchParams = useSearchParams();
+  	const query = searchParams.get("q") ?? "";
 	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
 	const [mobileOpen, setMobileOpen] = useState(false);
+	
 
 	const filters: BrowseFiltersState = useMemo(
 		() => ({
@@ -123,10 +127,23 @@ export function ListingBrowseView() {
 		[priceRange, bedroomFilter, selectedAmenities],
 	);
 
-	const filtered = useMemo(
-		() => filterBrowseListings(MOCK_BROWSE_LISTINGS, filters),
-		[filters],
-	);
+	const filtered = useMemo(() => {
+  		const base = filterBrowseListings(MOCK_BROWSE_LISTINGS, filters);
+  		const trimmed = query.trim().toLowerCase();
+  		if (!trimmed) return base;
+  			return base.filter(
+    	(l) =>
+      	l.title.toLowerCase().includes(trimmed) ||
+      	l.location.toLowerCase().includes(trimmed) ||
+      	l.university.toLowerCase().includes(trimmed),
+  		);
+	}, [filters, query]);
+
+	function resetFilters() {
+  		setPriceRange([0, PRICE_FILTER_MAX]);
+  		setBedroomFilter(null);
+  		setSelectedAmenities(new Set());
+	}
 
 	function toggleAmenity(id: string) {
 		setSelectedAmenities((prev) => {
@@ -135,12 +152,6 @@ export function ListingBrowseView() {
 			else next.add(id);
 			return next;
 		});
-	}
-
-	function resetFilters() {
-		setPriceRange([0, PRICE_FILTER_MAX]);
-		setBedroomFilter(null);
-		setSelectedAmenities(new Set());
 	}
 
 	const filterProps = {
