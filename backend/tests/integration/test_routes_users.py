@@ -98,6 +98,8 @@ class TestAuthenticatedUserRoutes:
             "email": "me@example.com",
             "username": "meuser",
             "password": "password123",
+            "firstname": "Jane",
+            "lastname": "Doe",
         }
         client.post("/api/v1/auth/signup", json=signup)
         login = client.post(
