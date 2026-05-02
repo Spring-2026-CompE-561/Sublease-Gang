@@ -51,7 +51,7 @@ export function FiltersBody({
 			<div className="space-y-3">
 				<h3 className="font-semibold">University</h3>
 				<Select
-					value={university ?? undefined}
+					value={university}
 					onValueChange={(v) => setUniversity((v as string) || null)}
 				>
 					<SelectTrigger className="w-full">
