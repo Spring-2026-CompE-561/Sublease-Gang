@@ -7,6 +7,7 @@ import {
 	filterBrowseListings,
 	MOCK_BROWSE_LISTINGS,
 	PRICE_FILTER_MAX,
+	SQFT_FILTER_MAX,
 	type BrowseFiltersState,
 } from "@/lib/listings";
 import { ListingBrowseCard } from "@/components/listings/listing-browse-card";
@@ -26,21 +27,24 @@ export function ListingBrowseView() {
 	const searchParams = useSearchParams();
   	const query = searchParams.get("q") ?? "";
 	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
+	const [sqftRange, setSqftRange] = useState<[number, number]>([0, SQFT_FILTER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
 	const [university, setUniversity] = useState<string | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
-	
+
 
 	const filters: BrowseFiltersState = useMemo(
 		() => ({
 			priceMin: priceRange[0],
 			priceMax: priceRange[1],
+			sqftMin: sqftRange[0],
+			sqftMax: sqftRange[1],
 			bedrooms: bedroomFilter,
 			amenities: selectedAmenities,
 			university,
 		}),
-		[priceRange, bedroomFilter, selectedAmenities, university],
+		[priceRange, sqftRange, bedroomFilter, selectedAmenities, university],
 	);
 
 	const filtered = useMemo(() => {
@@ -66,6 +70,7 @@ export function ListingBrowseView() {
 
 	function resetFilters() {
 		setPriceRange([0, PRICE_FILTER_MAX]);
+		setSqftRange([0, SQFT_FILTER_MAX]);
 		setBedroomFilter(null);
 		setSelectedAmenities(new Set());
 		setUniversity(null);
@@ -74,6 +79,8 @@ export function ListingBrowseView() {
 	const filterProps = {
 		priceRange,
 		setPriceRange,
+		sqftRange,
+		setSqftRange,
 		bedroomFilter,
 		setBedroomFilter,
 		selectedAmenities,

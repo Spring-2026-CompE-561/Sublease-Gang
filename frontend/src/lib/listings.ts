@@ -10,6 +10,7 @@ export type BrowseListing = Listing & {
 };
 
 export const PRICE_FILTER_MAX = 2000;
+export const SQFT_FILTER_MAX = 2000;
 
 export const AMENITY_OPTIONS = [
 	"WiFi",
@@ -200,6 +201,8 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 export interface BrowseFiltersState {
 	priceMin: number;
 	priceMax: number;
+	sqftMin: number;
+	sqftMax: number;
 	bedrooms: number | null;
 	amenities: Set<string>;
 	university: string | null;
@@ -215,6 +218,7 @@ export function filterBrowseListings(
 ): BrowseListing[] {
 	return listings.filter((l) => {
 		if (l.price < f.priceMin || l.price > f.priceMax) return false;
+		if (l.sqft < f.sqftMin || l.sqft > f.sqftMax) return false;
 		if (f.bedrooms != null && l.bedrooms !== f.bedrooms) return false;
 		if (f.university && l.university !== f.university) return false;
 		for (const a of f.amenities) {
