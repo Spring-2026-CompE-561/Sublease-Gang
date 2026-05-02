@@ -28,6 +28,14 @@ import { API_BASE_URL, readApiErrorMessage } from "@/lib/api";
 
 const signupSchema = z
   .object({
+    firstname: z
+      .string()
+      .min(1, "First name is required.")
+      .max(50, "First name must be at most 50 characters."),
+    lastname: z
+      .string()
+      .min(1, "Last name is required.")
+      .max(50, "Last name must be at most 50 characters."),
     email: z.email("Invalid email address."),
     username: z
       .string()
@@ -53,6 +61,8 @@ export function SignupForm({
   const form = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
+      firstname: "",
+      lastname: "",
       email: "",
       username: "",
       password: "",
@@ -72,6 +82,8 @@ export function SignupForm({
         email: data.email,
         username: data.username,
         password: data.password,
+        firstname: data.firstname,
+        lastname: data.lastname,
       }),
     });
 
@@ -97,6 +109,50 @@ export function SignupForm({
         <CardContent>
           <form id="form-signup" onSubmit={form.handleSubmit(onSubmit)}>
             <FieldGroup>
+              <Controller
+                name="firstname"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="form-signup-firstname">
+                      First name
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="form-signup-firstname"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="Jane"
+                      autoComplete="given-name"
+                      maxLength={50}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="lastname"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="form-signup-lastname">
+                      Last name
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="form-signup-lastname"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="Doe"
+                      autoComplete="family-name"
+                      maxLength={50}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
               <Controller
                 name="email"
                 control={form.control}
