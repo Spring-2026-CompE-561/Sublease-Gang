@@ -202,7 +202,12 @@ export interface BrowseFiltersState {
 	priceMax: number;
 	bedrooms: number | null;
 	amenities: Set<string>;
+	university: string | null;
 }
+
+export const UNIVERSITY_OPTIONS = Array.from(
+	new Set(MOCK_BROWSE_LISTINGS.map((l) => l.university)),
+).sort();
 
 export function filterBrowseListings(
 	listings: BrowseListing[],
@@ -211,6 +216,7 @@ export function filterBrowseListings(
 	return listings.filter((l) => {
 		if (l.price < f.priceMin || l.price > f.priceMax) return false;
 		if (f.bedrooms != null && l.bedrooms !== f.bedrooms) return false;
+		if (f.university && l.university !== f.university) return false;
 		for (const a of f.amenities) {
 			if (!l.amenities.includes(a)) return false;
 		}
