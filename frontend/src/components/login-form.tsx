@@ -152,6 +152,12 @@ export function LoginForm({
                 Sign in
               </Button>
             </Field>
+            <Link
+              href="/forgot-password"
+              className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            >
+            Forgot password?
+            </Link>
             <p className="text-sm text-muted-foreground">
               Need an account?{" "}
               <Link
