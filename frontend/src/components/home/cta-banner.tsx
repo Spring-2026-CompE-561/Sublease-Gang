@@ -15,6 +15,7 @@ export default function CtaBanner() {
           <Button
             size="lg"
             variant="secondary"
+            nativeButton={false}
             render={<Link href="/list">Get Started</Link>}
           />
         </div>
