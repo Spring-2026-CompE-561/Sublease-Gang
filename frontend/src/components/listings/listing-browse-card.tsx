@@ -36,7 +36,7 @@ export function ListingBrowseCard({ listing, className }: ListingBrowseCardProps
 	return (
 		<Link href={`/listings/${listing.id}`} className={cn("group block outline-none", className)}>
 			<Card className="overflow-hidden py-0 transition hover:ring-2 hover:ring-amber-500/80 focus-visible:ring-2 focus-visible:ring-ring">
-				<div className="relative aspect-4/3 w-full overflow-hidden bg-muted">
+				<div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
 					{thumb ? (
 						<Image
 							src={thumb}

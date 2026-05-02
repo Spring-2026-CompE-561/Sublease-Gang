@@ -107,7 +107,7 @@ export default async function ListingDetailPage({ params }: Props) {
 					<div className="space-y-4">
 						<section>
 							<h2 className="mb-2 text-lg font-semibold">About</h2>
-							<p className="leading-relaxed text-muted-foreground">{listing.description}</p>
+							<p className="text-muted-foreground leading-relaxed">{listing.description}</p>
 						</section>
 						<section className="flex items-center gap-2 text-sm text-muted-foreground">
 							<Calendar className="size-4 shrink-0" aria-hidden />
@@ -135,7 +135,7 @@ export default async function ListingDetailPage({ params }: Props) {
 							{formatPrice(listing.price)}
 							<span className="text-base font-normal text-muted-foreground"> / month</span>
 						</p>
-						<p className="mt-1 text-sm capitalize text-muted-foreground">{listing.room_type}</p>
+						<p className="mt-1 text-sm text-muted-foreground capitalize">{listing.room_type}</p>
 						<Link
 							href="/list"
 							className={cn(

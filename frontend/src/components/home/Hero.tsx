@@ -12,12 +12,17 @@ export default function Hero() {
           Connect with verified students for short-term housing near your campus
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link href="/listings">
-            <Button size="lg">Browse Listings</Button>
-          </Link>
-          <Link href="/list">
-            <Button variant="outline" size="lg">List Your Place</Button>
-          </Link>
+          <Button
+            nativeButton={false}
+            size="lg"
+            render={<Link href="/listings">Browse Listings</Link>}
+          />
+          <Button
+            nativeButton={false}
+            variant="outline"
+            size="lg"
+            render={<Link href="/list">List Your Place</Link>}
+          />
         </div>
       </div>
     </section>

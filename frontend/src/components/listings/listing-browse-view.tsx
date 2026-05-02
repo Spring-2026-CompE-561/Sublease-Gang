@@ -123,7 +123,10 @@ export function ListingBrowseView() {
 		[priceRange, bedroomFilter, selectedAmenities],
 	);
 
-	const filtered = useMemo(() => filterBrowseListings(MOCK_BROWSE_LISTINGS, filters), [filters]);
+	const filtered = useMemo(
+		() => filterBrowseListings(MOCK_BROWSE_LISTINGS, filters),
+		[filters],
+	);
 
 	function toggleAmenity(id: string) {
 		setSelectedAmenities((prev) => {
@@ -179,10 +182,7 @@ export function ListingBrowseView() {
 										</Button>
 									}
 								/>
-								<SheetContent
-									side="left"
-									className="flex w-[min(100vw-2rem,380px)] flex-col gap-0 overflow-y-auto"
-								>
+								<SheetContent side="left" className="flex w-[min(100vw-2rem,380px)] flex-col gap-0 overflow-y-auto">
 									<SheetHeader>
 										<SheetTitle>Filters</SheetTitle>
 									</SheetHeader>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
-import { Menu, Search, User } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import UserButton from "@/components/UserButton";
 
@@ -36,6 +36,9 @@ function DesktopNavbar() {
         </div>
 
         <div className="flex shrink-0 items-center gap-3">
+          <Link href="/listings" className="text-sm">
+            Browse
+          </Link>
           <Link href="/list" className="text-sm">
             List your place
           </Link>
@@ -60,10 +63,12 @@ function MobileNavbar() {
             <div className="pt-4">
               <Logo />
               <div className="flex flex-col gap-2 pt-6">
+                <Link href="/listings" onClick={() => setIsOpen(false)}>
+                  Browse listings
+                </Link>
                 <Link href="/list" onClick={() => setIsOpen(false)}>
                   List your place
                 </Link>
-                <UserButton />
               </div>
             </div>
           </SheetContent>
@@ -73,9 +78,7 @@ function MobileNavbar() {
 
         <div className="flex items-center gap-2">
           <ModeToggle />
-        <Button variant="ghost" size="icon">
-          <User />
-        </Button>
+          <UserButton />
         </div>
       </nav>
     </div>
