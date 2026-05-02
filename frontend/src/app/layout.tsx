@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/query-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
 const geistSans = Geist({
@@ -47,8 +48,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            {children}
-            <Toaster />
+            <TooltipProvider>
+              {children}
+              <Toaster />
+            </TooltipProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>
