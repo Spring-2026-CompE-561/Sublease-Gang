@@ -25,7 +25,7 @@ export const AMENITY_OPTIONS = [
 
 export type AmenityId = (typeof AMENITY_OPTIONS)[number];
 
-/** Mock catalog aligned with Figma "All Listings". */
+/** Mock catalog aligned with Figma “All Listings”. */
 export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 	{
 		id: 1,
