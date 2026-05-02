@@ -8,13 +8,6 @@ import {
   SheetFooter 
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuTrigger, 
-  DropdownMenuRadioItem, 
-  DropdownMenuRadioGroup 
-} from "@/components/ui/dropdown-menu"
 import {
   Combobox,
   ComboboxContent,
@@ -41,8 +34,11 @@ export function FilterPanel() {
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   const [selectedRoomType, setSelectedRoomType] = useState<string>("");
   const [selectedCollege, setSelectedCollege] = useState<string>("");
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000]);
+  const [sqftRange, setSqftRange] = useState<[number, number]>([0, 2000]);
 
   const collegeNames = filterOptions?.colleges.map((c) => String(c.name)) ?? []
+  const roomTypeList = filterOptions?.room_types ?? []
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -74,26 +70,19 @@ export function FilterPanel() {
 
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Room Type</h3>
-        <DropdownMenu>
-          <DropdownMenuTrigger className="w-full border rounded-md px-4 py-2 text-left">
-            {selectedRoomType || "Select Room Type"}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuRadioGroup
-              value={selectedRoomType}
-              onValueChange={(value) => setSelectedRoomType(value)}
-            >
-              <DropdownMenuRadioItem value="">
-                Any
-              </DropdownMenuRadioItem>
-              {filterOptions?.room_types.map((type) => (
-                <DropdownMenuRadioItem key={type} value={type}>
-                  {type}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Combobox items={roomTypeList} onValueChange={(value) => setSelectedRoomType(value as string)}>
+          <ComboboxInput placeholder="Select room type..." />
+          <ComboboxContent>
+            <ComboboxEmpty>No room types found.</ComboboxEmpty>
+            <ComboboxList>
+              {(item) => (
+                <ComboboxItem key={item} value={item}>
+                  {item}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </div>
 
       <div className="space-y-4">
@@ -102,10 +91,11 @@ export function FilterPanel() {
           min={filterOptions?.price_min ?? 0}
           max={filterOptions?.price_max ?? 2000}
           step={50} 
+          onValueChange={(value) => setPriceRange(value as [number, number])}
         />
         <div className="flex justify-between text-muted-foreground">
-          <span>${filterOptions?.price_min ?? 0}</span>
-          <span>${filterOptions?.price_max ?? 2000}</span>
+          <span>${priceRange[0]}</span>
+          <span>${priceRange[1]}</span>
         </div>
       </div>
 
@@ -115,10 +105,11 @@ export function FilterPanel() {
           min={filterOptions?.sqft_min ?? 0}
           max={filterOptions?.sqft_max ?? 2000}
           step={50} 
+          onValueChange={(value) => setSqftRange(value as [number, number])}
         />
         <div className="flex justify-between text-muted-foreground">
-          <span>{filterOptions?.sqft_min ?? 0} sq ft</span>
-          <span>{filterOptions?.sqft_max ?? 2000} sq ft</span>
+          <span>{sqftRange[0]} sq ft</span>
+          <span>{sqftRange[1]} sq ft</span>
         </div>
       </div>
     </div>
