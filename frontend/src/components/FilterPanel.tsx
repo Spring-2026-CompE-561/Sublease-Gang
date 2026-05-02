@@ -56,19 +56,6 @@ export function FilterPanel() {
   return (
     <div className="space-y-8">
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Price Range</h3>
-        <Slider defaultValue={[filterOptions?.price_min ?? 0, filterOptions?.price_max ?? 2000]}
-          min={filterOptions?.price_min ?? 0}
-          max={filterOptions?.price_max ?? 2000}
-          step={50} 
-        />
-        <div className="flex justify-between text-muted-foreground">
-          <span>${filterOptions?.price_min ?? 0}</span>
-          <span>${filterOptions?.price_max ?? 2000}</span>
-        </div>
-      </div>
-
-      <div className="space-y-4">
         <h3 className="text-lg font-semibold">University</h3>
         <Combobox items={collegeNames} onValueChange={(value) => setSelectedCollege(value as string)}>
           <ComboboxInput placeholder="Search college..." />
@@ -107,6 +94,32 @@ export function FilterPanel() {
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Price Range</h3>
+        <Slider defaultValue={[filterOptions?.price_min ?? 0, filterOptions?.price_max ?? 2000]}
+          min={filterOptions?.price_min ?? 0}
+          max={filterOptions?.price_max ?? 2000}
+          step={50} 
+        />
+        <div className="flex justify-between text-muted-foreground">
+          <span>${filterOptions?.price_min ?? 0}</span>
+          <span>${filterOptions?.price_max ?? 2000}</span>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Square Footage</h3>
+        <Slider defaultValue={[filterOptions?.sqft_min ?? 0, filterOptions?.sqft_max ?? 2000]}
+          min={filterOptions?.sqft_min ?? 0}
+          max={filterOptions?.sqft_max ?? 2000}
+          step={50} 
+        />
+        <div className="flex justify-between text-muted-foreground">
+          <span>{filterOptions?.sqft_min ?? 0} sq ft</span>
+          <span>{filterOptions?.sqft_max ?? 2000} sq ft</span>
+        </div>
       </div>
     </div>
   )
