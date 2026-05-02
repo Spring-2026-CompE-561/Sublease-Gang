@@ -65,7 +65,19 @@ function DesktopNavbar() {
 }
 
 function MobileNavbar() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    router.push(`/listings?q=${encodeURIComponent(trimmed)}`);
+    setQuery("");
+    setIsOpen(false);
+  }
+
   return (
     <div className="block border-b bg-background md:hidden">
       <nav className="container flex h-16 items-center justify-between px-4">
@@ -76,6 +88,17 @@ function MobileNavbar() {
           <SheetContent side="left" className="w-80">
             <div className="pt-4">
               <Logo />
+
+              <form onSubmit={handleSubmit} className="relative mt-6">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search by location, university..."
+                  className="pl-9 rounded-full bg-muted"
+                />
+              </form>
+
               <div className="flex flex-col gap-2 pt-6">
                 <Link href="/listings" onClick={() => setIsOpen(false)}>
                   Browse listings
