@@ -2,11 +2,23 @@
 
 import Logo from "@/components/Logo";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useState } from "react";
-import { Menu, Search } from "lucide-react";
+import {
+  LayoutGrid,
+  MapPin,
+  Menu,
+  MessageCircle,
+  PlusSquare,
+  Search,
+} from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import UserButton from "@/components/UserButton";
 import { useRouter } from "next/navigation";
@@ -17,6 +29,33 @@ export function Navbar() {
       <DesktopNavbar />
       <MobileNavbar />
     </>
+  );
+}
+
+function NavIconLink({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Link
+            href={href}
+            aria-label={label}
+            className={buttonVariants({ variant: "ghost", size: "icon" })}
+          >
+            {children}
+          </Link>
+        }
+      />
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -49,19 +88,19 @@ function DesktopNavbar() {
           />
         </form>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <Link href="/listings" className="text-sm">
-            Browse
-          </Link>
-          <Link href="/map" className="text-sm">
-            Map
-          </Link>
-          <Link href="/list" className="text-sm">
-            List your place
-          </Link>
-          <Link href="/messages" className="text-sm">
-            Messages
-          </Link>
+        <div className="flex shrink-0 items-center gap-1">
+          <NavIconLink href="/listings" label="Browse">
+            <LayoutGrid className="h-5 w-5" />
+          </NavIconLink>
+          <NavIconLink href="/map" label="Map">
+            <MapPin className="h-5 w-5" />
+          </NavIconLink>
+          <NavIconLink href="/list" label="List your place">
+            <PlusSquare className="h-5 w-5" />
+          </NavIconLink>
+          <NavIconLink href="/messages" label="Messages">
+            <MessageCircle className="h-5 w-5" />
+          </NavIconLink>
           <ModeToggle />
           <UserButton />
         </div>
