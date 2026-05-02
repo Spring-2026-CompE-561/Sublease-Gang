@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Filter } from "lucide-react";
 import {
 	AMENITY_OPTIONS,
@@ -107,12 +108,14 @@ function FiltersBody({
 	);
 }
 
-export function ListingBrowseView({ initialQuery = "" }: { initialQuery?: string }) {
+export function ListingBrowseView() {
+	const searchParams = useSearchParams();
+  	const query = searchParams.get("q") ?? "";
 	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
 	const [mobileOpen, setMobileOpen] = useState(false);
-	const [query, setQuery] = useState(initialQuery);
+	
 
 	const filters: BrowseFiltersState = useMemo(
 		() => ({
@@ -140,7 +143,6 @@ export function ListingBrowseView({ initialQuery = "" }: { initialQuery?: string
   		setPriceRange([0, PRICE_FILTER_MAX]);
   		setBedroomFilter(null);
   		setSelectedAmenities(new Set());
-  		setQuery("");
 	}
 
 	function toggleAmenity(id: string) {
