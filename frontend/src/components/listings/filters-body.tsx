@@ -1,7 +1,12 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { AMENITY_OPTIONS, PRICE_FILTER_MAX, UNIVERSITY_OPTIONS } from "@/lib/listings";
+import {
+	AMENITY_OPTIONS,
+	PRICE_FILTER_MAX,
+	SQFT_FILTER_MAX,
+	UNIVERSITY_OPTIONS,
+} from "@/lib/listings";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -17,6 +22,8 @@ import { cn } from "@/lib/utils";
 export function FiltersBody({
 	priceRange,
 	setPriceRange,
+	sqftRange,
+	setSqftRange,
 	bedroomFilter,
 	setBedroomFilter,
 	selectedAmenities,
@@ -27,6 +34,8 @@ export function FiltersBody({
 }: {
 	priceRange: [number, number];
 	setPriceRange: (v: [number, number]) => void;
+	sqftRange: [number, number];
+	setSqftRange: (v: [number, number]) => void;
 	bedroomFilter: number | null;
 	setBedroomFilter: (v: number | null) => void;
 	selectedAmenities: Set<string>;
@@ -80,6 +89,21 @@ export function FiltersBody({
 				<div className="flex justify-between text-sm text-muted-foreground">
 					<span>${priceRange[0]}</span>
 					<span>${priceRange[1]}</span>
+				</div>
+			</div>
+
+			<div className="space-y-3">
+				<h3 className="font-semibold">Square Footage</h3>
+				<Slider
+					min={0}
+					max={SQFT_FILTER_MAX}
+					step={50}
+					value={sqftRange}
+					onValueChange={(v) => setSqftRange(v as [number, number])}
+				/>
+				<div className="flex justify-between text-sm text-muted-foreground">
+					<span>{sqftRange[0]} sq ft</span>
+					<span>{sqftRange[1]} sq ft</span>
 				</div>
 			</div>
 
