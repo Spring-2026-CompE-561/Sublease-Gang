@@ -13,9 +13,9 @@ export default function CtaBanner() {
         </p>
         <div className="mt-8 flex justify-center">
           <Button
+            nativeButton={false}          
             size="lg"
             variant="secondary"
-            nativeButton={false}
             render={<Link href="/list">Get Started</Link>}
           />
         </div>
