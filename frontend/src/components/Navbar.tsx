@@ -36,6 +36,9 @@ function DesktopNavbar() {
         </div>
 
         <div className="flex shrink-0 items-center gap-3">
+          <Link href="/listings" className="text-sm">
+            Browse
+          </Link>
           <Link href="/list" className="text-sm">
             List your place
           </Link>
@@ -60,6 +63,9 @@ function MobileNavbar() {
             <div className="pt-4">
               <Logo />
               <div className="flex flex-col gap-2 pt-6">
+                <Link href="/listings" onClick={() => setIsOpen(false)}>
+                  Browse listings
+                </Link>
                 <Link href="/list" onClick={() => setIsOpen(false)}>
                   List your place
                 </Link>
