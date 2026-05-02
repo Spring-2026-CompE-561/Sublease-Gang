@@ -53,6 +53,9 @@ function DesktopNavbar() {
           <Link href="/listings" className="text-sm">
             Browse
           </Link>
+          <Link href="/map" className="text-sm">
+            Map
+          </Link>
           <Link href="/list" className="text-sm">
             List your place
           </Link>
@@ -102,6 +105,9 @@ function MobileNavbar() {
               <div className="flex flex-col gap-2 pt-6">
                 <Link href="/listings" onClick={() => setIsOpen(false)}>
                   Browse listings
+                </Link>
+                <Link href="/map" onClick={() => setIsOpen(false)}>
+                  Map
                 </Link>
                 <Link href="/list" onClick={() => setIsOpen(false)}>
                   List your place
