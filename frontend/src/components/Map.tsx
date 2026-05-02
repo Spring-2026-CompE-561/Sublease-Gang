@@ -102,7 +102,7 @@ export default function Map({
 					longitude={pin.longitude}
 					onClick={(e) => {
 						e.originalEvent.stopPropagation();
-						setActiveId(pin.id);
+						setActiveId((prev) => (prev === pin.id ? null : pin.id));
 					}}
 					style={{ cursor: "pointer" }}
 				/>
