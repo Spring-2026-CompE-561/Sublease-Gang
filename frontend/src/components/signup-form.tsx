@@ -29,21 +29,29 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL, readApiErrorMessage } from "@/lib/api";
 
+const NAME_REGEX = /^[A-Za-z\s\-']+$/;
+const USERNAME_REGEX = /^\w{3,30}$/;
+const PHONE_STRIP_REGEX = /[\s\-()+]/g;
+
 const signupSchema = z
   .object({
     firstname: z
       .string()
       .min(1, "First name is required.")
-      .max(50, "First name must be at most 50 characters."),
+      .max(50, "First name must be at most 50 characters.")
+      .regex(NAME_REGEX, "Must contain only letters, spaces, or hyphens."),
     lastname: z
       .string()
       .min(1, "Last name is required.")
-      .max(50, "Last name must be at most 50 characters."),
+      .max(50, "Last name must be at most 50 characters.")
+      .regex(NAME_REGEX, "Must contain only letters, spaces, or hyphens."),
     email: z.email("Invalid email address."),
     username: z
       .string()
-      .min(3, "Username must be at least 3 characters.")
-      .max(32, "Username must be at most 32 characters."),
+      .regex(
+        USERNAME_REGEX,
+        "Must be 3-30 characters, letters/numbers/underscores only.",
+      ),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters.")
@@ -55,7 +63,15 @@ const signupSchema = z
     contact_phone: z
       .string()
       .max(20, "Phone must be at most 20 characters.")
-      .optional(),
+      .optional()
+      .refine(
+        (value) => {
+          if (!value) return true;
+          const digits = value.replace(PHONE_STRIP_REGEX, "");
+          return /^\d+$/.test(digits) && digits.length >= 7 && digits.length <= 15;
+        },
+        { message: "Must be a valid phone number (7-15 digits)." },
+      ),
     description: z
       .string()
       .max(500, "Bio must be at most 500 characters.")
