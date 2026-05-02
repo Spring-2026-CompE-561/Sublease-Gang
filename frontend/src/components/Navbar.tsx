@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
-import { Menu, Search, User } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import UserButton from "@/components/UserButton";
 
@@ -69,7 +69,6 @@ function MobileNavbar() {
                 <Link href="/list" onClick={() => setIsOpen(false)}>
                   List your place
                 </Link>
-                <UserButton />
               </div>
             </div>
           </SheetContent>
@@ -79,9 +78,7 @@ function MobileNavbar() {
 
         <div className="flex items-center gap-2">
           <ModeToggle />
-        <Button variant="ghost" size="icon">
-          <User />
-        </Button>
+          <UserButton />
         </div>
       </nav>
     </div>
