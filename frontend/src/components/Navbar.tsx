@@ -59,6 +59,9 @@ function DesktopNavbar() {
           <Link href="/list" className="text-sm">
             List your place
           </Link>
+          <Link href="/messages" className="text-sm">
+            Messages
+          </Link>
           <ModeToggle />
           <UserButton />
         </div>
@@ -111,6 +114,9 @@ function MobileNavbar() {
                 </Link>
                 <Link href="/list" onClick={() => setIsOpen(false)}>
                   List your place
+                </Link>
+                <Link href="/messages" onClick={() => setIsOpen(false)}>
+                  Messages
                 </Link>
               </div>
             </div>
