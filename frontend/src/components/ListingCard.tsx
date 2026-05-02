@@ -6,15 +6,16 @@ interface ListingCardProps {
 	listing: Listing;
 }
 
-const dateFormat: Intl.DateTimeFormatOptions = {
+const dateFormatUtc: Intl.DateTimeFormatOptions = {
+	timeZone: "UTC",
 	month: "short",
 	day: "numeric",
 	year: "numeric",
 };
 
 function formatRange(start: string, end: string) {
-	const s = new Date(start).toLocaleDateString("en-US", dateFormat);
-	const e = new Date(end).toLocaleDateString("en-US", dateFormat);
+	const s = new Date(start).toLocaleDateString("en-US", dateFormatUtc);
+	const e = new Date(end).toLocaleDateString("en-US", dateFormatUtc);
 	return `${s} – ${e}`;
 }
 
