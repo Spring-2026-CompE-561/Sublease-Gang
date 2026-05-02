@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { API_BASE_URL, readApiErrorMessage } from "@/lib/api";
 
 const signupSchema = z
   .object({
@@ -34,7 +35,7 @@ const signupSchema = z
       .max(32, "Username must be at most 32 characters."),
     password: z
       .string()
-      .min(4, "Password must be at least 4 characters.")
+      .min(8, "Password must be at least 8 characters.")
       .max(32, "Password must be at most 32 characters."),
     confirmPassword: z.string(),
   })
@@ -61,7 +62,7 @@ export function SignupForm({
   const router = useRouter();
 
   async function onSubmit(data: SignupValues) {
-    const res = await fetch("http://localhost:8000/api/v1/auth/signup", {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/signup`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -75,8 +76,8 @@ export function SignupForm({
     });
 
     if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      toast.error("Registration failed: " + (errorData?.detail || "Unknown error"));
+      const message = await readApiErrorMessage(res);
+      toast.error(`Registration failed: ${message ?? "Unknown error"}`);
       return;
     }
 
