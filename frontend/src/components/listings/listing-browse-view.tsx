@@ -25,6 +25,7 @@ export function ListingBrowseView() {
 	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
+	const [university, setUniversity] = useState<string | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
 
 	const filters: BrowseFiltersState = useMemo(
@@ -33,8 +34,9 @@ export function ListingBrowseView() {
 			priceMax: priceRange[1],
 			bedrooms: bedroomFilter,
 			amenities: selectedAmenities,
+			university,
 		}),
-		[priceRange, bedroomFilter, selectedAmenities],
+		[priceRange, bedroomFilter, selectedAmenities, university],
 	);
 
 	const filtered = useMemo(
@@ -55,6 +57,7 @@ export function ListingBrowseView() {
 		setPriceRange([0, PRICE_FILTER_MAX]);
 		setBedroomFilter(null);
 		setSelectedAmenities(new Set());
+		setUniversity(null);
 	}
 
 	const filterProps = {
@@ -64,6 +67,8 @@ export function ListingBrowseView() {
 		setBedroomFilter,
 		selectedAmenities,
 		toggleAmenity,
+		university,
+		setUniversity,
 		onReset: resetFilters,
 	};
 

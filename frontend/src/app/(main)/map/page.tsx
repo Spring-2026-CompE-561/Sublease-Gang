@@ -28,6 +28,7 @@ export default function MapPage() {
 	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
+	const [university, setUniversity] = useState<string | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [flyTo, setFlyTo] = useState<FlyToTarget | undefined>();
 
@@ -54,8 +55,9 @@ export default function MapPage() {
 			priceMax: priceRange[1],
 			bedrooms: bedroomFilter,
 			amenities: selectedAmenities,
+			university,
 		}),
-		[priceRange, bedroomFilter, selectedAmenities],
+		[priceRange, bedroomFilter, selectedAmenities, university],
 	);
 
 	const filtered = useMemo(
@@ -86,6 +88,7 @@ export default function MapPage() {
 		setPriceRange([0, PRICE_FILTER_MAX]);
 		setBedroomFilter(null);
 		setSelectedAmenities(new Set());
+		setUniversity(null);
 	}
 
 	const filterProps = {
@@ -95,6 +98,8 @@ export default function MapPage() {
 		setBedroomFilter,
 		selectedAmenities,
 		toggleAmenity,
+		university,
+		setUniversity,
 		onReset: resetFilters,
 	};
 

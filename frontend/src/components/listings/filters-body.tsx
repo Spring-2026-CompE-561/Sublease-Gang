@@ -1,8 +1,15 @@
 "use client";
 
-import { AMENITY_OPTIONS, PRICE_FILTER_MAX } from "@/lib/listings";
+import { ChevronDown } from "lucide-react";
+import { AMENITY_OPTIONS, PRICE_FILTER_MAX, UNIVERSITY_OPTIONS } from "@/lib/listings";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -14,6 +21,8 @@ export function FiltersBody({
 	setBedroomFilter,
 	selectedAmenities,
 	toggleAmenity,
+	university,
+	setUniversity,
 	onReset,
 }: {
 	priceRange: [number, number];
@@ -22,12 +31,43 @@ export function FiltersBody({
 	setBedroomFilter: (v: number | null) => void;
 	selectedAmenities: Set<string>;
 	toggleAmenity: (id: string) => void;
+	university: string | null;
+	setUniversity: (v: string | null) => void;
 	onReset: () => void;
 }) {
 	const beds = [1, 2, 3, 4] as const;
 
 	return (
 		<div className="space-y-8">
+			<div className="space-y-3">
+				<h3 className="font-semibold">University</h3>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								variant="outline"
+								className="w-full justify-between rounded-xl font-normal"
+							>
+								<span className={cn(!university && "text-muted-foreground")}>
+									{university ?? "Any university"}
+								</span>
+								<ChevronDown className="size-4 opacity-60" />
+							</Button>
+						}
+					/>
+					<DropdownMenuContent className="w-[var(--anchor-width)]">
+						<DropdownMenuItem onClick={() => setUniversity(null)}>
+							Any university
+						</DropdownMenuItem>
+						{UNIVERSITY_OPTIONS.map((u) => (
+							<DropdownMenuItem key={u} onClick={() => setUniversity(u)}>
+								{u}
+							</DropdownMenuItem>
+						))}
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</div>
+
 			<div className="space-y-3">
 				<h3 className="font-semibold">Price Range</h3>
 				<Slider
