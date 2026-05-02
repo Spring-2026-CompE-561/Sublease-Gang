@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Filter } from "lucide-react";
 import {
 	filterBrowseListings,
@@ -22,11 +23,14 @@ import {
 } from "@/components/ui/sheet";
 
 export function ListingBrowseView() {
+	const searchParams = useSearchParams();
+  	const query = searchParams.get("q") ?? "";
 	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
 	const [university, setUniversity] = useState<string | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
+	
 
 	const filters: BrowseFiltersState = useMemo(
 		() => ({
@@ -39,10 +43,17 @@ export function ListingBrowseView() {
 		[priceRange, bedroomFilter, selectedAmenities, university],
 	);
 
-	const filtered = useMemo(
-		() => filterBrowseListings(MOCK_BROWSE_LISTINGS, filters),
-		[filters],
-	);
+	const filtered = useMemo(() => {
+  		const base = filterBrowseListings(MOCK_BROWSE_LISTINGS, filters);
+  		const trimmed = query.trim().toLowerCase();
+  		if (!trimmed) return base;
+  			return base.filter(
+    	(l) =>
+      	l.title.toLowerCase().includes(trimmed) ||
+      	l.location.toLowerCase().includes(trimmed) ||
+      	l.university.toLowerCase().includes(trimmed),
+  		);
+	}, [filters, query]);
 
 	function toggleAmenity(id: string) {
 		setSelectedAmenities((prev) => {
