@@ -5,14 +5,24 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-  SheetFooter,
+  SheetFooter 
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, 
-         DropdownMenuContent, 
-         DropdownMenuTrigger, 
-         DropdownMenuRadioItem, 
-         DropdownMenuRadioGroup } from "@/components/ui/dropdown-menu"
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuTrigger, 
+  DropdownMenuRadioItem, 
+  DropdownMenuRadioGroup 
+} from "@/components/ui/dropdown-menu"
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox"
 import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -30,6 +40,9 @@ type FilterOptions = {
 export function FilterPanel() {
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   const [selectedRoomType, setSelectedRoomType] = useState<string>("");
+  const [selectedCollege, setSelectedCollege] = useState<string>("");
+
+  const collegeNames = filterOptions?.colleges.map((c) => String(c.name)) ?? []
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -44,11 +57,32 @@ export function FilterPanel() {
     <div className="space-y-8">
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Price Range</h3>
-        <Slider defaultValue={[0, 2000]} max={2000} step={50} />
+        <Slider defaultValue={[filterOptions?.price_min ?? 0, filterOptions?.price_max ?? 2000]}
+          min={filterOptions?.price_min ?? 0}
+          max={filterOptions?.price_max ?? 2000}
+          step={50} 
+        />
         <div className="flex justify-between text-muted-foreground">
-          <span>$0</span>
-          <span>$2000</span>
+          <span>${filterOptions?.price_min ?? 0}</span>
+          <span>${filterOptions?.price_max ?? 2000}</span>
         </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">University</h3>
+        <Combobox items={collegeNames} onValueChange={(value) => setSelectedCollege(value as string)}>
+          <ComboboxInput placeholder="Search college..." />
+          <ComboboxContent>
+            <ComboboxEmpty>No college found.</ComboboxEmpty>
+            <ComboboxList>
+              {(item) => (
+                <ComboboxItem key={item} value={item}>
+                  {item}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </div>
 
       <div className="space-y-4">
@@ -74,22 +108,6 @@ export function FilterPanel() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Amenities</h3>
-
-        {["WiFi", "Furnished", "Utilities Included", "Parking", "Laundry", "Kitchen"].map(
-          (item) => {
-            const id = item.toLowerCase().replace(/\s+/g, "-")
-            return (
-              <div key={id} className="flex items-center space-x-3">
-                <Checkbox id={id} />
-                <Label htmlFor={id}>{item}</Label>
-              </div>
-            )
-          }
-        )}
-      </div>
     </div>
   )
 }
@@ -97,8 +115,8 @@ export function FilterPanel() {
 export function MobileFilterSheet() {
   return (
     <Sheet>
-      <SheetTrigger className="sm:hidden">
-        <Button variant="outline">Filters</Button>
+      <SheetTrigger className="sm:hidden inline-flex items-center justify-center rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground">
+        Filters
       </SheetTrigger>
 
       <SheetContent side="left" className="w-[320px] sm:w-[380px] overflow-y-auto">
