@@ -23,6 +23,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { API_BASE_URL, readApiErrorMessage } from "@/lib/api";
+import { saveTokens } from "@/lib/auth";
 
 const formSchema = z.object({
   email: z.email("Invalid email address."),
@@ -43,7 +45,7 @@ export function LoginForm({
   });
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
-    const res = await fetch("http://localhost:8000/api/v1/auth/login", {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -55,15 +57,23 @@ export function LoginForm({
     });
 
     if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      toast.error("Login failed: " + (errorData?.detail || "Invalid credentials"));
+      const message = await readApiErrorMessage(res);
+      toast.error(`Login failed: ${message ?? "Invalid credentials"}`);
       return;
     }
 
-    const returnedData = await res.json();
-    if (returnedData.access_token) {
-      localStorage.setItem("access_token", returnedData.access_token);
+    const returnedData = (await res.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+    };
+    if (!returnedData.access_token) {
+      toast.error("Login failed: missing access token in response.");
+      return;
     }
+    saveTokens({
+      access_token: returnedData.access_token,
+      refresh_token: returnedData.refresh_token,
+    });
     toast.success("Login successful");
     router.push("/");
     router.refresh();
