@@ -127,7 +127,10 @@ export function SignupForm({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="form-signup-firstname">
-                        First name
+                        First name{" "}
+                        <span aria-hidden="true" className="text-destructive">
+                          *
+                        </span>
                       </FieldLabel>
                       <Input
                         {...field}
@@ -149,7 +152,10 @@ export function SignupForm({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="form-signup-lastname">
-                        Last name
+                        Last name{" "}
+                        <span aria-hidden="true" className="text-destructive">
+                          *
+                        </span>
                       </FieldLabel>
                       <Input
                         {...field}
@@ -172,7 +178,12 @@ export function SignupForm({
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="form-signup-email">Email</FieldLabel>
+                      <FieldLabel htmlFor="form-signup-email">
+                        Email{" "}
+                        <span aria-hidden="true" className="text-destructive">
+                          *
+                        </span>
+                      </FieldLabel>
                       <Input
                         {...field}
                         id="form-signup-email"
@@ -192,7 +203,10 @@ export function SignupForm({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="form-signup-username">
-                        Username
+                        Username{" "}
+                        <span aria-hidden="true" className="text-destructive">
+                          *
+                        </span>
                       </FieldLabel>
                       <Input
                         {...field}
@@ -215,7 +229,10 @@ export function SignupForm({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="form-signup-password">
-                        Password
+                        Password{" "}
+                        <span aria-hidden="true" className="text-destructive">
+                          *
+                        </span>
                       </FieldLabel>
                       <Input
                         {...field}
@@ -237,7 +254,10 @@ export function SignupForm({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="form-signup-confirm-password">
-                        Confirm password
+                        Confirm password{" "}
+                        <span aria-hidden="true" className="text-destructive">
+                          *
+                        </span>
                       </FieldLabel>
                       <Input
                         {...field}
