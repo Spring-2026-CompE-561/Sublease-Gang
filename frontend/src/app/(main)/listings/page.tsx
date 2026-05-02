@@ -1,9 +1,14 @@
 import { ListingBrowseView } from "@/components/listings/listing-browse-view";
 
-export default function AllListingsPage() {
-	return (
-		<main className="flex-1">
-			<ListingBrowseView />
-		</main>
-	);
+type Props = {
+  searchParams: Promise<{ q?: string }>;
+};
+
+export default async function AllListingsPage({ searchParams }: Props) {
+  const { q } = await searchParams;
+  return (
+    <main className="flex-1">
+      <ListingBrowseView initialQuery={q ?? ""} />
+    </main>
+  );
 }
