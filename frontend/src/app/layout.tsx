@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Manrope } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -49,9 +47,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-          <Navbar />
+          
           {children}
-          <Footer />
+          
           <Toaster />
           </QueryProvider>
         </ThemeProvider>
