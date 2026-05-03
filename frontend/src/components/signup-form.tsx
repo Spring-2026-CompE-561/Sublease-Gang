@@ -181,6 +181,27 @@ export function SignupForm({
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
     });
+
+    if (iconFile) {
+      const formData = new FormData();
+      formData.append("file", iconFile);
+      try {
+        const iconRes = await fetch(
+          `${API_BASE_URL}/api/v1/profiles/me/icon`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${tokens.access_token}` },
+            body: formData,
+          },
+        );
+        if (!iconRes.ok) {
+          toast.warning("Account created, but profile photo upload failed.");
+        }
+      } catch {
+        toast.warning("Account created, but profile photo upload failed.");
+      }
+    }
+
     toast.success("Welcome to SubLease!");
     router.push("/");
     router.refresh();
