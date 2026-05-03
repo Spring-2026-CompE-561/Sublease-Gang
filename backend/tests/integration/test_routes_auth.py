@@ -20,10 +20,13 @@ class TestSignup:
         resp = client.post("/api/v1/auth/signup", json=_signup_payload())
         assert resp.status_code == 201
         data = resp.json()
-        assert data["email"] == "new@example.com"
-        assert data["username"] == "newuser"
-        assert "password" not in data
-        # Profile row should have been created in the same transaction.
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert data["token_type"] == "bearer"
+        # User and profile rows should have been created in the same transaction.
+        user = db_session.query(User).filter(User.email == "new@example.com").first()
+        assert user is not None
+        assert user.username == "newuser"
         profile = (
             db_session.query(Profile).filter(Profile.username == "newuser").first()
         )
