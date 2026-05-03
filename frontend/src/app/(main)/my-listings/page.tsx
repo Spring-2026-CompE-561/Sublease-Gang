@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { ListingBrowseCard } from "@/components/listings/listing-browse-card";
+import { ListingManageCard } from "@/components/listings/listing-manage-card";
 import { MOCK_MY_LISTINGS } from "@/lib/listings";
 
 export default function MyListingsPage() {
@@ -42,7 +42,7 @@ export default function MyListingsPage() {
 				{MOCK_MY_LISTINGS.length > 0 ? (
 					<div className="grid auto-rows-max gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						{MOCK_MY_LISTINGS.map((listing) => (
-							<ListingBrowseCard key={listing.id} listing={listing} />
+							<ListingManageCard key={listing.id} listing={listing} />
 						))}
 					</div>
 				) : (
