@@ -40,8 +40,8 @@ class SignupRequest(BaseModel):
     password: str = Field(min_length=8, max_length=32)
 
     # Profile fields
-    firstname: str
-    lastname: str
+    firstname: str = Field(max_length=50)
+    lastname: str = Field(max_length=50)
     icon: str | None = None
     description: str | None = None
     contact_email: EmailStr | None = None
