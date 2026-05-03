@@ -136,14 +136,17 @@ export default function MapPage() {
 									</Button>
 								}
 							/>
-							<SheetContent side="left" className="flex w-[min(100vw-2rem,380px)] flex-col gap-0 overflow-y-auto">
-								<SheetHeader>
+							<SheetContent
+								side="left"
+								className="flex h-dvh max-h-dvh w-[min(100vw-1rem,24rem)] flex-col gap-0 overflow-hidden border-r p-0"
+							>
+								<SheetHeader className="shrink-0 space-y-0 border-b px-4 pb-4 pt-6">
 									<SheetTitle>Filters</SheetTitle>
 								</SheetHeader>
-								<div className="flex-1 py-6">
+								<div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 [-webkit-overflow-scrolling:touch]">
 									<FiltersBody {...filterProps} />
 								</div>
-								<SheetFooter className="border-t pt-4">
+								<SheetFooter className="shrink-0 gap-2 border-t bg-background/95 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm supports-backdrop-filter:bg-background/80">
 									<Button type="button" className="w-full" onClick={() => setMobileOpen(false)}>
 										Show results
 									</Button>
