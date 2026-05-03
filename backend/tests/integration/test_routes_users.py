@@ -155,3 +155,87 @@ class TestAuthenticatedUserRoutes:
 
         me_resp = client.get("/api/v1/users/me", headers=headers)
         assert me_resp.status_code == 401
+
+    def test_delete_me_with_full_data_graph(
+        self, client, make_user, make_listing, make_conversation, db_session
+    ):
+        """A user with listings, conversations, and messages can still delete.
+
+        Regression guard for the FK-cascade work in delete_user — without the
+        manual cleanup in repository/user.py this would 500 on IntegrityError.
+        """
+        from app.models.conversations import Conversation
+        from app.models.listing import Listing
+        from app.models.messages import Message
+        from app.models.profiles import Profile
+        from app.models.token import Token
+        from app.models.user import User
+
+        headers = self._register_and_login(client)
+        me_id = client.get("/api/v1/users/me", headers=headers).json()["id"]
+
+        # Build out related data directly against the same test DB session.
+        other = make_user()
+        third = make_user()
+        own_listing = make_listing(host_id=me_id)
+        other_listing = make_listing(host_id=other.id)
+
+        db_session.add(
+            Profile(
+                user_id=me_id,
+                firstname="Me",
+                lastname="User",
+                username=f"profile_{me_id}",
+            )
+        )
+        convo_as_participant = make_conversation(
+            listing_id=other_listing.id,
+            user_one_id=me_id,
+            user_two_id=other.id,
+        )
+        convo_on_my_listing = make_conversation(
+            listing_id=own_listing.id,
+            user_one_id=other.id,
+            user_two_id=third.id,
+        )
+        db_session.add(
+            Message(
+                conversation_id=convo_as_participant.id,
+                sender_id=me_id,
+                content="hi",
+            )
+        )
+        db_session.add(
+            Message(
+                conversation_id=convo_on_my_listing.id,
+                sender_id=other.id,
+                content="chatting on my listing",
+            )
+        )
+        db_session.commit()
+        convo_on_my_listing_id = convo_on_my_listing.id
+
+        delete_resp = client.delete("/api/v1/users/me", headers=headers)
+        assert delete_resp.status_code == 204
+
+        # User row and every dependent row are gone.
+        assert db_session.query(User).filter(User.id == me_id).count() == 0
+        assert db_session.query(Profile).filter(Profile.user_id == me_id).count() == 0
+        assert db_session.query(Token).filter(Token.user_id == me_id).count() == 0
+        assert db_session.query(Listing).filter(Listing.host_id == me_id).count() == 0
+        assert (
+            db_session.query(Conversation)
+            .filter(
+                (Conversation.user_one_id == me_id)
+                | (Conversation.user_two_id == me_id)
+                | (Conversation.id == convo_on_my_listing_id)
+            )
+            .count()
+            == 0
+        )
+        assert db_session.query(Message).filter(Message.sender_id == me_id).count() == 0
+
+        # Other users untouched, and old token is now 401.
+        assert db_session.query(User).filter(User.id == other.id).count() == 1
+        assert db_session.query(User).filter(User.id == third.id).count() == 1
+        assert client.get("/api/v1/users/me", headers=headers).status_code == 401

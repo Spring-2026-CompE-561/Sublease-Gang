@@ -28,12 +28,15 @@ function UserButton() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {isLoggedIn ? (
-          <>
-            <DropdownMenuItem onClick={() => router.push("/profile")}>
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
-          </>
+        <>
+        <DropdownMenuItem onClick={() => router.push("/profile")}>
+        Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/saved-listings")}>
+        Saved listings
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
+        </>
         ) : (
           <>
             <DropdownMenuItem onClick={() => router.push("/signin")}>
