@@ -1,6 +1,12 @@
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.auth import hash_password
+from app.models.conversations import Conversation
+from app.models.listing import Listing
+from app.models.messages import Message
+from app.models.profiles import Profile
+from app.models.token import Token
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 
@@ -53,5 +59,53 @@ def disable_user(db: Session, user: User) -> User:
 
 
 def delete_user(db: Session, user: User) -> None:
+    """Hard-delete a user and every row that references them.
+
+    No FK cascades are configured at the schema level, so we explicitly walk
+    the dependency graph in FK-safe order. Everything happens in a single
+    transaction — if any step fails, the whole delete rolls back.
+    """
+    listing_ids = [
+        listing_id
+        for (listing_id,) in db.query(Listing.id)
+        .filter(Listing.host_id == user.id)
+        .all()
+    ]
+
+    # Conversations the user touches: as a participant on either side, OR on a
+    # listing they host (covers the case where two other users were chatting
+    # about this user's listing).
+    conversation_id_query = db.query(Conversation.id).filter(
+        or_(
+            Conversation.user_one_id == user.id,
+            Conversation.user_two_id == user.id,
+            Conversation.listing_id.in_(listing_ids) if listing_ids else False,
+        )
+    )
+    conversation_ids = [cid for (cid,) in conversation_id_query.all()]
+
+    if conversation_ids:
+        db.query(Message).filter(
+            Message.conversation_id.in_(conversation_ids)
+        ).delete(synchronize_session=False)
+    # Catch any messages this user sent in conversations we didn't pick up
+    # above (defensive — shouldn't exist, but keeps the FK happy).
+    db.query(Message).filter(Message.sender_id == user.id).delete(
+        synchronize_session=False
+    )
+    if conversation_ids:
+        db.query(Conversation).filter(Conversation.id.in_(conversation_ids)).delete(
+            synchronize_session=False
+        )
+    if listing_ids:
+        db.query(Listing).filter(Listing.id.in_(listing_ids)).delete(
+            synchronize_session=False
+        )
+    db.query(Profile).filter(Profile.user_id == user.id).delete(
+        synchronize_session=False
+    )
+    db.query(Token).filter(Token.user_id == user.id).delete(
+        synchronize_session=False
+    )
     db.delete(user)
     db.commit()
