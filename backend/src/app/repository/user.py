@@ -75,14 +75,16 @@ def delete_user(db: Session, user: User) -> None:
     # Conversations the user touches: as a participant on either side, OR on a
     # listing they host (covers the case where two other users were chatting
     # about this user's listing).
-    conversation_id_query = db.query(Conversation.id).filter(
-        or_(
-            Conversation.user_one_id == user.id,
-            Conversation.user_two_id == user.id,
-            Conversation.listing_id.in_(listing_ids) if listing_ids else False,
-        )
-    )
-    conversation_ids = [cid for (cid,) in conversation_id_query.all()]
+    convo_clauses = [
+        Conversation.user_one_id == user.id,
+        Conversation.user_two_id == user.id,
+    ]
+    if listing_ids:
+        convo_clauses.append(Conversation.listing_id.in_(listing_ids))
+    conversation_ids = [
+        cid
+        for (cid,) in db.query(Conversation.id).filter(or_(*convo_clauses)).all()
+    ]
 
     if conversation_ids:
         db.query(Message).filter(
