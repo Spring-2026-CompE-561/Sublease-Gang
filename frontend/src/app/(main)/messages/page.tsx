@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { API_BASE_URL, ACCESS_TOKEN_KEY, readApiErrorMessage } from "@/lib/api";
 
 type Conversation = {
 	id: number;
@@ -42,7 +43,7 @@ export default function MessagesPage() {
 
 	useEffect(() => {
 		async function load() {
-			const token = localStorage.getItem("access_token");
+			const token = localStorage.getItem(ACCESS_TOKEN_KEY);
 			if (!token) {
 				setNeedsSignIn(true);
 				setLoading(false);
@@ -50,10 +51,10 @@ export default function MessagesPage() {
 			}
 
 			const headers = { Authorization: `Bearer ${token}` };
-			const meRes = await fetch("http://localhost:8000/api/v1/users/me", {
+			const meRes = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
 				headers,
 			});
-			const convRes = await fetch("http://localhost:8000/api/v1/conversations/", {
+			const convRes = await fetch(`${API_BASE_URL}/api/v1/conversations/`, {
 				headers,
 			});
 
@@ -88,9 +89,9 @@ export default function MessagesPage() {
 
 		let cancelled = false;
 		async function loadMsgs() {
-			const token = localStorage.getItem("access_token");
+			const token = localStorage.getItem(ACCESS_TOKEN_KEY);
 			const res = await fetch(
-				`http://localhost:8000/api/v1/conversations/${activeId}/messages`,
+				`${API_BASE_URL}/api/v1/conversations/${activeId}/messages`,
 				{ headers: { Authorization: `Bearer ${token}` } },
 			);
 			if (cancelled) return;
@@ -120,9 +121,9 @@ export default function MessagesPage() {
 		if (!text || activeId == null) return;
 
 		setSending(true);
-		const token = localStorage.getItem("access_token");
+		const token = localStorage.getItem(ACCESS_TOKEN_KEY);
 		const res = await fetch(
-			`http://localhost:8000/api/v1/conversations/${activeId}/messages`,
+			`${API_BASE_URL}/api/v1/conversations/${activeId}/messages`,
 			{
 				method: "POST",
 				headers: {
@@ -135,8 +136,8 @@ export default function MessagesPage() {
 		setSending(false);
 
 		if (!res.ok) {
-			const err = await res.json().catch(() => ({}));
-			toast.error("Could not send: " + (err?.detail || res.statusText));
+			const msg = (await readApiErrorMessage(res)) || res.statusText;
+			toast.error("Could not send: " + msg);
 			return;
 		}
 
