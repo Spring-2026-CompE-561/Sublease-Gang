@@ -167,25 +167,7 @@ export function SignupForm({
       return;
     }
 
-    const loginRes = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: data.email,
-        password: data.password,
-      }),
-    });
-
-    if (!loginRes.ok) {
-      toast.success("Account created. Please sign in to continue.");
-      router.push("/signin");
-      return;
-    }
-
-    const tokens = (await loginRes.json()) as {
+    const tokens = (await res.json()) as {
       access_token?: string;
       refresh_token?: string;
     };
