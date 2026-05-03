@@ -21,6 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { API_BASE_URL, ACCESS_TOKEN_KEY, readApiErrorMessage } from "@/lib/api";
 
 // TODO: lat/lng should come from a map picker. hardcoded for now
 const DEFAULT_LAT = 0;
@@ -71,7 +72,7 @@ export function ListingForm({
       return;
     }
 
-    const token = localStorage.getItem("access_token");
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
     if (!token) {
       toast.error("You need to sign in first");
       router.push("/signin");
@@ -94,7 +95,7 @@ export function ListingForm({
     // console.log(payload);
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/listings/", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/listings/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -104,8 +105,8 @@ export function ListingForm({
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        toast.error("Could not post listing: " + (err?.detail || res.statusText));
+        const msg = (await readApiErrorMessage(res)) || res.statusText;
+        toast.error("Could not post listing: " + msg);
         return;
       }
 
