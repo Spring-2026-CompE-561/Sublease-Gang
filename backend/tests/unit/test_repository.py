@@ -114,6 +114,146 @@ class TestUserRepository:
         delete_user(db_session, user)
         assert get_user_by_id(db_session, uid) is None
 
+    def test_delete_user_cascades_all_owned_data(
+        self, db_session, make_user, make_listing, make_conversation
+    ):
+        """A user with the full set of related data should be fully removed."""
+        from app.models.conversations import Conversation
+        from app.models.listing import Listing
+        from app.models.messages import Message
+        from app.models.profiles import Profile
+        from app.models.token import Token
+
+        user = make_user()
+        other = make_user()
+        third = make_user()
+        uid = user.id
+
+        # Profile
+        profile = Profile(
+            user_id=user.id,
+            firstname="Test",
+            lastname="User",
+            username=f"profile_{user.id}",
+        )
+        db_session.add(profile)
+
+        # Tokens
+        db_session.add(
+            Token(user_id=user.id, token_type="bearer", access_token="a")
+        )
+        db_session.add(
+            Token(user_id=user.id, token_type="bearer", refresh_token="r")
+        )
+
+        # Listing owned by the user
+        own_listing = make_listing(host_id=user.id)
+        # Listing owned by someone else (control — must NOT be deleted)
+        other_listing = make_listing(host_id=other.id)
+
+        # Conversation: user is a participant on someone else's listing
+        convo_as_participant = make_conversation(
+            listing_id=other_listing.id,
+            user_one_id=user.id,
+            user_two_id=other.id,
+        )
+        # Conversation: user hosts the listing, two OTHER users are talking
+        convo_on_my_listing = make_conversation(
+            listing_id=own_listing.id,
+            user_one_id=other.id,
+            user_two_id=third.id,
+        )
+        # Control conversation: doesn't involve user at all
+        control_listing = make_listing(host_id=other.id)
+        convo_unrelated = make_conversation(
+            listing_id=control_listing.id,
+            user_one_id=other.id,
+            user_two_id=third.id,
+        )
+
+        # Messages across all three conversations
+        db_session.add(
+            Message(
+                conversation_id=convo_as_participant.id,
+                sender_id=user.id,
+                content="hi from user",
+            )
+        )
+        db_session.add(
+            Message(
+                conversation_id=convo_as_participant.id,
+                sender_id=other.id,
+                content="reply from other",
+            )
+        )
+        db_session.add(
+            Message(
+                conversation_id=convo_on_my_listing.id,
+                sender_id=other.id,
+                content="chatting on user's listing",
+            )
+        )
+        db_session.add(
+            Message(
+                conversation_id=convo_unrelated.id,
+                sender_id=third.id,
+                content="unrelated chat",
+            )
+        )
+        db_session.commit()
+
+        unrelated_convo_id = convo_unrelated.id
+        unrelated_listing_id = control_listing.id
+        convo_on_my_listing_id = convo_on_my_listing.id
+
+        delete_user(db_session, user)
+
+        # User and everything they owned is gone
+        assert get_user_by_id(db_session, uid) is None
+        assert db_session.query(Profile).filter(Profile.user_id == uid).count() == 0
+        assert db_session.query(Token).filter(Token.user_id == uid).count() == 0
+        assert db_session.query(Listing).filter(Listing.host_id == uid).count() == 0
+        assert (
+            db_session.query(Conversation)
+            .filter(
+                (Conversation.user_one_id == uid)
+                | (Conversation.user_two_id == uid)
+            )
+            .count()
+            == 0
+        )
+        assert (
+            db_session.query(Conversation)
+            .filter(Conversation.id == convo_on_my_listing_id)
+            .count()
+            == 0
+        )
+        assert (
+            db_session.query(Message).filter(Message.sender_id == uid).count() == 0
+        )
+
+        # Other users and unrelated data are untouched
+        assert get_user_by_id(db_session, other.id) is not None
+        assert get_user_by_id(db_session, third.id) is not None
+        assert (
+            db_session.query(Listing)
+            .filter(Listing.id == unrelated_listing_id)
+            .count()
+            == 1
+        )
+        assert (
+            db_session.query(Conversation)
+            .filter(Conversation.id == unrelated_convo_id)
+            .count()
+            == 1
+        )
+        assert (
+            db_session.query(Message)
+            .filter(Message.conversation_id == unrelated_convo_id)
+            .count()
+            == 1
+        )
+
 
 # ── Token Repository ─────────────────────────────────────────────────────────
 
