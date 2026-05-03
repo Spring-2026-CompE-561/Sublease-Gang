@@ -3,10 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowLeft, Calendar, MapPin, Star } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { MessageHostButton } from "@/components/MessageHostButton";
 import { getBrowseListingById } from "@/lib/listings";
-import { cn } from "@/lib/utils";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -136,15 +135,11 @@ export default async function ListingDetailPage({ params }: Props) {
 							<span className="text-base font-normal text-muted-foreground"> / month</span>
 						</p>
 						<p className="mt-1 text-sm text-muted-foreground capitalize">{listing.room_type}</p>
-						<Link
-							href="/list"
-							className={cn(
-								buttonVariants({ variant: "default", size: "default" }),
-								"mt-6 w-full justify-center rounded-xl",
-							)}
-						>
-							Contact host
-						</Link>
+						<MessageHostButton
+							listingId={listing.id}
+							hostId={listing.host_id}
+							className="mt-6 w-full justify-center rounded-xl"
+						/>
 						<p className="mt-3 text-center text-xs text-muted-foreground">You won&apos;t be charged yet.</p>
 					</Card>
 				</div>
