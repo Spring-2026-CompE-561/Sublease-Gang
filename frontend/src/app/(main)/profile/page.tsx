@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { User, Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,8 +18,51 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { API_BASE_URL, readApiErrorMessage } from "@/lib/api";
+import { clearTokens, getAccessToken } from "@/lib/auth";
 
 export default function Profile() {
+    const router = useRouter();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    async function handleDeleteAccount() {
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+            toast.error("You must be signed in to delete your account.");
+            router.push("/signin");
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
+
+            if (!response.ok) {
+                const apiErrorMessage = await readApiErrorMessage(response);
+                toast.error(
+                    `Failed to delete account: ${apiErrorMessage ?? response.statusText}`,
+                );
+                setIsDeleting(false);
+                return;
+            }
+
+            clearTokens();
+            setDeleteDialogOpen(false);
+            toast.success("Your account has been deleted.");
+            router.push("/");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            toast.error(`Failed to delete account: ${message}`);
+            setIsDeleting(false);
+        }
+    }
+
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="max-w-3xl mx-auto space-y-6">
@@ -94,7 +140,7 @@ export default function Profile() {
                     Sign Out
                 </Button>
                 <Separator />
-                <Dialog>
+                <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                     <DialogTrigger
                         render={
                             <Button
@@ -115,7 +161,11 @@ export default function Profile() {
                         <DialogFooter>
                             <DialogClose
                                 render={
-                                    <Button variant="outline" className="min-h-[44px] text-sm">
+                                    <Button
+                                        variant="outline"
+                                        className="min-h-[44px] text-sm"
+                                        disabled={isDeleting}
+                                    >
                                         Cancel
                                     </Button>
                                 }
@@ -123,8 +173,10 @@ export default function Profile() {
                             <Button
                                 variant="ghost"
                                 className="min-h-[44px] text-sm font-medium text-red-600 hover:text-red-600 hover:bg-red-50"
+                                onClick={handleDeleteAccount}
+                                disabled={isDeleting}
                             >
-                                Delete Account
+                                {isDeleting ? "Deleting..." : "Delete Account"}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
