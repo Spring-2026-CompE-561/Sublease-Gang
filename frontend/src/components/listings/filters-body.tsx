@@ -19,6 +19,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
+const ANY_UNIVERSITY = "__any__";
+
 export function FiltersBody({
 	priceRange,
 	setPriceRange,
@@ -47,17 +49,21 @@ export function FiltersBody({
 	const beds = [1, 2, 3, 4] as const;
 
 	return (
-		<div className="space-y-8">
+		<div className="min-w-0 space-y-8">
 			<div className="space-y-3">
 				<h3 className="font-semibold">University</h3>
 				<Select
-					value={university}
-					onValueChange={(v) => setUniversity((v as string) || null)}
+					value={university ?? ANY_UNIVERSITY}
+					onValueChange={(v) => setUniversity(v === ANY_UNIVERSITY ? null : v)}
 				>
-					<SelectTrigger className="w-full">
-						<SelectValue placeholder="Any university" />
+					<SelectTrigger className="h-11 w-full min-w-0 max-w-full">
+						{/* Base UI may render the raw `value` for the sentinel; override display text. */}
+						<SelectValue placeholder="Any university">
+							{university == null ? "Any university" : university}
+						</SelectValue>
 					</SelectTrigger>
-					<SelectContent>
+					<SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-none">
+						<SelectItem value={ANY_UNIVERSITY}>Any university</SelectItem>
 						{UNIVERSITY_OPTIONS.map((u) => (
 							<SelectItem key={u} value={u}>
 								{u}
@@ -76,9 +82,9 @@ export function FiltersBody({
 					value={priceRange}
 					onValueChange={(v) => setPriceRange(v as [number, number])}
 				/>
-				<div className="flex justify-between text-sm text-muted-foreground">
-					<span>${priceRange[0]}</span>
-					<span>${priceRange[1]}</span>
+				<div className="flex min-w-0 justify-between gap-2 text-sm text-muted-foreground tabular-nums">
+					<span className="min-w-0 shrink truncate">${priceRange[0]}</span>
+					<span className="min-w-0 shrink truncate text-right">${priceRange[1]}</span>
 				</div>
 			</div>
 
@@ -91,9 +97,9 @@ export function FiltersBody({
 					value={sqftRange}
 					onValueChange={(v) => setSqftRange(v as [number, number])}
 				/>
-				<div className="flex justify-between text-sm text-muted-foreground">
-					<span>{sqftRange[0]} sq ft</span>
-					<span>{sqftRange[1]} sq ft</span>
+				<div className="flex min-w-0 justify-between gap-2 text-sm text-muted-foreground tabular-nums">
+					<span className="min-w-0 shrink">{sqftRange[0]} sq ft</span>
+					<span className="min-w-0 shrink text-right">{sqftRange[1]} sq ft</span>
 				</div>
 			</div>
 
@@ -106,7 +112,7 @@ export function FiltersBody({
 							type="button"
 							onClick={() => setBedroomFilter(bedroomFilter === n ? null : n)}
 							className={cn(
-								"rounded-full border px-3 py-1.5 text-sm transition",
+								"min-h-10 rounded-full border px-3 py-2 text-sm transition touch-manipulation sm:min-h-0 sm:py-1.5",
 								bedroomFilter === n
 									? "border-foreground bg-muted font-medium"
 									: "border-input hover:bg-muted/60",
@@ -122,13 +128,17 @@ export function FiltersBody({
 				<h3 className="font-semibold">Amenities</h3>
 				<ul className="space-y-3">
 					{AMENITY_OPTIONS.map((id) => (
-						<li key={id} className="flex items-center gap-3">
+						<li key={id} className="flex min-w-0 items-start gap-3">
 							<Checkbox
 								id={`amenity-${id}`}
+								className="mt-0.5"
 								checked={selectedAmenities.has(id)}
 								onCheckedChange={() => toggleAmenity(id)}
 							/>
-							<Label htmlFor={`amenity-${id}`} className="cursor-pointer font-normal leading-none">
+							<Label
+								htmlFor={`amenity-${id}`}
+								className="min-w-0 flex-1 cursor-pointer font-normal leading-snug"
+							>
 								{id}
 							</Label>
 						</li>
