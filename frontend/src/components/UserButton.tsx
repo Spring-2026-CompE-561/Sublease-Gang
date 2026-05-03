@@ -35,6 +35,9 @@ function UserButton() {
         <DropdownMenuItem onClick={() => router.push("/saved-listings")}>
         Saved listings
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/reported-listings")}>
+        Reported listings
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
         </>
         ) : (
