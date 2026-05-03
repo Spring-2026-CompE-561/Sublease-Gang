@@ -1,8 +1,20 @@
+"use client";
+
 import { User, Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function Profile() {
     return (
@@ -81,6 +93,42 @@ export default function Profile() {
                 >
                     Sign Out
                 </Button>
+                <Separator />
+                <Dialog>
+                    <DialogTrigger
+                        render={
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start min-h-[44px] text-sm font-normal text-red-600 hover:text-red-600 hover:bg-red-50"
+                            />
+                        }
+                    >
+                        Delete Account
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Delete account?</DialogTitle>
+                            <DialogDescription>
+                                This will permanently delete your account, listings, and messages. This action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <DialogClose
+                                render={
+                                    <Button variant="outline" className="min-h-[44px] text-sm">
+                                        Cancel
+                                    </Button>
+                                }
+                            />
+                            <Button
+                                variant="ghost"
+                                className="min-h-[44px] text-sm font-medium text-red-600 hover:text-red-600 hover:bg-red-50"
+                            >
+                                Delete Account
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
                 </div>
             </Card>
 
