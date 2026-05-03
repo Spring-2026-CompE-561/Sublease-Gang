@@ -205,12 +205,6 @@ export const MOCK_SAVED_LISTINGS: BrowseListing[] = [
 	MOCK_BROWSE_LISTINGS[4], // Modern Apartment with Kitchen
 ];
 
-/** Mock reported listings - subset of browse listings that user has reported. */
-export const MOCK_REPORTED_LISTINGS: BrowseListing[] = [
-	MOCK_BROWSE_LISTINGS[1], // Cozy Dorm Room Available
-	MOCK_BROWSE_LISTINGS[3], // Shared Apartment - Private Room
-];
-
 export interface BrowseFiltersState {
 	priceMin: number;
 	priceMax: number;
