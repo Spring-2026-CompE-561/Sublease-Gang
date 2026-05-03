@@ -491,11 +491,16 @@ export function SignupForm({
                 type="button"
                 variant="outline"
                 onClick={handleReset}
+                disabled={form.formState.isSubmitting}
               >
                 Reset
               </Button>
-              <Button type="submit" form="form-signup">
-                Create account
+              <Button
+                type="submit"
+                form="form-signup"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Creating account…" : "Create account"}
               </Button>
             </Field>
             <p className="text-sm text-muted-foreground">
