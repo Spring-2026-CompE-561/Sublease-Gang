@@ -104,7 +104,7 @@ export function ReportListingDialog({ listingId }: ReportListingDialogProps) {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel>Reason</FieldLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
                       <SelectTrigger aria-invalid={fieldState.invalid}>
                         <SelectValue placeholder="Select a reason" />
                       </SelectTrigger>
