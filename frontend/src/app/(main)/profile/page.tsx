@@ -48,7 +48,6 @@ export default function Profile() {
                 toast.error(
                     `Failed to delete account: ${apiErrorMessage ?? response.statusText}`,
                 );
-                setIsDeleting(false);
                 return;
             }
 
@@ -59,6 +58,9 @@ export default function Profile() {
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             toast.error(`Failed to delete account: ${message}`);
+        } finally {
+            // Always reset so a failed navigation or unexpected throw can't
+            // leave the confirm button stuck on "Deleting...".
             setIsDeleting(false);
         }
     }
