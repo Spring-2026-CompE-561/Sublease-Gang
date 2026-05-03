@@ -32,6 +32,9 @@ function UserButton() {
         <DropdownMenuItem onClick={() => router.push("/profile")}>
         Profile
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/my-listings")}>
+        My Listings
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push("/saved-listings")}>
         Saved listings
         </DropdownMenuItem>
