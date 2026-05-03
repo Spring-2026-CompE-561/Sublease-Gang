@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Pencil, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +15,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { ListingManageCard } from "@/components/listings/listing-manage-card";
+import { ListingBrowseCard } from "@/components/listings/listing-browse-card";
 import { MOCK_MY_LISTINGS, type BrowseListing } from "@/lib/listings";
 
 export default function MyListingsPage() {
@@ -67,11 +68,31 @@ export default function MyListingsPage() {
 				{listings.length > 0 ? (
 					<div className="grid auto-rows-max gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						{listings.map((listing) => (
-							<ListingManageCard
+							<ListingBrowseCard
 								key={listing.id}
 								listing={listing}
-								onEdit={handleEdit}
-								onDelete={(l) => setPendingDelete(l)}
+								actions={
+									<>
+										<Button
+											variant="outline"
+											size="sm"
+											className="flex-1"
+											onClick={() => handleEdit(listing)}
+										>
+											<Pencil className="size-3.5" aria-hidden />
+											Edit
+										</Button>
+										<Button
+											variant="destructive"
+											size="sm"
+											className="flex-1"
+											onClick={() => setPendingDelete(listing)}
+										>
+											<Trash2 className="size-3.5" aria-hidden />
+											Delete
+										</Button>
+									</>
+								}
 							/>
 						))}
 					</div>
