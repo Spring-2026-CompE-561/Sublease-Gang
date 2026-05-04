@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { API_BASE_URL, ACCESS_TOKEN_KEY, readApiErrorMessage } from "@/lib/api";
+import type { Listing } from "@/types/listing";
 
 const MAX_PHOTOS = 12;
 const MAX_IMAGE_BYTES = 1_500_000;
@@ -73,6 +74,36 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+function splitStoredLocation(stored: string): { address: string; city: string } {
+	const idx = stored.lastIndexOf(", ");
+	if (idx === -1) return { address: "", city: stored };
+	return { address: stored.slice(0, idx), city: stored.slice(idx + 2) };
+}
+
+function isoToDateInput(iso: string | null | undefined): string {
+	if (!iso) return "";
+	return iso.slice(0, 10);
+}
+
+function defaultsFromListing(listing: Listing): FormValues {
+	const { address, city } = splitStoredLocation(listing.location);
+	return {
+		title: listing.title ?? "",
+		description: listing.description ?? "",
+		price: listing.price != null ? String(listing.price) : "",
+		address,
+		location: city,
+		room_type: listing.room_type ?? "",
+		sqft: listing.sqft != null ? String(listing.sqft) : "",
+		start_date: isoToDateInput(listing.start_date),
+		end_date: isoToDateInput(listing.end_date),
+		photos: (listing.image_urls ?? []).map((url) => ({
+			id: crypto.randomUUID(),
+			url,
+		})),
+	};
+}
+
 function readFileAsDataUrl(file: File): Promise<string> {
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
@@ -85,29 +116,43 @@ function readFileAsDataUrl(file: File): Promise<string> {
 	});
 }
 
+type ListingFormProps = React.ComponentProps<"div"> & {
+	mode?: "create" | "edit";
+	listing?: Listing;
+	listingId?: number;
+};
+
 export function ListingForm({
 	className,
+	mode = "create",
+	listing,
+	listingId,
 	...props
-}: React.ComponentProps<"div">) {
+}: ListingFormProps) {
 	const router = useRouter();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const dragPhotoFrom = useRef<number | null>(null);
 	const [dropZoneActive, setDropZoneActive] = useState(false);
 
+	const isEdit = mode === "edit" && listing !== undefined && listingId !== undefined;
+
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
-		defaultValues: {
-			title: "",
-			description: "",
-			price: "",
-			address: "",
-			location: "",
-			room_type: "",
-			sqft: "",
-			start_date: "",
-			end_date: "",
-			photos: [],
-		},
+		defaultValues:
+			isEdit && listing
+				? defaultsFromListing(listing)
+				: {
+						title: "",
+						description: "",
+						price: "",
+						address: "",
+						location: "",
+						room_type: "",
+						sqft: "",
+						start_date: "",
+						end_date: "",
+						photos: [],
+					},
 	});
 
 	const { fields, append, remove, move } = useFieldArray({
@@ -215,16 +260,25 @@ export function ListingForm({
 		const combinedLocation = `${data.address.trim()}, ${data.location.trim()}`;
 		const image_urls = data.photos.map((p) => p.url);
 
+		const addressUnchanged =
+			isEdit && listing ? combinedLocation === listing.location : false;
+
 		let coords: { lat: number; lng: number } | null;
-		try {
-			coords = await geocodeAddress(combinedLocation);
-		} catch {
-			toast.error("Could not look up that address — check your connection and try again");
-			return;
-		}
-		if (!coords) {
-			toast.error("Couldn't find that address. Double-check the street and city.");
-			return;
+		if (addressUnchanged && listing) {
+			coords = { lat: listing.latitude, lng: listing.longitude };
+		} else {
+			try {
+				coords = await geocodeAddress(combinedLocation);
+			} catch {
+				toast.error(
+					"Could not look up that address — check your connection and try again",
+				);
+				return;
+			}
+			if (!coords) {
+				toast.error("Couldn't find that address. Double-check the street and city.");
+				return;
+			}
 		}
 
 		const payload = {
@@ -241,9 +295,15 @@ export function ListingForm({
 			longitude: coords.lng,
 		};
 
+		const url =
+			isEdit && listingId !== undefined
+				? `${API_BASE_URL}/api/v1/listings/${listingId}`
+				: `${API_BASE_URL}/api/v1/listings/`;
+		const method = isEdit ? "PUT" : "POST";
+
 		try {
-			const res = await fetch(`${API_BASE_URL}/api/v1/listings/`, {
-				method: "POST",
+			const res = await fetch(url, {
+				method,
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${token}`,
@@ -253,15 +313,21 @@ export function ListingForm({
 
 			if (!res.ok) {
 				const msg = (await readApiErrorMessage(res)) || res.statusText;
-				toast.error("Could not post listing: " + msg);
+				const verb = isEdit ? "save changes" : "post listing";
+				toast.error(`Could not ${verb}: ${msg}`);
 				return;
 			}
 
-			toast.success("Listing posted");
-			router.push("/");
+			if (isEdit) {
+				toast.success("Listing updated");
+				router.push("/my-listings");
+			} else {
+				toast.success("Listing posted");
+				router.push("/");
+			}
 			router.refresh();
 		} catch (e) {
-			console.log("listing post failed", e);
+			console.log("listing submit failed", e);
 			toast.error("Something went wrong, try again");
 		}
 	}
@@ -272,7 +338,7 @@ export function ListingForm({
 		<div className={cn("flex flex-col gap-6", className)} {...props}>
 			<Card>
 				<CardHeader>
-					<CardTitle>Post a sublease</CardTitle>
+					<CardTitle>{isEdit ? "Edit listing" : "Post a sublease"}</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<form id="form-listing" onSubmit={form.handleSubmit(onSubmit)}>
@@ -550,7 +616,7 @@ export function ListingForm({
 							Reset
 						</Button>
 						<Button type="submit" form="form-listing">
-							Post listing
+							{isEdit ? "Save changes" : "Post listing"}
 						</Button>
 					</Field>
 				</CardFooter>
