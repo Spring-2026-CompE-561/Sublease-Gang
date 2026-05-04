@@ -49,7 +49,7 @@ interface ReportListingDialogProps {
   listingId: string;
 }
 
-export function ReportListingDialog({ listingId }: ReportListingDialogProps) {
+export function ReportListingDialog({ listingId: _listingId }: ReportListingDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
@@ -72,7 +72,9 @@ export function ReportListingDialog({ listingId }: ReportListingDialogProps) {
 
   function onSubmit(_data: ReportListingValues) {
     // TODO: Wire up to /api/v1/listings/{listingId}/report when backend exists
-    toast.success("Report submitted. Our team will review.");
+    // listingId should be sent with the report data above
+    // TODO: Update toast message once API endpoint is ready
+    toast.success("Thanks for your feedback.");
     setOpen(false);
     form.reset();
   }
