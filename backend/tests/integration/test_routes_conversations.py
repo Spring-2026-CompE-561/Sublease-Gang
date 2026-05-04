@@ -182,7 +182,7 @@ class TestConversationMessagePermissionsWithAuth:
                 "location": "Test City",
                 "room_type": "studio",
                 "sqft": 450,
-                "thumbnail_url": "https://example.com/photo.jpg",
+                "image_urls": ["https://example.com/photo.jpg"],
                 "start_date": "2026-01-01T00:00:00Z",
                 "end_date": "2026-02-01T00:00:00Z",
                 "latitude": 40.0,

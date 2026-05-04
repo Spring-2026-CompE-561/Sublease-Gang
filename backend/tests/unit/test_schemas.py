@@ -106,7 +106,7 @@ class TestListingCreate:
             "location": "City",
             "room_type": "studio",
             "sqft": 400,
-            "thumbnail_url": "https://example.com/photo.jpg",
+            "image_urls": ["https://example.com/photo.jpg"],
             "start_date": now,
             "end_date": now + timedelta(days=30),
             "latitude": 40.7,
