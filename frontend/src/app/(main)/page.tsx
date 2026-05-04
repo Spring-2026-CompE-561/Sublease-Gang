@@ -6,11 +6,12 @@ import { fetchBrowseListings, type BrowseListing } from "@/lib/listings";
 
 export default async function Home() {
   let featuredListings: BrowseListing[] = [];
+  let loadFailed = false;
   try {
-    const listings = await fetchBrowseListings();
-    featuredListings = listings.slice(0, 4);
+    featuredListings = await fetchBrowseListings({ limit: 4 });
   } catch (e) {
     console.error("home featured fetch failed", e);
+    loadFailed = true;
   }
 
   return (
@@ -19,9 +20,13 @@ export default async function Home() {
       <Features />
       <section className="container mx-auto px-4 py-12">
         <h2 className="mb-6 text-2xl font-semibold">Available subleases</h2>
-        {featuredListings.length === 0 ? (
+        {loadFailed ? (
           <p className="text-sm text-muted-foreground">
-            No listings to show right now.
+            Could not load listings right now. Please try again later.
+          </p>
+        ) : featuredListings.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No listings yet. Check back soon.
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
