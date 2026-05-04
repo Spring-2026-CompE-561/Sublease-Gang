@@ -65,7 +65,10 @@ class TestUserServiceAuthenticate:
             patch("app.services.user.get_user_by_email", return_value=user),
             patch("app.services.user.verify_password", return_value=True),
             patch("app.services.user.create_access_token", return_value="access_tok"),
-            patch("app.services.user.create_refresh_token", return_value="refresh_tok"),
+            patch(
+                "app.services.user.TokenService.issue_refresh_token",
+                return_value="refresh_tok",
+            ),
         ):
             result = UserService.authenticate(db, "ok@example.com", "password123")
 

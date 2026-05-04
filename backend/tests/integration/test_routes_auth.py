@@ -168,6 +168,96 @@ class TestRefresh:
         assert resp.status_code == 401
         assert "Invalid or expired refresh token" in resp.json()["detail"]
 
+    def test_refresh_rotates_and_old_token_is_revoked(self, client):
+        tokens = self._login(client)
+        first = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": tokens["refresh_token"]},
+        )
+        assert first.status_code == 200
+        new_tokens = first.json()
+        assert new_tokens["refresh_token"] != tokens["refresh_token"]
+
+        # Replaying the now-rotated original refresh should fail.
+        replay = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": tokens["refresh_token"]},
+        )
+        assert replay.status_code == 401
+
+    def test_refresh_reuse_detection_burns_all_user_tokens(self, client):
+        tokens = self._login(client)
+        rotated = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": tokens["refresh_token"]},
+        )
+        assert rotated.status_code == 200
+        new_refresh = rotated.json()["refresh_token"]
+
+        # Replay the original — triggers reuse detection.
+        replay = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": tokens["refresh_token"]},
+        )
+        assert replay.status_code == 401
+
+        # The most recent (legitimate) refresh token must now also be dead.
+        followup = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": new_refresh},
+        )
+        assert followup.status_code == 401
+
+    def test_refresh_token_without_jti_rejected(self, client, db_session):
+        import jwt
+        from datetime import UTC, datetime, timedelta
+
+        from app.core.auth import ALGORITHM, SECRET_KEY
+
+        self._login(client)
+        user = db_session.query(User).filter(User.email == "ref@example.com").first()
+        # Hand-craft a refresh token missing the jti claim entirely.
+        forged = jwt.encode(
+            {
+                "sub": str(user.id),
+                "type": "refresh",
+                "iat": datetime.now(UTC),
+                "exp": datetime.now(UTC) + timedelta(days=1),
+            },
+            SECRET_KEY,
+            algorithm=ALGORITHM,
+        )
+        resp = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": forged},
+        )
+        assert resp.status_code == 401
+
+    def test_refresh_token_with_unknown_jti_rejected(self, client, db_session):
+        import jwt
+        from datetime import UTC, datetime, timedelta
+
+        from app.core.auth import ALGORITHM, SECRET_KEY
+
+        self._login(client)
+        user = db_session.query(User).filter(User.email == "ref@example.com").first()
+        forged = jwt.encode(
+            {
+                "sub": str(user.id),
+                "type": "refresh",
+                "iat": datetime.now(UTC),
+                "exp": datetime.now(UTC) + timedelta(days=1),
+                "jti": "this-jti-was-never-issued",
+            },
+            SECRET_KEY,
+            algorithm=ALGORITHM,
+        )
+        resp = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": forged},
+        )
+        assert resp.status_code == 401
+
 
 class TestForgotPassword:
     def test_registered_email(self, client):
