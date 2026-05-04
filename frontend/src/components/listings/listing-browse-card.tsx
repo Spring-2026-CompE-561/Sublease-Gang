@@ -30,11 +30,16 @@ interface ListingBrowseCardProps {
 	readonly listing: BrowseListing;
 	readonly className?: string;
 	readonly actions?: ReactNode;
+	/** Source page slug; appended as `?from=...` so the detail page can show a contextual back link. */
+	readonly from?: string;
 }
 
-export function ListingBrowseCard({ listing, className, actions }: ListingBrowseCardProps) {
+export function ListingBrowseCard({ listing, className, actions, from }: ListingBrowseCardProps) {
 	const thumb = listing.thumbnail_url;
 	const isDataUrl = Boolean(thumb?.startsWith("data:"));
+	const href = from
+		? `/listings/${listing.id}?from=${encodeURIComponent(from)}`
+		: `/listings/${listing.id}`;
 
 	return (
 		<Card
@@ -43,7 +48,7 @@ export function ListingBrowseCard({ listing, className, actions }: ListingBrowse
 				className,
 			)}
 		>
-			<Link href={`/listings/${listing.id}`} className="group block outline-none">
+			<Link href={href} className="group block outline-none">
 				<div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
 					{thumb && isDataUrl ? (
 						// eslint-disable-next-line @next/next/no-img-element -- user-uploaded data URLs
