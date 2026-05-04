@@ -15,7 +15,12 @@ class User(Base):
     account_disabled = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    profile = relationship("Profile", back_populates="user")
+    profile = relationship(
+        "Profile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
     tokens = relationship("Token", back_populates="user")
     listings = relationship("Listing", back_populates="user")
     sent_messages = relationship("Message", back_populates="sender")
