@@ -57,10 +57,13 @@ def create_refresh_token(
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_reset_token(data: dict) -> str:
+def create_reset_token(data: dict, jti: str | None = None) -> str:
     to_encode = data.copy()
-    expire = datetime.now(UTC) + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire, "type": "reset"})
+    now = datetime.now(UTC)
+    expire = now + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
+    if jti is None:
+        jti = uuid4().hex
+    to_encode.update({"exp": expire, "iat": now, "type": "reset", "jti": jti})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
