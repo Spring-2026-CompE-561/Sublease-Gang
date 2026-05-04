@@ -1,10 +1,10 @@
 "use client";
 
+import type { CollegeFilterOption } from "@/lib/listings";
 import {
 	AMENITY_OPTIONS,
 	PRICE_FILTER_MAX,
 	SQFT_FILTER_MAX,
-	UNIVERSITY_OPTIONS,
 } from "@/lib/listings";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,7 +19,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
-const ANY_UNIVERSITY = "__any__";
+const ANY_COLLEGE = "__any__";
 
 export function FiltersBody({
 	priceRange,
@@ -30,8 +30,9 @@ export function FiltersBody({
 	setBedroomFilter,
 	selectedAmenities,
 	toggleAmenity,
-	university,
-	setUniversity,
+	collegeId,
+	setCollegeId,
+	collegeOptions,
 	onReset,
 }: {
 	priceRange: [number, number];
@@ -42,31 +43,33 @@ export function FiltersBody({
 	setBedroomFilter: (v: number | null) => void;
 	selectedAmenities: Set<string>;
 	toggleAmenity: (id: string) => void;
-	university: string | null;
-	setUniversity: (v: string | null) => void;
+	collegeId: number | null;
+	setCollegeId: (v: number | null) => void;
+	collegeOptions: CollegeFilterOption[];
 	onReset: () => void;
 }) {
-	const beds = [1, 2, 3, 4] as const;
+	const beds = [0, 1, 2, 3, 4] as const;
 
 	return (
 		<div className="min-w-0 space-y-8">
 			<div className="space-y-3">
 				<h3 className="font-semibold">University</h3>
 				<Select
-					value={university ?? ANY_UNIVERSITY}
-					onValueChange={(v) => setUniversity(v === ANY_UNIVERSITY ? null : v)}
+					value={collegeId != null ? String(collegeId) : ANY_COLLEGE}
+					onValueChange={(v) => setCollegeId(v === ANY_COLLEGE ? null : Number(v))}
 				>
 					<SelectTrigger className="h-11 w-full min-w-0 max-w-full">
-						{/* Base UI may render the raw `value` for the sentinel; override display text. */}
 						<SelectValue placeholder="Any university">
-							{university == null ? "Any university" : university}
+							{collegeId == null
+								? "Any university"
+								: (collegeOptions.find((c) => c.id === collegeId)?.label ?? "University")}
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-none">
-						<SelectItem value={ANY_UNIVERSITY}>Any university</SelectItem>
-						{UNIVERSITY_OPTIONS.map((u) => (
-							<SelectItem key={u} value={u}>
-								{u}
+						<SelectItem value={ANY_COLLEGE}>Any university</SelectItem>
+						{collegeOptions.map((c) => (
+							<SelectItem key={c.id} value={String(c.id)}>
+								{c.label}
 							</SelectItem>
 						))}
 					</SelectContent>
@@ -118,7 +121,7 @@ export function FiltersBody({
 									: "border-input hover:bg-muted/60",
 							)}
 						>
-							{n} bed{n > 1 ? "s" : ""}
+							{n === 0 ? "Studio" : `${n} bed${n > 1 ? "s" : ""}`}
 						</button>
 					))}
 				</div>
