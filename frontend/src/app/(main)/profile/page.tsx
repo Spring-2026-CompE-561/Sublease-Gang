@@ -12,14 +12,13 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { clearTokens, getAccessToken } from "@/lib/auth";
 import { profileService } from "@/lib/profileService";
 import type { UserResponse, ProfileResponse } from "@/lib/profile";
 
-export function Profile() {
-  const { toast } = useToast();
+export default function Profile() {
   const router = useRouter();
   const token = getAccessToken();
 
@@ -45,8 +44,8 @@ export function Profile() {
     const load = async () => {
       try {
         const [userData, profileData] = await Promise.all([
-          userService.getMe(token),
-          userService.getMyProfile(token),
+          profileService.getMe(token),
+          profileService.getMyProfile(token),
         ]);
         setUser(userData);
         setProfile(profileData);
@@ -59,7 +58,7 @@ export function Profile() {
           description: profileData.description ?? "",
         });
       } catch {
-        toast({ title: "Failed to load profile", variant: "destructive" });
+        toast.error("Failed to load profile");
       } finally {
         setIsLoading(false);
       }
@@ -86,16 +85,16 @@ export function Profile() {
       // Fire both updates in parallel if needed
       const updates: Promise<unknown>[] = [];
       if (Object.keys(userPayload).length > 0)
-        updates.push(userService.updateMe(token, userPayload).then(setUser));
+        updates.push(profileService.updateMe(token, userPayload).then(setUser));
       if (Object.keys(profilePayload).length > 0)
-        updates.push(userService.updateMyProfile(token, profilePayload).then(setProfile));
+        updates.push(profileService.updateMyProfile(token, profilePayload).then(setProfile));
 
       await Promise.all(updates);
       setIsEditing(false);
-      toast({ title: "Profile updated successfully" });
+      toast.success("Profile updated successfully");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to update profile";
-      toast({ title: message, variant: "destructive" });
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }
