@@ -4,12 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Filter } from "lucide-react";
 import {
+	collegeOptionsFromMockListings,
 	fetchBrowseListings,
+	fetchCollegeFilterOptions,
 	filterBrowseListings,
 	PRICE_FILTER_MAX,
 	SQFT_FILTER_MAX,
 	type BrowseFiltersState,
 	type BrowseListing,
+	type CollegeFilterOption,
 } from "@/lib/listings";
 import { ListingBrowseCard } from "@/components/listings/listing-browse-card";
 import { FiltersBody } from "@/components/listings/filters-body";
@@ -26,17 +29,32 @@ import {
 
 export function ListingBrowseView() {
 	const searchParams = useSearchParams();
-  	const query = searchParams.get("q") ?? "";
+	const query = searchParams.get("q") ?? "";
 	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
 	const [sqftRange, setSqftRange] = useState<[number, number]>([0, SQFT_FILTER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
-	const [university, setUniversity] = useState<string | null>(null);
+	const [collegeId, setCollegeId] = useState<number | null>(null);
+	const [collegeOptions, setCollegeOptions] = useState<CollegeFilterOption[]>(() => collegeOptionsFromMockListings());
 	const [mobileOpen, setMobileOpen] = useState(false);
 
 	const [listings, setListings] = useState<BrowseListing[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState<string | null>(null);
+
+	useEffect(() => {
+		let cancelled = false;
+		fetchCollegeFilterOptions()
+			.then((opts) => {
+				if (!cancelled) setCollegeOptions(opts);
+			})
+			.catch(() => {
+				if (!cancelled) setCollegeOptions(collegeOptionsFromMockListings());
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -56,6 +74,14 @@ export function ListingBrowseView() {
 		};
 	}, []);
 
+	const collegeLabelById = useMemo(() => {
+		const m = new Map<number, string>();
+		for (const c of collegeOptions) {
+			m.set(c.id, c.label);
+		}
+		return m;
+	}, [collegeOptions]);
+
 	const filters: BrowseFiltersState = useMemo(
 		() => ({
 			priceMin: priceRange[0],
@@ -64,22 +90,30 @@ export function ListingBrowseView() {
 			sqftMax: sqftRange[1],
 			bedrooms: bedroomFilter,
 			amenities: selectedAmenities,
-			university,
+			collegeId,
 		}),
-		[priceRange, sqftRange, bedroomFilter, selectedAmenities, university],
+		[priceRange, sqftRange, bedroomFilter, selectedAmenities, collegeId],
 	);
 
 	const filtered = useMemo(() => {
 		const base = filterBrowseListings(listings, filters);
 		const trimmed = query.trim().toLowerCase();
 		if (!trimmed) return base;
-		return base.filter(
-			(l) =>
+		return base.filter((l) => {
+			const loc = (l.location ?? "").toLowerCase();
+			const uni = (l.university ?? "").toLowerCase();
+			const college =
+				l.college_id != null
+					? (collegeLabelById.get(l.college_id) ?? "").toLowerCase()
+					: "";
+			return (
 				l.title.toLowerCase().includes(trimmed) ||
-				l.location.toLowerCase().includes(trimmed) ||
-				l.university.toLowerCase().includes(trimmed),
-		);
-	}, [filters, listings, query]);
+				loc.includes(trimmed) ||
+				uni.includes(trimmed) ||
+				college.includes(trimmed)
+			);
+		});
+	}, [collegeLabelById, filters, listings, query]);
 
 	function toggleAmenity(id: string) {
 		setSelectedAmenities((prev) => {
@@ -95,7 +129,7 @@ export function ListingBrowseView() {
 		setSqftRange([0, SQFT_FILTER_MAX]);
 		setBedroomFilter(null);
 		setSelectedAmenities(new Set());
-		setUniversity(null);
+		setCollegeId(null);
 	}
 
 	const filterProps = {
@@ -107,8 +141,9 @@ export function ListingBrowseView() {
 		setBedroomFilter,
 		selectedAmenities,
 		toggleAmenity,
-		university,
-		setUniversity,
+		collegeId,
+		setCollegeId,
+		collegeOptions,
 		onReset: resetFilters,
 	};
 
@@ -177,7 +212,11 @@ export function ListingBrowseView() {
 								))}
 							</div>
 
-							{filtered.length === 0 ? (
+							{listings.length === 0 ? (
+								<p className="rounded-xl border border-dashed py-12 text-center text-muted-foreground">
+									No listings yet. Check back soon.
+								</p>
+							) : filtered.length === 0 ? (
 								<p className="rounded-xl border border-dashed py-12 text-center text-muted-foreground">
 									No listings match these filters. Try adjusting price or amenities.
 								</p>
