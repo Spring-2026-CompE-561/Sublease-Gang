@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { Filter } from "lucide-react";
 import {
+	collegeOptionsFromMockListings,
 	filterBrowseListings,
 	MOCK_BROWSE_LISTINGS,
 	PRICE_FILTER_MAX,
@@ -30,9 +31,11 @@ export default function MapPage() {
 	const [sqftRange, setSqftRange] = useState<[number, number]>([0, SQFT_FILTER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
-	const [university, setUniversity] = useState<string | null>(null);
+	const [collegeId, setCollegeId] = useState<number | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [flyTo, setFlyTo] = useState<FlyToTarget | undefined>();
+
+	const collegeOptions = useMemo(() => collegeOptionsFromMockListings(), []);
 
 	useEffect(() => {
 		if (typeof window === "undefined" || !("geolocation" in navigator)) return;
@@ -59,9 +62,9 @@ export default function MapPage() {
 			sqftMax: sqftRange[1],
 			bedrooms: bedroomFilter,
 			amenities: selectedAmenities,
-			university,
+			collegeId,
 		}),
-		[priceRange, sqftRange, bedroomFilter, selectedAmenities, university],
+		[priceRange, sqftRange, bedroomFilter, selectedAmenities, collegeId],
 	);
 
 	const filtered = useMemo(
@@ -97,7 +100,7 @@ export default function MapPage() {
 		setSqftRange([0, SQFT_FILTER_MAX]);
 		setBedroomFilter(null);
 		setSelectedAmenities(new Set());
-		setUniversity(null);
+		setCollegeId(null);
 	}
 
 	const filterProps = {
@@ -109,8 +112,9 @@ export default function MapPage() {
 		setBedroomFilter,
 		selectedAmenities,
 		toggleAmenity,
-		university,
-		setUniversity,
+		collegeId,
+		setCollegeId,
+		collegeOptions,
 		onReset: resetFilters,
 	};
 
