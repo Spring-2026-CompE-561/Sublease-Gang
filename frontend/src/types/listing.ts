@@ -12,6 +12,8 @@ export interface Listing {
 	end_date: string;
 	college_id: number | null;
 	thumbnail_url: string | null;
+	/** Gallery order: first item is the cover / thumbnail. */
+	image_urls?: string[] | null;
 	latitude: number;
 	longitude: number;
 	created_at?: string | null;
