@@ -38,6 +38,7 @@ async def list_listings(
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     available_only: bool | None = None,
+    host_id: int | None = None,
     sort: str | None = None,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -55,6 +56,7 @@ async def list_listings(
         max_sqft=max_sqft,
         start_date=start_date,
         end_date=end_date,
+        host_id=host_id,
         skip=offset,
         limit=limit,
     )
