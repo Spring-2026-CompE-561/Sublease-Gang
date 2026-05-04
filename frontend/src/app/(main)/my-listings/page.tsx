@@ -66,7 +66,7 @@ export default function MyListingsPage() {
 	}, [loadMyListings]);
 
 	function handleEdit(listing: BrowseListing) {
-		toast.info(`Editing "${listing.title}" is coming soon.`);
+		router.push(`/listings/${listing.id}/edit`);
 	}
 
 	async function confirmDelete() {
