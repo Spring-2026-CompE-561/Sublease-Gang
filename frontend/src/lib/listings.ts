@@ -325,8 +325,17 @@ export function toBrowseListing(l: Listing): BrowseListing {
 	};
 }
 
-export async function fetchBrowseListings(): Promise<BrowseListing[]> {
-	const res = await fetch(`${API_BASE_URL}/api/v1/listings/?limit=100`);
+type FetchBrowseOptions = {
+	limit?: number;
+};
+
+export async function fetchBrowseListings(
+	options: FetchBrowseOptions = {},
+): Promise<BrowseListing[]> {
+	const limit = options.limit ?? 100;
+	const init: RequestInit =
+		typeof window === "undefined" ? { next: { revalidate: 30 } } : {};
+	const res = await fetch(`${API_BASE_URL}/api/v1/listings/?limit=${limit}`, init);
 	if (!res.ok) {
 		throw new Error("Failed to load listings");
 	}
