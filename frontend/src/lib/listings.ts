@@ -1,4 +1,5 @@
-import type { Listing } from "@/types/listing";
+import type { Listing, ListingListApiRow } from "@/types/listing";
+import { API_BASE_URL } from "@/lib/api";
 
 /** Listing fields used on browse + cards (mock/API may grow over time). */
 export type BrowseListing = Listing & {
@@ -9,10 +10,8 @@ export type BrowseListing = Listing & {
 	amenities: string[];
 };
 
-/** Upper bounds for browse/map sliders, derived from the mock catalog. */
-function roundUpToStep(value: number, step: number): number {
-	return Math.ceil(value / step) * step;
-}
+export const PRICE_FILTER_MAX = 2000;
+export const SQFT_FILTER_MAX = 2000;
 
 export const AMENITY_OPTIONS = [
 	"WiFi",
@@ -41,7 +40,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		sqft: 380,
 		start_date: "2026-05-14T00:00:00Z",
 		end_date: "2026-08-30T00:00:00Z",
-		college_id: null,
+		college_id: 1,
 		thumbnail_url:
 			"https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80",
 		latitude: 37.8715,
@@ -51,7 +50,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		rating: 4.9,
 		university: "UC Berkeley",
 		verified: true,
-		bedrooms: 1,
+		bedrooms: 0,
 		amenities: ["WiFi", "Furnished", "Kitchen", "Laundry"],
 	},
 	{
@@ -65,7 +64,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		sqft: 180,
 		start_date: "2026-05-31T00:00:00Z",
 		end_date: "2026-08-14T00:00:00Z",
-		college_id: null,
+		college_id: 2,
 		thumbnail_url:
 			"https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=800&q=80",
 		latitude: 37.4275,
@@ -89,7 +88,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		sqft: 620,
 		start_date: "2026-05-19T00:00:00Z",
 		end_date: "2026-09-09T00:00:00Z",
-		college_id: null,
+		college_id: 3,
 		thumbnail_url:
 			"https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80",
 		latitude: 34.0689,
@@ -113,7 +112,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		sqft: 140,
 		start_date: "2026-06-09T00:00:00Z",
 		end_date: "2026-08-19T00:00:00Z",
-		college_id: null,
+		college_id: 4,
 		thumbnail_url:
 			"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80",
 		latitude: 42.3601,
@@ -137,7 +136,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		sqft: 780,
 		start_date: "2026-05-24T00:00:00Z",
 		end_date: "2026-08-24T00:00:00Z",
-		college_id: null,
+		college_id: 5,
 		thumbnail_url:
 			"https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80",
 		latitude: 40.8075,
@@ -161,7 +160,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		sqft: 540,
 		start_date: "2026-06-04T00:00:00Z",
 		end_date: "2026-08-29T00:00:00Z",
-		college_id: null,
+		college_id: 6,
 		thumbnail_url:
 			"https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80",
 		latitude: 40.7295,
@@ -185,7 +184,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		sqft: 720,
 		start_date: "2026-05-20T00:00:00Z",
 		end_date: "2026-08-25T00:00:00Z",
-		college_id: null,
+		college_id: 7,
 		thumbnail_url:
 			"https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80",
 		latitude: 32.7757,
@@ -199,22 +198,6 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		amenities: ["WiFi", "Furnished", "Parking", "Air Conditioning", "Laundry"],
 	},
 ];
-
-export const BROWSE_PRICE_SLIDER_MAX = roundUpToStep(
-	Math.max(...MOCK_BROWSE_LISTINGS.map((l) => l.price), 50),
-	50,
-);
-
-export const BROWSE_SQFT_SLIDER_MAX = roundUpToStep(
-	Math.max(...MOCK_BROWSE_LISTINGS.map((l) => l.sqft ?? 0), 50),
-	50,
-);
-
-export const ROOM_TYPE_OPTIONS = Array.from(
-	new Set(
-		MOCK_BROWSE_LISTINGS.map((l) => l.room_type).filter((t): t is string => Boolean(t)),
-	),
-).sort((a, b) => a.localeCompare(b));
 
 /** Mock saved listings - subset of browse listings for user's saved collection. */
 export const MOCK_SAVED_LISTINGS: BrowseListing[] = [
@@ -236,25 +219,62 @@ export interface BrowseFiltersState {
 	sqftMax: number;
 	bedrooms: number | null;
 	amenities: Set<string>;
-	university: string | null;
-	roomType: string | null;
+	collegeId: number | null;
 }
 
-export const UNIVERSITY_OPTIONS = Array.from(
-	new Set(MOCK_BROWSE_LISTINGS.map((l) => l.university)),
-).sort();
+export type CollegeFilterOption = { id: number; label: string };
+
+/** College labels from mock browse data (map page and fallback when API filters fail). */
+export function collegeOptionsFromMockListings(): CollegeFilterOption[] {
+	const byId = new Map<number, string>();
+	for (const l of MOCK_BROWSE_LISTINGS) {
+		if (l.college_id != null && l.university) {
+			byId.set(l.college_id, l.university);
+		}
+	}
+	return Array.from(byId.entries())
+		.map(([id, label]) => ({ id, label }))
+		.sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export async function fetchCollegeFilterOptions(): Promise<CollegeFilterOption[]> {
+	const merged = new Map<number, string>();
+	for (const opt of collegeOptionsFromMockListings()) {
+		merged.set(opt.id, opt.label);
+	}
+	try {
+		const res = await fetch(`${API_BASE_URL}/api/v1/listings/filters`);
+		if (!res.ok) {
+			return collegeOptionsFromMockListings();
+		}
+		const data = (await res.json()) as {
+			colleges?: { id: number; name: string | number }[];
+		};
+		for (const c of data.colleges ?? []) {
+			const nameStr =
+				typeof c.name === "string" ? c.name.trim() : String(c.name);
+			const looksLikeRealName = nameStr.length > 0 && Number(nameStr) !== c.id;
+			const label = looksLikeRealName ? nameStr : (merged.get(c.id) ?? `College ${c.id}`);
+			merged.set(c.id, label);
+		}
+	} catch {
+		return collegeOptionsFromMockListings();
+	}
+	return Array.from(merged.entries())
+		.map(([id, label]) => ({ id, label }))
+		.sort((a, b) => a.label.localeCompare(b.label));
+}
 
 export function filterBrowseListings(
 	listings: BrowseListing[],
 	f: BrowseFiltersState,
 ): BrowseListing[] {
 	return listings.filter((l) => {
-		const sqft = l.sqft ?? 0;
 		if (l.price < f.priceMin || l.price > f.priceMax) return false;
+		const sqft = l.sqft ?? 0;
 		if (sqft < f.sqftMin || sqft > f.sqftMax) return false;
 		if (f.bedrooms != null && l.bedrooms !== f.bedrooms) return false;
-		if (f.university && l.university !== f.university) return false;
-		if (f.roomType != null && (l.room_type ?? "") !== f.roomType) return false;
+		if (f.collegeId != null && (l.college_id ?? null) !== f.collegeId) return false;
 		for (const a of f.amenities) {
 			if (!l.amenities.includes(a)) return false;
 		}
@@ -262,8 +282,80 @@ export function filterBrowseListings(
 	});
 }
 
-export function getBrowseListingById(id: string): BrowseListing | undefined {
+/** Map browse list API row into full `Listing` (defaults for omitted fields). */
+export function listingFromListRow(row: ListingListApiRow): Listing {
+	return {
+		id: row.id,
+		host_id: 0,
+		title: row.title,
+		description: "",
+		price: row.price,
+		location: row.location_text ?? "",
+		room_type: row.room_type ?? null,
+		sqft: row.sqft ?? null,
+		start_date: row.start_date ?? "",
+		end_date: row.end_date ?? "",
+		college_id: row.college ?? null,
+		thumbnail_url: row.thumbnail_url ?? null,
+		latitude: 0,
+		longitude: 0,
+		created_at: row.created_at ?? "",
+		updated_at: row.created_at ?? "",
+	};
+}
+
+// API doesn't return rating/university/verified/bedrooms/amenities yet,
+// so fill them with sensible defaults.
+function bedroomsFromRoomType(roomType: string | null | undefined): number {
+	if (!roomType) return 1;
+	const lower = roomType.toLowerCase();
+	if (lower.includes("studio")) return 0;
+	const m = lower.match(/(\d+)/);
+	return m ? Number(m[1]) : 1;
+}
+
+export function toBrowseListing(l: Listing): BrowseListing {
+	return {
+		...l,
+		rating: 0,
+		university: "",
+		verified: false,
+		bedrooms: bedroomsFromRoomType(l.room_type),
+		amenities: [],
+	};
+}
+
+export async function fetchBrowseListings(): Promise<BrowseListing[]> {
+	const res = await fetch(`${API_BASE_URL}/api/v1/listings/?limit=100`);
+	if (!res.ok) {
+		throw new Error("Failed to load listings");
+	}
+	const data = (await res.json()) as { results: ListingListApiRow[] };
+	return data.results.map((row) => toBrowseListing(listingFromListRow(row)));
+}
+
+function browseListingFromMockId(id: number): BrowseListing | undefined {
+	return MOCK_BROWSE_LISTINGS.find((l) => l.id === id);
+}
+
+/** Server or client: load one listing from the API, falling back to mock data for demos. */
+export async function fetchBrowseListingById(id: string): Promise<BrowseListing | null> {
 	const n = Number(id);
-	if (!Number.isFinite(n)) return undefined;
-	return MOCK_BROWSE_LISTINGS.find((l) => l.id === n);
+	if (!Number.isFinite(n)) return null;
+
+	const fromMock = browseListingFromMockId(n);
+
+	try {
+		const init: RequestInit =
+			typeof window === "undefined" ? { next: { revalidate: 30 } } : {};
+		const res = await fetch(`${API_BASE_URL}/api/v1/listings/${n}`, init);
+		if (res.ok) {
+			const data = (await res.json()) as Listing;
+			return toBrowseListing(data);
+		}
+	} catch {
+		// offline / SSR build without API
+	}
+
+	return fromMock ?? null;
 }
