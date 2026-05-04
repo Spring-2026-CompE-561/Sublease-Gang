@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,16 +20,23 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller, useWatch } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Upload, X } from "lucide-react";
 import { API_BASE_URL, ACCESS_TOKEN_KEY, readApiErrorMessage } from "@/lib/api";
 
+const MAX_PHOTOS = 12;
 const MAX_IMAGE_BYTES = 1_500_000;
 
 // TODO: lat/lng should come from a map picker. hardcoded for now
 const DEFAULT_LAT = 0;
 const DEFAULT_LNG = 0;
+
+const photoRowSchema = z.object({
+	id: z.string(),
+	url: z.string().min(1),
+});
 
 const formSchema = z.object({
 	title: z.string().min(3, "Title is too short"),
@@ -46,16 +54,35 @@ const formSchema = z.object({
 		}, "Enter a valid square footage"),
 	start_date: z.string().min(1, "Pick a start date"),
 	end_date: z.string().min(1, "Pick an end date"),
-	thumbnailDataUrl: z.string().min(1, "Add a cover photo"),
+	photos: z
+		.array(photoRowSchema)
+		.min(1, "Add at least one photo")
+		.max(MAX_PHOTOS, `You can add up to ${MAX_PHOTOS} photos`),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+function readFileAsDataUrl(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => {
+			if (typeof reader.result === "string") resolve(reader.result);
+			else reject(new Error("Invalid read result"));
+		};
+		reader.onerror = () => reject(reader.error ?? new Error("read failed"));
+		reader.readAsDataURL(file);
+	});
+}
 
 export function ListingForm({
 	className,
 	...props
 }: React.ComponentProps<"div">) {
 	const router = useRouter();
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const dragPhotoFrom = useRef<number | null>(null);
+	const [dropZoneActive, setDropZoneActive] = useState(false);
+
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -68,29 +95,91 @@ export function ListingForm({
 			sqft: "",
 			start_date: "",
 			end_date: "",
-			thumbnailDataUrl: "",
+			photos: [],
 		},
 	});
 
-	function onCoverFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0];
-		if (!file) return;
-		if (!file.type.startsWith("image/")) {
-			toast.error("Please choose an image file");
-			return;
-		}
-		if (file.size > MAX_IMAGE_BYTES) {
-			toast.error("Image must be under 1.5 MB");
-			return;
-		}
-		const reader = new FileReader();
-		reader.onload = () => {
-			const url = reader.result;
-			if (typeof url === "string") {
-				form.setValue("thumbnailDataUrl", url, { shouldValidate: true });
+	const { fields, append, remove, move } = useFieldArray({
+		control: form.control,
+		name: "photos",
+	});
+
+	const addImageFiles = useCallback(
+		async (files: FileList | File[]) => {
+			const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+			if (list.length === 0) {
+				toast.error("Please choose image files");
+				return;
 			}
-		};
-		reader.readAsDataURL(file);
+			const current = form.getValues("photos").length;
+			let added = 0;
+			for (const file of list) {
+				if (current + added >= MAX_PHOTOS) {
+					toast.info(`Maximum ${MAX_PHOTOS} photos`);
+					break;
+				}
+				if (file.size > MAX_IMAGE_BYTES) {
+					toast.error(`${file.name} is over 1.5 MB — skip or compress it`);
+					continue;
+				}
+				try {
+					const url = await readFileAsDataUrl(file);
+					append({ id: crypto.randomUUID(), url });
+					added += 1;
+				} catch {
+					toast.error(`Could not read ${file.name}`);
+				}
+			}
+			if (added > 0) {
+				void form.trigger("photos");
+			}
+		},
+		[append, form],
+	);
+
+	function onFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const files = e.target.files;
+		if (files?.length) void addImageFiles(files);
+		e.target.value = "";
+	}
+
+	function onDropZoneDragOver(e: React.DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		setDropZoneActive(true);
+	}
+
+	function onDropZoneDragLeave(e: React.DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		if (e.currentTarget === e.target) setDropZoneActive(false);
+	}
+
+	function onDropZoneDrop(e: React.DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		setDropZoneActive(false);
+		const dt = e.dataTransfer.files;
+		if (dt?.length) void addImageFiles(dt);
+	}
+
+	function onThumbDragStart(index: number) {
+		dragPhotoFrom.current = index;
+	}
+
+	function onThumbDragOver(e: React.DragEvent) {
+		e.preventDefault();
+	}
+
+	function onThumbDrop(toIndex: number) {
+		const from = dragPhotoFrom.current;
+		dragPhotoFrom.current = null;
+		if (from == null || from === toIndex) return;
+		move(from, toIndex);
+	}
+
+	function onThumbDragEnd() {
+		dragPhotoFrom.current = null;
 	}
 
 	async function onSubmit(data: FormValues) {
@@ -113,6 +202,7 @@ export function ListingForm({
 		}
 
 		const combinedLocation = `${data.address.trim()}, ${data.location.trim()}`;
+		const image_urls = data.photos.map((p) => p.url);
 
 		const payload = {
 			title: data.title.trim(),
@@ -123,7 +213,7 @@ export function ListingForm({
 			sqft: Number(data.sqft),
 			start_date: new Date(data.start_date).toISOString(),
 			end_date: new Date(data.end_date).toISOString(),
-			thumbnail_url: data.thumbnailDataUrl,
+			image_urls,
 			latitude: DEFAULT_LAT,
 			longitude: DEFAULT_LNG,
 		};
@@ -153,7 +243,7 @@ export function ListingForm({
 		}
 	}
 
-	const thumb = useWatch({ control: form.control, name: "thumbnailDataUrl" });
+	const photosError = form.formState.errors.photos;
 
 	return (
 		<div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -290,23 +380,108 @@ export function ListingForm({
 								)}
 							/>
 
-							<Field className="sm:col-span-2" data-invalid={Boolean(form.formState.errors.thumbnailDataUrl)}>
-								<FieldLabel htmlFor="form-listing-cover">Cover photo</FieldLabel>
+							<Field
+								className="sm:col-span-2"
+								data-invalid={Boolean(photosError)}
+							>
+								<FieldLabel htmlFor="form-listing-photos-trigger">Photos</FieldLabel>
+								<p className="mb-3 text-sm text-muted-foreground" id="form-listing-photos-hint">
+									Drag and drop images here or click to browse. First photo is the cover (up to{" "}
+									{MAX_PHOTOS} images, 1.5 MB each).
+								</p>
+
 								<input
-									id="form-listing-cover"
+									ref={fileInputRef}
+									id="form-listing-photos-input"
 									type="file"
 									accept="image/*"
-									className="block w-full max-w-md text-sm file:mr-3 file:rounded-md file:border file:bg-muted file:px-3 file:py-1.5"
-									onChange={onCoverFileChange}
+									multiple
+									className="sr-only"
+									tabIndex={-1}
+									aria-hidden
+									onChange={onFileInputChange}
 								/>
-								{thumb ? (
-									<div className="relative mt-3 aspect-video w-full max-w-md overflow-hidden rounded-lg border bg-muted">
-										{/* eslint-disable-next-line @next/next/no-img-element */}
-										<img src={thumb} alt="Cover preview" className="size-full object-cover" />
-									</div>
+
+								<button
+									id="form-listing-photos-trigger"
+									type="button"
+									onClick={() => fileInputRef.current?.click()}
+									aria-describedby="form-listing-photos-hint"
+									onDragOver={onDropZoneDragOver}
+									onDragLeave={onDropZoneDragLeave}
+									onDrop={onDropZoneDrop}
+									className={cn(
+										"flex w-full min-h-[140px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors",
+										dropZoneActive
+											? "border-primary bg-primary/5"
+											: "border-muted-foreground/25 bg-muted/30 hover:border-muted-foreground/40 hover:bg-muted/50",
+									)}
+								>
+									<Upload className="size-8 text-muted-foreground" aria-hidden />
+									<span className="text-sm font-medium text-foreground">
+										Drop images here or click to select
+									</span>
+									<span className="text-xs text-muted-foreground">
+										{fields.length} / {MAX_PHOTOS} added
+									</span>
+								</button>
+
+								{fields.length > 0 ? (
+									<ul
+										className="mt-4 grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+										aria-label="Photo previews"
+									>
+										{fields.map((field, index) => (
+											<li
+												key={field.id}
+												draggable
+												onDragStart={() => onThumbDragStart(index)}
+												onDragOver={onThumbDragOver}
+												onDrop={() => onThumbDrop(index)}
+												onDragEnd={onThumbDragEnd}
+												className="group relative aspect-square overflow-hidden rounded-lg border bg-muted ring-offset-background focus-within:ring-2 focus-within:ring-ring"
+											>
+												{/* eslint-disable-next-line @next/next/no-img-element */}
+												<img
+													src={field.url}
+													alt=""
+													className="size-full object-cover"
+												/>
+												{index === 0 ? (
+													<span className="absolute left-1.5 top-1.5 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground shadow-sm">
+														Cover
+													</span>
+												) : (
+													<Button
+														type="button"
+														variant="secondary"
+														size="sm"
+														className="absolute left-1.5 top-1.5 h-7 px-2 text-[10px] font-medium opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+														onClick={() => move(index, 0)}
+													>
+														Make cover
+													</Button>
+												)}
+												<Button
+													type="button"
+													size="icon"
+													variant="destructive"
+													className="absolute right-1 top-1 size-8 rounded-full opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+													aria-label={`Remove photo ${index + 1}`}
+													onClick={() => remove(index)}
+												>
+													<X className="size-4" />
+												</Button>
+												<span className="pointer-events-none absolute bottom-1 left-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] text-white">
+													Drag to reorder
+												</span>
+											</li>
+										))}
+									</ul>
 								) : null}
-								{form.formState.errors.thumbnailDataUrl ? (
-									<FieldError errors={[form.formState.errors.thumbnailDataUrl]} />
+
+								{photosError?.message ? (
+									<FieldError errors={[{ message: photosError.message }]} />
 								) : null}
 							</Field>
 
@@ -343,8 +518,6 @@ export function ListingForm({
 									</Field>
 								)}
 							/>
-
-							<input type="hidden" {...form.register("thumbnailDataUrl")} />
 						</FieldGroup>
 					</form>
 				</CardContent>
