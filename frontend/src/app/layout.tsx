@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/query-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import SessionExpiredHandler from "@/components/SessionExpiredHandler";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
 const geistSans = Geist({
@@ -56,6 +57,7 @@ export default function RootLayout({
         >
           <QueryProvider>
             <TooltipProvider>
+              <SessionExpiredHandler />
               {children}
               <Toaster />
             </TooltipProvider>
