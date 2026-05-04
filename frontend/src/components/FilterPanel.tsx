@@ -20,6 +20,7 @@ import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { useEffect, useState } from 'react'
+import { API_BASE_URL } from "@/lib/api"
 
 type FilterOptions = {
   room_types: string[]
@@ -42,7 +43,7 @@ export function FilterPanel() {
 
   useEffect(() => {
     const fetchFilters = async () => {
-      const res = await fetch("http://localhost:8000/api/v1/listings/filters")
+      const res = await fetch(`${API_BASE_URL}/api/v1/listings/filters`)
       const data = await res.json()
       setFilterOptions(data)
     }

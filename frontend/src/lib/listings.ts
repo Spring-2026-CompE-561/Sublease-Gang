@@ -65,7 +65,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		end_date: "2026-08-14T00:00:00Z",
 		college_id: null,
 		thumbnail_url:
-			"https://images.unsplash.com/photo-1595526114035-0d68ed016cf2?auto=format&fit=crop&w=800&q=80",
+			"https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=800&q=80",
 		latitude: 37.4275,
 		longitude: -122.1697,
 		created_at: "2026-01-01T00:00:00Z",
@@ -196,6 +196,19 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		bedrooms: 2,
 		amenities: ["WiFi", "Furnished", "Parking", "Air Conditioning", "Laundry"],
 	},
+];
+
+/** Mock saved listings - subset of browse listings for user's saved collection. */
+export const MOCK_SAVED_LISTINGS: BrowseListing[] = [
+	MOCK_BROWSE_LISTINGS[0], // Modern Studio Near Campus
+	MOCK_BROWSE_LISTINGS[2], // Spacious 1BR in Student Housing
+	MOCK_BROWSE_LISTINGS[4], // Modern Apartment with Kitchen
+];
+
+/** Mock listings owned by the signed-in user. */
+export const MOCK_MY_LISTINGS: BrowseListing[] = [
+	MOCK_BROWSE_LISTINGS[1], // Cozy Dorm Room Available
+	MOCK_BROWSE_LISTINGS[5], // Bright Living Space Near University
 ];
 
 export interface BrowseFiltersState {
