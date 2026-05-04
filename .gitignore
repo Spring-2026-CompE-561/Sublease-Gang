@@ -3,7 +3,12 @@
 __pycache__/
 *.pyc
 *.egg-info/
-backend/sublease_marketplace.db
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
 backend/media/
 .DS_Store
 .pytest_cache/
