@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Calendar, MapPin, Star } from "lucide-react";
@@ -28,14 +29,20 @@ function formatPrice(price: number) {
 interface ListingBrowseCardProps {
 	readonly listing: BrowseListing;
 	readonly className?: string;
+	readonly actions?: ReactNode;
 }
 
-export function ListingBrowseCard({ listing, className }: ListingBrowseCardProps) {
+export function ListingBrowseCard({ listing, className, actions }: ListingBrowseCardProps) {
 	const thumb = listing.thumbnail_url;
 
 	return (
-		<Link href={`/listings/${listing.id}`} className={cn("group block outline-none", className)}>
-			<Card className="overflow-hidden py-0 transition hover:ring-2 hover:ring-amber-500/80 focus-visible:ring-2 focus-visible:ring-ring">
+		<Card
+			className={cn(
+				"overflow-hidden py-0 transition hover:ring-2 hover:ring-amber-500/80 focus-within:ring-2 focus-within:ring-ring",
+				className,
+			)}
+		>
+			<Link href={`/listings/${listing.id}`} className="group block outline-none">
 				<div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
 					{thumb ? (
 						<Image
@@ -79,7 +86,9 @@ export function ListingBrowseCard({ listing, className }: ListingBrowseCardProps
 						<span className="text-sm font-normal text-muted-foreground"> / month</span>
 					</p>
 				</div>
-			</Card>
-		</Link>
+			</Link>
+
+			{actions ? <div className="flex gap-2 border-t px-4 py-3">{actions}</div> : null}
+		</Card>
 	);
 }

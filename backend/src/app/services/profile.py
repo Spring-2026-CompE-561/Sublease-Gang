@@ -7,6 +7,7 @@ from app.repository.profile import (
     get_profile,
     get_profile_by_username,
     get_profile_or_raise,
+    set_profile_icon,
     update_profile,
 )
 from app.schemas.profile import ProfileCreate, ProfileUpdate
@@ -38,3 +39,7 @@ class ProfileService:
     @staticmethod
     def delete(db: Session, user_id: int) -> None:
         delete_profile(db, user_id)
+
+    @staticmethod
+    def set_icon(db: Session, user_id: int, icon_url: str | None) -> Profile:
+        return set_profile_icon(db, user_id, icon_url)

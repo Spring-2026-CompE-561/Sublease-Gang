@@ -98,6 +98,8 @@ class TestAuthenticatedUserRoutes:
             "email": "me@example.com",
             "username": "meuser",
             "password": "password123",
+            "firstname": "Jane",
+            "lastname": "Doe",
         }
         client.post("/api/v1/auth/signup", json=signup)
         login = client.post(
@@ -173,19 +175,13 @@ class TestAuthenticatedUserRoutes:
         me_id = client.get("/api/v1/users/me", headers=headers).json()["id"]
 
         # Build out related data directly against the same test DB session.
+        # Note: signup already created the Profile via register_with_profile,
+        # so we don't manually insert one here.
         other = make_user()
         third = make_user()
         own_listing = make_listing(host_id=me_id)
         other_listing = make_listing(host_id=other.id)
 
-        db_session.add(
-            Profile(
-                user_id=me_id,
-                firstname="Me",
-                lastname="User",
-                username=f"profile_{me_id}",
-            )
-        )
         convo_as_participant = make_conversation(
             listing_id=other_listing.id,
             user_one_id=me_id,
