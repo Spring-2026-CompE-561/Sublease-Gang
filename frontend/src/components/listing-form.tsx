@@ -29,9 +29,20 @@ import { API_BASE_URL, ACCESS_TOKEN_KEY, readApiErrorMessage } from "@/lib/api";
 const MAX_PHOTOS = 12;
 const MAX_IMAGE_BYTES = 1_500_000;
 
-// TODO: lat/lng should come from a map picker. hardcoded for now
-const DEFAULT_LAT = 0;
-const DEFAULT_LNG = 0;
+const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+
+async function geocodeAddress(query: string): Promise<{ lat: number; lng: number } | null> {
+	const url = `${NOMINATIM_URL}?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
+	const res = await fetch(url, { headers: { Accept: "application/json" } });
+	if (!res.ok) return null;
+	const data = (await res.json()) as Array<{ lat?: string; lon?: string }>;
+	const hit = data[0];
+	if (!hit?.lat || !hit?.lon) return null;
+	const lat = Number(hit.lat);
+	const lng = Number(hit.lon);
+	if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+	return { lat, lng };
+}
 
 const photoRowSchema = z.object({
 	id: z.string(),
@@ -204,6 +215,18 @@ export function ListingForm({
 		const combinedLocation = `${data.address.trim()}, ${data.location.trim()}`;
 		const image_urls = data.photos.map((p) => p.url);
 
+		let coords: { lat: number; lng: number } | null;
+		try {
+			coords = await geocodeAddress(combinedLocation);
+		} catch {
+			toast.error("Could not look up that address — check your connection and try again");
+			return;
+		}
+		if (!coords) {
+			toast.error("Couldn't find that address. Double-check the street and city.");
+			return;
+		}
+
 		const payload = {
 			title: data.title.trim(),
 			description: data.description.trim(),
@@ -214,8 +237,8 @@ export function ListingForm({
 			start_date: new Date(data.start_date).toISOString(),
 			end_date: new Date(data.end_date).toISOString(),
 			image_urls,
-			latitude: DEFAULT_LAT,
-			longitude: DEFAULT_LNG,
+			latitude: coords.lat,
+			longitude: coords.lng,
 		};
 
 		try {
