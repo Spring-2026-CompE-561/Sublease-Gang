@@ -44,7 +44,16 @@ export function MessageHostButton({ listingId, hostId, className }: Props) {
 			return;
 		}
 
-		router.push("/messages");
+		const conversation = (await res.json()) as { id?: unknown };
+		const id =
+			typeof conversation.id === "number" && Number.isFinite(conversation.id)
+				? conversation.id
+				: null;
+		if (id !== null) {
+			router.push(`/messages?conversation=${id}`);
+		} else {
+			router.push("/messages");
+		}
 	}
 
 	return (
