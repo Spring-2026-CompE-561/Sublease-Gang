@@ -15,10 +15,16 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    environment:
+      INTERNAL_API_BASE_URL: http://sublease-backend:8000
     container_name: sublease-frontend
     ports:
       - "3000:3000"
     restart: unless-stopped
+    depends_on:
+      - backend
     networks:
       - sublease-network
 
