@@ -65,14 +65,21 @@ async def list_listings(
             {
                 "id": l.id,
                 "title": l.title,
+                "description": l.description,
                 "price": l.price,
                 "college": l.college_id,
                 "location_text": l.location,
+                "location": l.location,
                 "room_type": l.room_type,
                 "sqft": l.sqft,
                 "start_date": str(l.start_date) if l.start_date else None,
                 "end_date": str(l.end_date) if l.end_date else None,
                 "thumbnail_url": l.thumbnail_url,
+                "image_urls": l.image_urls
+                if l.image_urls is not None
+                else ([l.thumbnail_url] if l.thumbnail_url else []),
+                "latitude": float(l.latitude) if l.latitude is not None else None,
+                "longitude": float(l.longitude) if l.longitude is not None else None,
                 "created_at": str(l.created_at) if l.created_at else None,
             }
         )

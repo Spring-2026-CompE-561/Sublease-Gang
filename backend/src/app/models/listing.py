@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, Numeric, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -22,6 +22,7 @@ class Listing(Base):
     end_date = Column(DateTime(timezone=True), nullable=False)
     college_id = Column(Integer, nullable=True)
     thumbnail_url = Column(String, nullable=True, default=None)
+    image_urls = Column(JSON, nullable=True)
     latitude = Column(Numeric(9, 6), nullable=False)
     longitude = Column(Numeric(9, 6), nullable=False)
 

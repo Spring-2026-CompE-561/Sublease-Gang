@@ -1,23 +1,33 @@
 from datetime import datetime
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class ListingCreate(BaseModel):
     """Schema for creating a new listing."""
 
-    title: str
-    description: str
-    price: float
-    location: str
-    room_type: str | None = None
-    sqft: int | None = None
+    title: str = Field(..., min_length=1)
+    description: str = Field(..., min_length=1)
+    price: float = Field(..., gt=0)
+    location: str = Field(..., min_length=1)
+    room_type: str = Field(..., min_length=1)
+    sqft: int = Field(..., gt=0)
     start_date: datetime
     end_date: datetime
     college_id: int | None = None
-    thumbnail_url: str | None = None
+    image_urls: list[str] = Field(..., min_length=1, max_length=12)
     latitude: float
     longitude: float
+
+    @field_validator("image_urls")
+    @classmethod
+    def validate_image_urls(cls, v: list[str]) -> list[str]:
+        for u in v:
+            if not u or not str(u).strip():
+                raise ValueError("image_urls entries must be non-empty strings")
+            if len(u) > 2_800_000:
+                raise ValueError("each image_urls entry is too large")
+        return v
 
     @model_validator(mode="after")
     def check_dates(self):
@@ -39,6 +49,7 @@ class ListingUpdate(BaseModel):
     end_date: datetime | None = None
     college_id: int | None = None
     thumbnail_url: str | None = None
+    image_urls: list[str] | None = None
     latitude: float | None = None
     longitude: float | None = None
 
@@ -50,11 +61,24 @@ class ListingUpdate(BaseModel):
         return self
 
 
-class ListingResponse(ListingCreate):
-    """Schema for listing response."""
+class ListingResponse(BaseModel):
+    """Schema for listing response (DB rows may predate stricter create rules)."""
 
-    host_id: int
     id: int
+    host_id: int
+    title: str
+    description: str
+    price: float
+    location: str
+    room_type: str | None = None
+    sqft: int | None = None
+    start_date: datetime
+    end_date: datetime
+    college_id: int | None = None
+    thumbnail_url: str | None = None
+    image_urls: list[str] | None = None
+    latitude: float
+    longitude: float
     created_at: datetime
     updated_at: datetime
 
