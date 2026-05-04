@@ -10,7 +10,14 @@ from app.schemas.listing import ListingCreate, ListingUpdate
 def create_listing(db: Session, host_id: int, listing: ListingCreate) -> Listing:
     if db.get(User, host_id) is None:
         raise ResourceNotFoundError("User not found")
-    db_listing = Listing(host_id=host_id, **listing.model_dump())
+    data = listing.model_dump()
+    urls: list[str] = data.pop("image_urls")
+    db_listing = Listing(
+        host_id=host_id,
+        **data,
+        thumbnail_url=urls[0],
+        image_urls=urls,
+    )
     db.add(db_listing)
     db.commit()
     db.refresh(db_listing)
@@ -173,6 +180,8 @@ def update_listing(
     update_data = updates.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_listing, field, value)
+    if "image_urls" in update_data and update_data["image_urls"]:
+        db_listing.thumbnail_url = update_data["image_urls"][0]
     db.commit()
     db.refresh(db_listing)
     return db_listing
