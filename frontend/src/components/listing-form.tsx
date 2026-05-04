@@ -310,7 +310,7 @@ export function ListingForm({
 		try {
 			if (isEdit && listingId !== undefined) {
 				// Handle PUT request for edit - keep using fetch for now as we don't have putApiJson
-				const res = await fetch(`/api/v1/listings/${listingId}`, {
+				const res = await fetch(`${API_BASE_URL}/api/v1/listings/${listingId}`, {
 					method: "PUT",
 					headers: {
 						"Content-Type": "application/json",
