@@ -10,7 +10,7 @@ import { fetchBrowseListingById } from "@/lib/listings";
 
 type Props = {
 	params: Promise<{ id: string }>;
-	searchParams: Promise<{ from?: string }>;
+	searchParams: Promise<{ from?: string | string[] }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -21,6 +21,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 		title: `${listing.title} | SubLease`,
 		description: listing.description.slice(0, 160),
 	};
+}
+
+const BACK_DESTINATIONS: Record<string, { href: string; label: string }> = {
+	"my-listings": { href: "/my-listings", label: "Back to my listings" },
+	"saved-listings": { href: "/saved-listings", label: "Back to saved listings" },
+};
+
+function resolveBackLink(from: string | string[] | undefined) {
+	const slug = Array.isArray(from) ? from[0] : from;
+	if (slug && BACK_DESTINATIONS[slug]) return BACK_DESTINATIONS[slug];
+	return { href: "/listings", label: "Back to all listings" };
 }
 
 function formatRange(start: string, end: string) {
@@ -54,20 +65,18 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
 	if (!listing) notFound();
 
 	const hero = listing.thumbnail_url;
-	const cameFromMap = from === "map";
-	const backHref = cameFromMap ? "/map" : "/listings";
-	const backLabel = cameFromMap ? "Back to map" : "Back to all listings";
+	const back = resolveBackLink(from);
 
 	return (
 		<main className="flex-1">
 			<div className="border-b bg-background">
 				<div className="mx-auto max-w-6xl px-4 py-3 md:px-6">
 					<Link
-						href={backHref}
+						href={back.href}
 						className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground"
 					>
 						<ArrowLeft className="size-4" aria-hidden />
-						{backLabel}
+						{back.label}
 					</Link>
 				</div>
 			</div>
