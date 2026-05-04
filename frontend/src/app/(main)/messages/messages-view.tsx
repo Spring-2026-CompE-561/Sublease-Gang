@@ -506,9 +506,20 @@ export function MessagesView() {
 								{selected && meId !== null
 									? (() => {
 											const other = otherParticipantId(selected, meId);
+											const username = userNames[other];
 											return (
 												<p className="text-xs text-muted-foreground">
-													with {userNames[other] ?? `user #${other}`}
+													with{" "}
+													{username ? (
+														<Link
+															href={`/users/${username}`}
+															className="font-medium text-foreground underline-offset-2 hover:underline"
+														>
+															{username}
+														</Link>
+													) : (
+														`user #${other}`
+													)}
 												</p>
 											);
 										})()
