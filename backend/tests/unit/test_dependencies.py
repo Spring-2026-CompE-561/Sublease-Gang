@@ -1,7 +1,11 @@
 import pytest
 from fastapi import HTTPException
 
-from app.core.auth import create_access_token
+from app.core.auth import (
+    create_access_token,
+    create_refresh_token,
+    create_reset_token,
+)
 from app.core.dependencies import get_current_user
 
 
@@ -32,4 +36,18 @@ class TestGetCurrentUser:
         token = create_access_token({"sub": str(user.id)})
 
         with pytest.raises(HTTPException, match="Account disabled"):
+            get_current_user(token=token, db=db_session)
+
+    def test_rejects_refresh_token(self, db_session, make_user):
+        user = make_user()
+        token = create_refresh_token({"sub": str(user.id)})
+
+        with pytest.raises(HTTPException, match="Invalid or expired token"):
+            get_current_user(token=token, db=db_session)
+
+    def test_rejects_reset_token(self, db_session, make_user):
+        user = make_user()
+        token = create_reset_token({"sub": str(user.id)})
+
+        with pytest.raises(HTTPException, match="Invalid or expired token"):
             get_current_user(token=token, db=db_session)
