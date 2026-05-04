@@ -34,6 +34,7 @@ interface ListingBrowseCardProps {
 
 export function ListingBrowseCard({ listing, className, actions }: ListingBrowseCardProps) {
 	const thumb = listing.thumbnail_url;
+	const isDataUrl = Boolean(thumb?.startsWith("data:"));
 
 	return (
 		<Card
@@ -44,7 +45,15 @@ export function ListingBrowseCard({ listing, className, actions }: ListingBrowse
 		>
 			<Link href={`/listings/${listing.id}`} className="group block outline-none">
 				<div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
-					{thumb ? (
+					{thumb && isDataUrl ? (
+						// eslint-disable-next-line @next/next/no-img-element -- user-uploaded data URLs
+						<img
+							src={thumb}
+							alt={listing.title}
+							className="absolute inset-0 size-full object-cover transition duration-300 group-hover:scale-[1.02]"
+						/>
+					) : null}
+					{thumb && !isDataUrl ? (
 						<Image
 							src={thumb}
 							alt={listing.title}
@@ -63,10 +72,12 @@ export function ListingBrowseCard({ listing, className, actions }: ListingBrowse
 				<div className="space-y-2 p-4">
 					<div className="flex items-start justify-between gap-2">
 						<h2 className="line-clamp-2 font-semibold leading-snug text-foreground">{listing.title}</h2>
-						<span className="flex shrink-0 items-center gap-0.5 text-sm font-medium tabular-nums">
-							<Star className="size-3.5 fill-foreground text-foreground" aria-hidden />
-							{listing.rating.toFixed(1)}
-						</span>
+						{listing.rating > 0 ? (
+							<span className="flex shrink-0 items-center gap-0.5 text-sm font-medium tabular-nums">
+								<Star className="size-3.5 fill-foreground text-foreground" aria-hidden />
+								{listing.rating.toFixed(1)}
+							</span>
+						) : null}
 					</div>
 
 					<p className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -79,7 +90,28 @@ export function ListingBrowseCard({ listing, className, actions }: ListingBrowse
 						{formatRange(listing.start_date, listing.end_date)}
 					</p>
 
-					<p className="text-sm text-muted-foreground">{listing.university}</p>
+					{listing.university ? (
+						<p className="text-sm text-muted-foreground">{listing.university}</p>
+					) : null}
+
+					<p className="text-xs text-muted-foreground">
+						<span className="font-medium text-foreground">{listing.bedrooms}</span> bed ·{" "}
+						<span className="capitalize">{listing.room_type ?? "—"}</span> ·{" "}
+						<span>{listing.sqft} sq ft</span>
+					</p>
+
+					{listing.amenities.length > 0 ? (
+						<ul className="flex flex-wrap gap-1.5" aria-label="Amenities">
+							{listing.amenities.slice(0, 5).map((a) => (
+								<li
+									key={a}
+									className="rounded-full border border-border/80 bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
+								>
+									{a}
+								</li>
+							))}
+						</ul>
+					) : null}
 
 					<p className="pt-1 text-lg font-semibold">
 						{formatPrice(listing.price)}
