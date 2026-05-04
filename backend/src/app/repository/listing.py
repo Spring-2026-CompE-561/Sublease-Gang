@@ -81,6 +81,8 @@ def search_listings(
 ) -> tuple[int, list[Listing]]:
     """Search listings with filters. Returns (total_count, results)."""
     query = db.query(Listing)
+    if host_id is not None:
+        query = query.filter(Listing.host_id == host_id)
     if college_id is not None:
         query = query.filter(Listing.college_id == college_id)
     if location is not None:

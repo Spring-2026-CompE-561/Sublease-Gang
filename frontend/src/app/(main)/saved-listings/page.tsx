@@ -42,7 +42,7 @@ export default function SavedListingsPage() {
         {MOCK_SAVED_LISTINGS.length > 0 ? (
           <div className="grid auto-rows-max gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {MOCK_SAVED_LISTINGS.map((listing) => (
-              <ListingBrowseCard key={listing.id} listing={listing} />
+              <ListingBrowseCard key={listing.id} listing={listing} from="saved-listings" />
             ))}
           </div>
         ) : (
