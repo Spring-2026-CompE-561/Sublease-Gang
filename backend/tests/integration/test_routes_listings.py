@@ -256,7 +256,13 @@ class TestListingOwnershipWithAuth:
     def _register_and_login(self, client, *, email: str, username: str, password: str):
         client.post(
             "/api/v1/auth/signup",
-            json={"email": email, "username": username, "password": password},
+            json={
+                "email": email,
+                "username": username,
+                "password": password,
+                "firstname": "Jane",
+                "lastname": "Doe",
+            },
         )
         login = client.post(
             "/api/v1/auth/login",

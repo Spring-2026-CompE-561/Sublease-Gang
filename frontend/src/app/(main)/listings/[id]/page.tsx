@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { ArrowLeft, Calendar, MapPin, Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { MessageHostButton } from "@/components/MessageHostButton";
+import { ReportListingDialog } from "@/components/report-listing-dialog";
 import { getBrowseListingById } from "@/lib/listings";
 
 type Props = { params: Promise<{ id: string }> };
@@ -141,6 +142,7 @@ export default async function ListingDetailPage({ params }: Props) {
 							className="mt-6 w-full justify-center rounded-xl"
 						/>
 						<p className="mt-3 text-center text-xs text-muted-foreground">You won&apos;t be charged yet.</p>
+						<ReportListingDialog listingId={listing.id} />
 					</Card>
 				</div>
 			</div>
