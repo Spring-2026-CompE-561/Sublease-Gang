@@ -107,6 +107,8 @@ def make_listing(db_session):
             "start_date": now,
             "end_date": now + timedelta(days=30),
             "college_id": 1,
+            "thumbnail_url": "https://example.com/photo.jpg",
+            "image_urls": ["https://example.com/photo.jpg"],
             "latitude": 40.7128,
             "longitude": -74.006,
         }
