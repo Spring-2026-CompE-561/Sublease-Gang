@@ -1,6 +1,11 @@
 "use client";
 
-import { AMENITY_OPTIONS, ROOM_TYPE_OPTIONS, UNIVERSITY_OPTIONS } from "@/lib/listings";
+import type { CollegeFilterOption } from "@/lib/listings";
+import {
+	AMENITY_OPTIONS,
+	PRICE_FILTER_MAX,
+	SQFT_FILTER_MAX,
+} from "@/lib/listings";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -14,12 +19,9 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
-const ANY_UNIVERSITY = "__any__";
-const ANY_ROOM_TYPE = "__any_room__";
+const ANY_COLLEGE = "__any__";
 
 export function FiltersBody({
-	priceSliderMax,
-	sqftSliderMax,
 	priceRange,
 	setPriceRange,
 	sqftRange,
@@ -28,14 +30,11 @@ export function FiltersBody({
 	setBedroomFilter,
 	selectedAmenities,
 	toggleAmenity,
-	university,
-	setUniversity,
-	roomTypeFilter,
-	setRoomTypeFilter,
+	collegeId,
+	setCollegeId,
+	collegeOptions,
 	onReset,
 }: {
-	priceSliderMax: number;
-	sqftSliderMax: number;
 	priceRange: [number, number];
 	setPriceRange: (v: [number, number]) => void;
 	sqftRange: [number, number];
@@ -44,55 +43,33 @@ export function FiltersBody({
 	setBedroomFilter: (v: number | null) => void;
 	selectedAmenities: Set<string>;
 	toggleAmenity: (id: string) => void;
-	university: string | null;
-	setUniversity: (v: string | null) => void;
-	roomTypeFilter: string | null;
-	setRoomTypeFilter: (v: string | null) => void;
+	collegeId: number | null;
+	setCollegeId: (v: number | null) => void;
+	collegeOptions: CollegeFilterOption[];
 	onReset: () => void;
 }) {
-	const beds = [1, 2, 3, 4] as const;
+	const beds = [0, 1, 2, 3, 4] as const;
 
 	return (
 		<div className="min-w-0 space-y-8">
 			<div className="space-y-3">
 				<h3 className="font-semibold">University</h3>
 				<Select
-					value={university ?? ANY_UNIVERSITY}
-					onValueChange={(v) => setUniversity(v === ANY_UNIVERSITY ? null : v)}
+					value={collegeId != null ? String(collegeId) : ANY_COLLEGE}
+					onValueChange={(v) => setCollegeId(v === ANY_COLLEGE ? null : Number(v))}
 				>
 					<SelectTrigger className="h-11 w-full min-w-0 max-w-full">
-						{/* Base UI may render the raw `value` for the sentinel; override display text. */}
 						<SelectValue placeholder="Any university">
-							{university == null ? "Any university" : university}
+							{collegeId == null
+								? "Any university"
+								: (collegeOptions.find((c) => c.id === collegeId)?.label ?? "University")}
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-none">
-						<SelectItem value={ANY_UNIVERSITY}>Any university</SelectItem>
-						{UNIVERSITY_OPTIONS.map((u) => (
-							<SelectItem key={u} value={u}>
-								{u}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-			</div>
-
-			<div className="space-y-3">
-				<h3 className="font-semibold">Room type</h3>
-				<Select
-					value={roomTypeFilter ?? ANY_ROOM_TYPE}
-					onValueChange={(v) => setRoomTypeFilter(v === ANY_ROOM_TYPE ? null : v)}
-				>
-					<SelectTrigger className="h-11 w-full min-w-0 max-w-full">
-						<SelectValue placeholder="Any room type">
-							{roomTypeFilter == null ? "Any room type" : roomTypeFilter}
-						</SelectValue>
-					</SelectTrigger>
-					<SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-none">
-						<SelectItem value={ANY_ROOM_TYPE}>Any room type</SelectItem>
-						{ROOM_TYPE_OPTIONS.map((rt) => (
-							<SelectItem key={rt} value={rt}>
-								{rt}
+						<SelectItem value={ANY_COLLEGE}>Any university</SelectItem>
+						{collegeOptions.map((c) => (
+							<SelectItem key={c.id} value={String(c.id)}>
+								{c.label}
 							</SelectItem>
 						))}
 					</SelectContent>
@@ -103,7 +80,7 @@ export function FiltersBody({
 				<h3 className="font-semibold">Price Range</h3>
 				<Slider
 					min={0}
-					max={priceSliderMax}
+					max={PRICE_FILTER_MAX}
 					step={50}
 					value={priceRange}
 					onValueChange={(v) => setPriceRange(v as [number, number])}
@@ -118,7 +95,7 @@ export function FiltersBody({
 				<h3 className="font-semibold">Square Footage</h3>
 				<Slider
 					min={0}
-					max={sqftSliderMax}
+					max={SQFT_FILTER_MAX}
 					step={50}
 					value={sqftRange}
 					onValueChange={(v) => setSqftRange(v as [number, number])}
@@ -144,7 +121,7 @@ export function FiltersBody({
 									: "border-input hover:bg-muted/60",
 							)}
 						>
-							{n} bed{n > 1 ? "s" : ""}
+							{n === 0 ? "Studio" : `${n} bed${n > 1 ? "s" : ""}`}
 						</button>
 					))}
 				</div>
