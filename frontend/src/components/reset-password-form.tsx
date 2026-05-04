@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
@@ -25,7 +24,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { API_BASE_URL, readApiErrorMessage } from "@/lib/api";
+import { API_BASE_URL } from "@/lib/api";
 
 const formSchema = z
   .object({
@@ -77,8 +76,10 @@ export function ResetPasswordForm({
       });
 
       if (!res.ok) {
-        const message = await readApiErrorMessage(res) ?? "Unknown error";
-        toast.error("Reset failed: " + message);
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(
+          "Reset failed: " + (errorData?.detail || "Unknown error")
+        );
         setIsLoading(false);
         return;
       }
@@ -101,14 +102,7 @@ export function ResetPasswordForm({
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Invalid or missing reset token.{" "}
-              <Link
-                href="/forgot-password"
-                className="font-medium text-foreground underline underline-offset-4"
-              >
-                Request a new link
-              </Link>
-              .
+              Invalid or missing reset token. Request a new link.
             </p>
           </CardContent>
         </Card>
@@ -131,12 +125,12 @@ export function ResetPasswordForm({
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="reset-new-password">
+                    <FieldLabel htmlFor="form-reset-password">
                       New Password
                     </FieldLabel>
                     <Input
                       {...field}
-                      id="reset-new-password"
+                      id="form-reset-password"
                       aria-invalid={fieldState.invalid}
                       type="password"
                       placeholder="••••••••"
