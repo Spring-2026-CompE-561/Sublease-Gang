@@ -8,7 +8,10 @@ import { MessageHostButton } from "@/components/MessageHostButton";
 import { ReportListingDialog } from "@/components/report-listing-dialog";
 import { fetchBrowseListingById } from "@/lib/listings";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+	params: Promise<{ id: string }>;
+	searchParams: Promise<{ from?: string }>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const { id } = await params;
@@ -44,23 +47,27 @@ function formatPrice(price: number) {
 	}).format(price);
 }
 
-export default async function ListingDetailPage({ params }: Props) {
+export default async function ListingDetailPage({ params, searchParams }: Props) {
 	const { id } = await params;
+	const { from } = await searchParams;
 	const listing = await fetchBrowseListingById(id);
 	if (!listing) notFound();
 
 	const hero = listing.thumbnail_url;
+	const cameFromMap = from === "map";
+	const backHref = cameFromMap ? "/map" : "/listings";
+	const backLabel = cameFromMap ? "Back to map" : "Back to all listings";
 
 	return (
 		<main className="flex-1">
 			<div className="border-b bg-background">
 				<div className="mx-auto max-w-6xl px-4 py-3 md:px-6">
 					<Link
-						href="/listings"
+						href={backHref}
 						className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground"
 					>
 						<ArrowLeft className="size-4" aria-hidden />
-						Back to all listings
+						{backLabel}
 					</Link>
 				</div>
 			</div>
