@@ -63,10 +63,12 @@ export function ListingBrowseCard({ listing, className, actions }: ListingBrowse
 				<div className="space-y-2 p-4">
 					<div className="flex items-start justify-between gap-2">
 						<h2 className="line-clamp-2 font-semibold leading-snug text-foreground">{listing.title}</h2>
-						<span className="flex shrink-0 items-center gap-0.5 text-sm font-medium tabular-nums">
-							<Star className="size-3.5 fill-foreground text-foreground" aria-hidden />
-							{listing.rating.toFixed(1)}
-						</span>
+						{listing.rating > 0 ? (
+							<span className="flex shrink-0 items-center gap-0.5 text-sm font-medium tabular-nums">
+								<Star className="size-3.5 fill-foreground text-foreground" aria-hidden />
+								{listing.rating.toFixed(1)}
+							</span>
+						) : null}
 					</div>
 
 					<p className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -79,7 +81,9 @@ export function ListingBrowseCard({ listing, className, actions }: ListingBrowse
 						{formatRange(listing.start_date, listing.end_date)}
 					</p>
 
-					<p className="text-sm text-muted-foreground">{listing.university}</p>
+					{listing.university ? (
+						<p className="text-sm text-muted-foreground">{listing.university}</p>
+					) : null}
 
 					<p className="pt-1 text-lg font-semibold">
 						{formatPrice(listing.price)}
