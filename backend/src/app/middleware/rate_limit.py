@@ -15,6 +15,10 @@ RATE_LIMIT_RULES: dict[str, tuple[int, int]] = {
 # Buckets inactive for longer than this (in seconds) are pruned
 _BUCKET_TTL = 3600
 
+# Only throttle write requests. GET/HEAD/OPTIONS pass through so page reloads
+# and dev-mode double-mounts don't accidentally hit the limit.
+_RATE_LIMITED_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
 
 class _TokenBucket:
     __slots__ = ("last_refill", "max_tokens", "refill_rate", "tokens")
@@ -60,6 +64,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: RequestResponseEndpoint,
     ) -> Response:
+        if request.method not in _RATE_LIMITED_METHODS:
+            return await call_next(request)
+
         path = request.url.path
         client_ip = request.client.host if request.client else "unknown"
 

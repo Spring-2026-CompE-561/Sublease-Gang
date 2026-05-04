@@ -75,11 +75,14 @@ def search_listings(
     max_sqft: int | None = None,
     start_date=None,
     end_date=None,
+    host_id: int | None = None,
     skip: int = 0,
     limit: int = 20,
 ) -> tuple[int, list[Listing]]:
     """Search listings with filters. Returns (total_count, results)."""
     query = db.query(Listing)
+    if host_id is not None:
+        query = query.filter(Listing.host_id == host_id)
     if college_id is not None:
         query = query.filter(Listing.college_id == college_id)
     if location is not None:
