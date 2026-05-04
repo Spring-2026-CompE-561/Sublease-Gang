@@ -19,6 +19,16 @@ class UserResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PublicUserResponse(BaseModel):
+    """User fields safe to expose to other authenticated users."""
+
+    id: int
+    username: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class UserUpdate(BaseModel):
     email: EmailStr | None = None
     username: str | None = None

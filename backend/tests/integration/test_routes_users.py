@@ -54,15 +54,42 @@ class TestCreateUser:
 
 
 class TestGetUser:
+    def _register_and_login(self, client, email="caller@example.com", username="caller"):
+        signup = {
+            "email": email,
+            "username": username,
+            "password": "password123",
+            "firstname": "Jane",
+            "lastname": "Doe",
+        }
+        client.post("/api/v1/auth/signup", json=signup)
+        login = client.post(
+            "/api/v1/auth/login",
+            json={"email": email, "password": "password123"},
+        )
+        token = login.json()["access_token"]
+        return {"Authorization": f"Bearer {token}"}
+
     def test_found(self, client, make_user):
+        headers = self._register_and_login(client)
         user = make_user(email="found@example.com", username="founduser")
-        resp = client.get(f"/api/v1/users/{user.id}")
+        resp = client.get(f"/api/v1/users/{user.id}", headers=headers)
         assert resp.status_code == 200
-        assert resp.json()["email"] == "found@example.com"
+        data = resp.json()
+        assert data["id"] == user.id
+        assert data["username"] == "founduser"
+        assert "email" not in data
+        assert "account_disabled" not in data
 
     def test_not_found(self, client):
-        resp = client.get("/api/v1/users/9999")
+        headers = self._register_and_login(client)
+        resp = client.get("/api/v1/users/9999", headers=headers)
         assert resp.status_code == 404
+
+    def test_requires_auth(self, client, make_user):
+        user = make_user(email="found@example.com", username="founduser")
+        resp = client.get(f"/api/v1/users/{user.id}")
+        assert resp.status_code == 401
 
 
 class TestAuthProtectedEndpoints:
