@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  User, Mail, Phone, MapPin, Pencil,
+  User, Mail, Phone, Pencil,
   X, Check, Loader2, AtSign, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,10 @@ export default function Profile() {
   });
 
   useEffect(() => {
-    if (!token) { router.push("/signin"); return; }
+    if (!token) {
+      router.push("/signin");
+      return;
+    }
 
     const load = async () => {
       try {
@@ -64,7 +67,7 @@ export default function Profile() {
       }
     };
     load();
-  }, []);
+  }, [token, router]);
 
   const handleSave = async () => {
     if (!token) return;
@@ -76,6 +79,9 @@ export default function Profile() {
       if (userForm.username !== user?.username) userPayload.username = userForm.username;
 
       const profilePayload: Record<string, string> = {};
+      if (userForm.username !== user?.username) {
+        profilePayload.username = userForm.username;
+      }
       if (profileForm.firstname !== profile?.firstname) profilePayload.firstname = profileForm.firstname;
       if (profileForm.lastname !== profile?.lastname) profilePayload.lastname = profileForm.lastname;
       if (profileForm.contact_email !== (profile?.contact_email ?? "")) profilePayload.contact_email = profileForm.contact_email;
@@ -88,6 +94,13 @@ export default function Profile() {
         updates.push(profileService.updateMe(token, userPayload).then(setUser));
       if (Object.keys(profilePayload).length > 0)
         updates.push(profileService.updateMyProfile(token, profilePayload).then(setProfile));
+
+      if (updates.length === 0) {
+        setIsSaving(false);
+        toast("No changes to save");
+        setIsEditing(false);
+        return;
+      }
 
       await Promise.all(updates);
       setIsEditing(false);
@@ -113,6 +126,27 @@ export default function Profile() {
   };
 
   const handleSignOut = () => { clearTokens(); router.push("/"); };
+
+  const handleDeleteAccount = async () => {
+    if (!token) return;
+    const confirmed = window.confirm(
+      "Delete your account? This cannot be undone."
+    );
+    if (!confirmed) return;
+
+    setIsSaving(true);
+    try {
+      await profileService.deleteMe(token);
+      clearTokens();
+      toast.success("Your account has been deleted.");
+      router.push("/");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete account";
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -327,6 +361,15 @@ export default function Profile() {
               className="w-full justify-start min-h-[44px] text-sm font-normal text-red-600 hover:text-red-600 hover:bg-red-50"
             >
               Sign Out
+            </Button>
+            <Separator />
+            <Button
+              variant="ghost"
+              onClick={handleDeleteAccount}
+              disabled={isSaving}
+              className="w-full justify-start min-h-[44px] text-sm font-normal text-red-600 hover:text-red-600 hover:bg-red-50"
+            >
+              Delete account
             </Button>
           </div>
         </Card>
