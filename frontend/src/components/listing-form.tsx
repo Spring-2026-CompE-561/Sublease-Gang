@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,7 @@ import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
-import { API_BASE_URL, ACCESS_TOKEN_KEY, readApiErrorMessage } from "@/lib/api";
+import { API_BASE_URL, ACCESS_TOKEN_KEY, readApiErrorMessage, postApiJson, ApiUnauthorizedError } from "@/lib/api";
 import type { Listing } from "@/types/listing";
 
 const MAX_PHOTOS = 12;
@@ -133,8 +133,19 @@ export function ListingForm({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const dragPhotoFrom = useRef<number | null>(null);
 	const [dropZoneActive, setDropZoneActive] = useState(false);
+	const [isAuthChecked] = useState(() =>
+		typeof window !== "undefined" && !!localStorage.getItem(ACCESS_TOKEN_KEY)
+	);
 
 	const isEdit = mode === "edit" && listing !== undefined && listingId !== undefined;
+
+	// Check authentication before showing form
+	useEffect(() => {
+		if (!isAuthChecked) {
+			toast.error("You need to sign in first");
+			router.push("/signin");
+		}
+	}, [isAuthChecked, router]);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -295,44 +306,55 @@ export function ListingForm({
 			longitude: coords.lng,
 		};
 
-		const url =
-			isEdit && listingId !== undefined
-				? `${API_BASE_URL}/api/v1/listings/${listingId}`
-				: `${API_BASE_URL}/api/v1/listings/`;
-		const method = isEdit ? "PUT" : "POST";
-
 		try {
-			const res = await fetch(url, {
-				method,
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify(payload),
-			});
+			if (isEdit && listingId !== undefined) {
+				// Handle PUT request for edit - keep using fetch for now as we don't have putApiJson
+				const res = await fetch(`${API_BASE_URL}/api/v1/listings/${listingId}`, {
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify(payload),
+				});
 
-			if (!res.ok) {
-				const msg = (await readApiErrorMessage(res)) || res.statusText;
-				const verb = isEdit ? "save changes" : "post listing";
-				toast.error(`Could not ${verb}: ${msg}`);
-				return;
-			}
+				if (!res.ok) {
+					const msg = (await readApiErrorMessage(res)) || res.statusText;
+					toast.error(`Could not save changes: ${msg}`);
+					return;
+				}
 
-			if (isEdit) {
 				toast.success("Listing updated");
 				router.push("/my-listings");
 			} else {
+				// Handle POST request for create - use postApiJson
+				await postApiJson<Listing, typeof payload>("/api/v1/listings/", token, payload);
 				toast.success("Listing posted");
 				router.push("/");
 			}
 			router.refresh();
 		} catch (e) {
-			console.log("listing submit failed", e);
-			toast.error("Something went wrong, try again");
+			if (e instanceof ApiUnauthorizedError) {
+				// SessionExpiredHandler will handle the redirect and toast
+				return;
+			}
+			
+			if (e instanceof Error) {
+				const verb = isEdit ? "save changes" : "post listing";
+				toast.error(`Could not ${verb}: ${e.message}`);
+				console.log("listing submit failed", e);
+			} else {
+				toast.error("Something went wrong, try again");
+				console.log("listing submit failed", e);
+			}
 		}
 	}
 
 	const photosError = form.formState.errors.photos;
+
+	if (!isAuthChecked) {
+		return null;
+	}
 
 	return (
 		<div className={cn("flex flex-col gap-6", className)} {...props}>
