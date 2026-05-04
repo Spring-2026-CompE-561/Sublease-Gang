@@ -612,9 +612,19 @@ export function ListingForm({
 				</CardContent>
 				<CardFooter>
 					<Field orientation="horizontal">
-						<Button type="button" variant="outline" onClick={() => form.reset()}>
-							Reset
-						</Button>
+						{isEdit ? (
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => router.push("/my-listings")}
+							>
+								Cancel
+							</Button>
+						) : (
+							<Button type="button" variant="outline" onClick={() => form.reset()}>
+								Reset
+							</Button>
+						)}
 						<Button type="submit" form="form-listing">
 							{isEdit ? "Save changes" : "Post listing"}
 						</Button>
