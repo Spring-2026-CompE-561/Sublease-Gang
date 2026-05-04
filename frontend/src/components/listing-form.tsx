@@ -133,20 +133,19 @@ export function ListingForm({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const dragPhotoFrom = useRef<number | null>(null);
 	const [dropZoneActive, setDropZoneActive] = useState(false);
-	const [isAuthChecked, setIsAuthChecked] = useState(false);
+	const [isAuthChecked] = useState(() =>
+		typeof window !== "undefined" && !!localStorage.getItem(ACCESS_TOKEN_KEY)
+	);
 
 	const isEdit = mode === "edit" && listing !== undefined && listingId !== undefined;
 
 	// Check authentication before showing form
 	useEffect(() => {
-		const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-		if (!token) {
+		if (!isAuthChecked) {
 			toast.error("You need to sign in first");
 			router.push("/signin");
-			return;
 		}
-		setIsAuthChecked(true);
-	}, [router]);
+	}, [isAuthChecked, router]);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
