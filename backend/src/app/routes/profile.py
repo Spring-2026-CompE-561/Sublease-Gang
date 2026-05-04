@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+import uuid
+from pathlib import Path
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
-from app.models.profiles import Profile
 from app.repository.exceptions import ResourceConflictError, ResourceNotFoundError
 from app.schemas.profile import ProfileCreate, ProfileResponse, ProfileUpdate
 from app.services.profile import ProfileService
@@ -77,3 +80,45 @@ async def get_profile_by_username(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     return profile
+# Local-disk storage. TODO: swap to object storage (S3/R2) before deploy —
+# files written here won't survive container restarts and aren't CDN-fronted.
+ICON_DIR = Path("media") / "icons"
+
+ALLOWED_ICON_TYPES: dict[str, str] = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
+MAX_ICON_BYTES = 5 * 1024 * 1024
+
+
+@router.post("/me/icon", response_model=ProfileResponse)
+async def upload_my_icon(
+    file: Annotated[UploadFile, File()],
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Upload a profile picture for the current user."""
+    extension = ALLOWED_ICON_TYPES.get(file.content_type or "")
+    if extension is None:
+        raise HTTPException(
+            status_code=415,
+            detail="Unsupported image type. Use jpg, png, webp, or gif.",
+        )
+    contents = await file.read()
+    if len(contents) > MAX_ICON_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Icon exceeds {MAX_ICON_BYTES // (1024 * 1024)}MB limit.",
+        )
+    ICON_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{current_user.id}_{uuid.uuid4().hex}{extension}"
+    path = ICON_DIR / filename
+    path.write_bytes(contents)
+    icon_url = f"/media/icons/{filename}"
+    try:
+        return ProfileService.set_icon(db, current_user.id, icon_url)
+    except ResourceNotFoundError as e:
+        path.unlink(missing_ok=True)
+        raise HTTPException(status_code=404, detail=e.detail) from e
