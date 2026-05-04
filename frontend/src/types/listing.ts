@@ -31,5 +31,7 @@ export interface ListingListApiRow {
 	start_date: string | null;
 	end_date: string | null;
 	thumbnail_url?: string | null;
+	latitude?: number | null;
+	longitude?: number | null;
 	created_at: string | null;
 }
