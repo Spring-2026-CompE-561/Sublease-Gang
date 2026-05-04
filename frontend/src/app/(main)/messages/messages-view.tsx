@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiUnauthorizedError, fetchApiJson } from "@/lib/api";
@@ -19,6 +19,7 @@ import {
 } from "@/lib/conversations";
 import type { Conversation, Message } from "@/types/conversation";
 import { MESSAGE_CONTENT_MAX_LENGTH } from "@/types/conversation";
+import { cn } from "@/lib/utils";
 
 type MeResponse = { id: number; username: string };
 
@@ -345,9 +346,12 @@ export function MessagesView() {
 									No conversations yet. Message a host from a listing to start
 									one.
 								</p>
-								<Button type="button" variant="outline" size="sm" asChild>
-									<Link href="/listings">Browse listings</Link>
-								</Button>
+								<Link
+									href="/listings"
+									className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+								>
+									Browse listings
+								</Link>
 							</div>
 						) : (
 							<ul className="space-y-1">
