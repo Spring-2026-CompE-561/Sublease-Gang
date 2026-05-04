@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class ListingCreate(BaseModel):
@@ -15,9 +15,19 @@ class ListingCreate(BaseModel):
     start_date: datetime
     end_date: datetime
     college_id: int | None = None
-    thumbnail_url: str = Field(..., min_length=1)
+    image_urls: list[str] = Field(..., min_length=1, max_length=12)
     latitude: float
     longitude: float
+
+    @field_validator("image_urls")
+    @classmethod
+    def validate_image_urls(cls, v: list[str]) -> list[str]:
+        for u in v:
+            if not u or not str(u).strip():
+                raise ValueError("image_urls entries must be non-empty strings")
+            if len(u) > 2_800_000:
+                raise ValueError("each image_urls entry is too large")
+        return v
 
     @model_validator(mode="after")
     def check_dates(self):
@@ -39,6 +49,7 @@ class ListingUpdate(BaseModel):
     end_date: datetime | None = None
     college_id: int | None = None
     thumbnail_url: str | None = None
+    image_urls: list[str] | None = None
     latitude: float | None = None
     longitude: float | None = None
 
@@ -65,6 +76,7 @@ class ListingResponse(BaseModel):
     end_date: datetime
     college_id: int | None = None
     thumbnail_url: str | None = None
+    image_urls: list[str] | None = None
     latitude: float
     longitude: float
     created_at: datetime
