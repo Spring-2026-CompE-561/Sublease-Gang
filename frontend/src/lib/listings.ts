@@ -1,4 +1,5 @@
 import type { Listing } from "@/types/listing";
+import { API_BASE_URL } from "@/lib/api";
 
 /** Listing fields used on browse + cards (mock/API may grow over time). */
 export type BrowseListing = Listing & {
@@ -231,7 +232,8 @@ export function filterBrowseListings(
 ): BrowseListing[] {
 	return listings.filter((l) => {
 		if (l.price < f.priceMin || l.price > f.priceMax) return false;
-		if (l.sqft < f.sqftMin || l.sqft > f.sqftMax) return false;
+		const sqft = l.sqft ?? 0;
+		if (sqft < f.sqftMin || sqft > f.sqftMax) return false;
 		if (f.bedrooms != null && l.bedrooms !== f.bedrooms) return false;
 		if (f.university && l.university !== f.university) return false;
 		for (const a of f.amenities) {
@@ -239,6 +241,36 @@ export function filterBrowseListings(
 		}
 		return true;
 	});
+}
+
+// API doesn't return rating/university/verified/bedrooms/amenities yet,
+// so fill them with sensible defaults.
+function bedroomsFromRoomType(roomType: string | null | undefined): number {
+	if (!roomType) return 1;
+	const lower = roomType.toLowerCase();
+	if (lower.includes("studio")) return 0;
+	const m = lower.match(/(\d+)/);
+	return m ? Number(m[1]) : 1;
+}
+
+export function toBrowseListing(l: Listing): BrowseListing {
+	return {
+		...l,
+		rating: 0,
+		university: "",
+		verified: false,
+		bedrooms: bedroomsFromRoomType(l.room_type),
+		amenities: [],
+	};
+}
+
+export async function fetchBrowseListings(): Promise<BrowseListing[]> {
+	const res = await fetch(`${API_BASE_URL}/api/v1/listings/?limit=100`);
+	if (!res.ok) {
+		throw new Error("Failed to load listings");
+	}
+	const data = (await res.json()) as { results: Listing[] };
+	return data.results.map(toBrowseListing);
 }
 
 export function getBrowseListingById(id: string): BrowseListing | undefined {
