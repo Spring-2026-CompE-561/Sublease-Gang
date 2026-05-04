@@ -156,7 +156,13 @@ class TestConversationMessagePermissionsWithAuth:
         password = "password123"
         client.post(
             "/api/v1/auth/signup",
-            json={"email": email, "username": username, "password": password},
+            json={
+                "email": email,
+                "username": username,
+                "password": password,
+                "firstname": "Jane",
+                "lastname": "Doe",
+            },
         )
         login = client.post(
             "/api/v1/auth/login",
