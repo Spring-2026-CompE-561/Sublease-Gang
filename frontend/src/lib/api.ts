@@ -212,3 +212,26 @@ export async function patchApiJson<TResponse, TBody>(
 
   return (await response.json()) as TResponse;
 }
+
+export async function deleteApiJson(
+  path: string,
+  accessToken: string,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (response.status === 401) throw new ApiUnauthorizedError();
+
+  if (!response.ok) {
+    const apiErrorMessage = await readApiErrorMessage(response);
+    const errorSuffix = apiErrorMessage ? ` - ${apiErrorMessage}` : "";
+    throw new Error(
+      `Failed to delete ${path}: ${response.status} ${response.statusText}${errorSuffix}`
+    );
+  }
+}
