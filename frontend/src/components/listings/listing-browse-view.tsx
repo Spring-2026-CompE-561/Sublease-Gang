@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Filter } from "lucide-react";
 import {
+	fetchBrowseListings,
 	filterBrowseListings,
-	MOCK_BROWSE_LISTINGS,
 	PRICE_FILTER_MAX,
 	SQFT_FILTER_MAX,
 	type BrowseFiltersState,
+	type BrowseListing,
 } from "@/lib/listings";
 import { ListingBrowseCard } from "@/components/listings/listing-browse-card";
 import { FiltersBody } from "@/components/listings/filters-body";
@@ -33,6 +34,27 @@ export function ListingBrowseView() {
 	const [university, setUniversity] = useState<string | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
 
+	const [listings, setListings] = useState<BrowseListing[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [loadError, setLoadError] = useState<string | null>(null);
+
+	useEffect(() => {
+		let cancelled = false;
+		fetchBrowseListings()
+			.then((data) => {
+				if (!cancelled) setListings(data);
+			})
+			.catch((e) => {
+				console.error("fetchBrowseListings", e);
+				if (!cancelled) setLoadError("Could not load listings.");
+			})
+			.finally(() => {
+				if (!cancelled) setLoading(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
 
 	const filters: BrowseFiltersState = useMemo(
 		() => ({
@@ -48,16 +70,16 @@ export function ListingBrowseView() {
 	);
 
 	const filtered = useMemo(() => {
-  		const base = filterBrowseListings(MOCK_BROWSE_LISTINGS, filters);
-  		const trimmed = query.trim().toLowerCase();
-  		if (!trimmed) return base;
-  			return base.filter(
-    	(l) =>
-      	l.title.toLowerCase().includes(trimmed) ||
-      	l.location.toLowerCase().includes(trimmed) ||
-      	l.university.toLowerCase().includes(trimmed),
-  		);
-	}, [filters, query]);
+		const base = filterBrowseListings(listings, filters);
+		const trimmed = query.trim().toLowerCase();
+		if (!trimmed) return base;
+		return base.filter(
+			(l) =>
+				l.title.toLowerCase().includes(trimmed) ||
+				l.location.toLowerCase().includes(trimmed) ||
+				l.university.toLowerCase().includes(trimmed),
+		);
+	}, [filters, listings, query]);
 
 	function toggleAmenity(id: string) {
 		setSelectedAmenities((prev) => {
@@ -139,17 +161,29 @@ export function ListingBrowseView() {
 						</div>
 					</div>
 
-					<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-						{filtered.map((listing) => (
-							<ListingBrowseCard key={listing.id} listing={listing} />
-						))}
-					</div>
-
-					{filtered.length === 0 ? (
+					{loading ? (
 						<p className="rounded-xl border border-dashed py-12 text-center text-muted-foreground">
-							No listings match these filters. Try adjusting price or amenities.
+							Loading listings...
 						</p>
-					) : null}
+					) : loadError ? (
+						<p className="rounded-xl border border-dashed py-12 text-center text-muted-foreground">
+							{loadError}
+						</p>
+					) : (
+						<>
+							<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+								{filtered.map((listing) => (
+									<ListingBrowseCard key={listing.id} listing={listing} />
+								))}
+							</div>
+
+							{filtered.length === 0 ? (
+								<p className="rounded-xl border border-dashed py-12 text-center text-muted-foreground">
+									No listings match these filters. Try adjusting price or amenities.
+								</p>
+							) : null}
+						</>
+					)}
 				</div>
 			</div>
 		</div>
