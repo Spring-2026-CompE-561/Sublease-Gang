@@ -5,15 +5,14 @@ import type { Metadata } from "next";
 import { ArrowLeft, Calendar, MapPin, Star } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ReportListingDialog } from "@/components/report-listing-dialog";
-import { getBrowseListingById } from "@/lib/listings";
+import { fetchBrowseListingById } from "@/lib/listings";
 import { cn } from "@/lib/utils";
 
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const { id } = await params;
-	const listing = getBrowseListingById(id);
+	const listing = await fetchBrowseListingById(id);
 	if (!listing) return { title: "Listing | SubLease" };
 	return {
 		title: `${listing.title} | SubLease`,
@@ -47,7 +46,7 @@ function formatPrice(price: number) {
 
 export default async function ListingDetailPage({ params }: Props) {
 	const { id } = await params;
-	const listing = getBrowseListingById(id);
+	const listing = await fetchBrowseListingById(id);
 	if (!listing) notFound();
 
 	const hero = listing.thumbnail_url;
@@ -91,13 +90,19 @@ export default async function ListingDetailPage({ params }: Props) {
 								<MapPin className="size-4 shrink-0" aria-hidden />
 								{listing.location}
 							</span>
-							<span className="text-border">·</span>
-							<span className="inline-flex items-center gap-1 font-medium text-foreground">
-								<Star className="size-4 fill-foreground text-foreground" aria-hidden />
-								{listing.rating.toFixed(1)}
-							</span>
+							{listing.rating > 0 ? (
+								<>
+									<span className="text-border">·</span>
+									<span className="inline-flex items-center gap-1 font-medium text-foreground">
+										<Star className="size-4 fill-foreground text-foreground" aria-hidden />
+										{listing.rating.toFixed(1)}
+									</span>
+								</>
+							) : null}
 						</div>
-						<p className="mt-2 text-sm text-muted-foreground">{listing.university}</p>
+						{listing.university.trim().length > 0 ? (
+							<p className="mt-2 text-sm text-muted-foreground">{listing.university}</p>
+						) : null}
 					</div>
 					{listing.verified ? (
 						<span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">Verified</span>
@@ -147,7 +152,6 @@ export default async function ListingDetailPage({ params }: Props) {
 							Contact host
 						</Link>
 						<p className="mt-3 text-center text-xs text-muted-foreground">You won&apos;t be charged yet.</p>
-						<ReportListingDialog listingId={listing.id} />
 					</Card>
 				</div>
 			</div>

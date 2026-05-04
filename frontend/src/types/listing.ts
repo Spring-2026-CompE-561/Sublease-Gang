@@ -16,3 +16,18 @@ export interface Listing {
 	created_at: string;
 	updated_at: string;
 }
+
+/** One row from `GET /api/v1/listings/` (differs from full `Listing`). */
+export interface ListingListApiRow {
+	id: number;
+	title: string;
+	price: number;
+	college: number | null;
+	location_text: string;
+	room_type?: string | null;
+	sqft?: number | null;
+	start_date: string | null;
+	end_date: string | null;
+	thumbnail_url?: string | null;
+	created_at: string | null;
+}
