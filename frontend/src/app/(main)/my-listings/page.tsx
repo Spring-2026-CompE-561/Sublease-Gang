@@ -16,7 +16,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { ListingBrowseCard } from "@/components/listings/listing-browse-card";
-import { ApiUnauthorizedError, fetchApiJson } from "@/lib/api";
+import { ApiUnauthorizedError, deleteApiJson, fetchApiJson } from "@/lib/api";
 import { clearTokens, getAccessToken } from "@/lib/auth";
 import { fetchListingsByHost, type BrowseListing } from "@/lib/listings";
 
@@ -29,6 +29,7 @@ export default function MyListingsPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [pendingDelete, setPendingDelete] = useState<BrowseListing | null>(null);
+	const [deleteBusy, setDeleteBusy] = useState(false);
 
 	const loadMyListings = useCallback(async () => {
 		const token = getAccessToken();
@@ -68,12 +69,33 @@ export default function MyListingsPage() {
 		toast.info(`Editing "${listing.title}" is coming soon.`);
 	}
 
-	function confirmDelete() {
+	async function confirmDelete() {
 		if (!pendingDelete) return;
+		const token = getAccessToken();
+		if (!token) {
+			router.replace("/signin");
+			return;
+		}
+
 		const removed = pendingDelete;
-		setListings((prev) => prev.filter((l) => l.id !== removed.id));
-		setPendingDelete(null);
-		toast.success(`Removed "${removed.title}".`);
+		setDeleteBusy(true);
+		try {
+			await deleteApiJson(`/api/v1/listings/${removed.id}`, token);
+			setListings((prev) => prev.filter((l) => l.id !== removed.id));
+			setPendingDelete(null);
+			toast.success(`Removed "${removed.title}".`);
+		} catch (e) {
+			if (e instanceof ApiUnauthorizedError) {
+				clearTokens();
+				toast.error(e.message);
+				router.replace("/signin");
+				return;
+			}
+			const message = e instanceof Error ? e.message : String(e);
+			toast.error(message);
+		} finally {
+			setDeleteBusy(false);
+		}
 	}
 
 	if (!isAuthorized && loading) {
@@ -165,6 +187,7 @@ export default function MyListingsPage() {
 			<Dialog
 				open={pendingDelete !== null}
 				onOpenChange={(open) => {
+					if (deleteBusy) return;
 					if (!open) setPendingDelete(null);
 				}}
 			>
@@ -180,7 +203,11 @@ export default function MyListingsPage() {
 					<DialogFooter>
 						<DialogClose
 							render={
-								<Button variant="outline" className="min-h-[44px] text-sm">
+								<Button
+									variant="outline"
+									className="min-h-[44px] text-sm"
+									disabled={deleteBusy}
+								>
 									Cancel
 								</Button>
 							}
@@ -188,9 +215,17 @@ export default function MyListingsPage() {
 						<Button
 							variant="destructive"
 							className="min-h-[44px] text-sm font-medium"
-							onClick={confirmDelete}
+							disabled={deleteBusy}
+							onClick={() => void confirmDelete()}
 						>
-							Delete listing
+							{deleteBusy ? (
+								<>
+									<Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+									Deleting…
+								</>
+							) : (
+								"Delete listing"
+							)}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
