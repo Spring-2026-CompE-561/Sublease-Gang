@@ -63,14 +63,18 @@ def delete_tokens_by_user(db: Session, user_id: int) -> None:
     db.commit()
 
 
-def record_refresh_jti(
-    db: Session, user_id: int, jti: str, expiration_time: datetime
+def record_token_jti(
+    db: Session,
+    user_id: int,
+    jti: str,
+    token_type: str,
+    expiration_time: datetime,
 ) -> Token:
-    """Persist a freshly-issued refresh token's jti for later validation."""
+    """Persist a freshly-issued token's jti for later validation."""
     row = Token(
         user_id=user_id,
         jti=jti,
-        token_type="refresh",
+        token_type=token_type,
         expiration_time=expiration_time,
     )
     db.add(row)
@@ -79,20 +83,44 @@ def record_refresh_jti(
     return row
 
 
-def get_refresh_token_by_jti(db: Session, jti: str) -> Token | None:
+def get_token_by_jti(db: Session, jti: str) -> Token | None:
     return db.query(Token).filter(Token.jti == jti).first()
 
 
-def revoke_refresh_token(db: Session, token: Token) -> None:
+def revoke_token(db: Session, token: Token) -> None:
     token.revoked_at = datetime.now(UTC)
     db.commit()
 
 
-def revoke_all_refresh_tokens_for_user(db: Session, user_id: int) -> None:
-    """Soft-revoke every active refresh token tracked for this user."""
+def revoke_all_active_for_user_and_type(
+    db: Session, user_id: int, token_type: str
+) -> None:
+    """Soft-revoke every active jti row of this type for the user."""
     db.query(Token).filter(
         Token.user_id == user_id,
+        Token.token_type == token_type,
         Token.jti.isnot(None),
         Token.revoked_at.is_(None),
     ).update({Token.revoked_at: datetime.now(UTC)}, synchronize_session=False)
     db.commit()
+
+
+# ── Backwards-compatible refresh-specific aliases ─────────────────────────
+
+
+def record_refresh_jti(
+    db: Session, user_id: int, jti: str, expiration_time: datetime
+) -> Token:
+    return record_token_jti(db, user_id, jti, "refresh", expiration_time)
+
+
+def get_refresh_token_by_jti(db: Session, jti: str) -> Token | None:
+    return get_token_by_jti(db, jti)
+
+
+def revoke_refresh_token(db: Session, token: Token) -> None:
+    revoke_token(db, token)
+
+
+def revoke_all_refresh_tokens_for_user(db: Session, user_id: int) -> None:
+    revoke_all_active_for_user_and_type(db, user_id, "refresh")

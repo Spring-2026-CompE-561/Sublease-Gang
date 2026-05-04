@@ -120,6 +120,39 @@ class TestAuthenticatedUserRoutes:
         )
         assert login_resp.status_code == 200
 
+    def test_change_password_revokes_existing_refresh_tokens(self, client):
+        # Sign up + grab the refresh token from signup.
+        signup = client.post(
+            "/api/v1/auth/signup",
+            json={
+                "email": "cp@example.com",
+                "username": "cpuser",
+                "password": "password123",
+                "firstname": "Jane",
+                "lastname": "Doe",
+            },
+        )
+        signup_refresh = signup.json()["refresh_token"]
+        headers = {"Authorization": f"Bearer {signup.json()['access_token']}"}
+
+        change_resp = client.put(
+            "/api/v1/users/me/password",
+            headers=headers,
+            json={
+                "current_password": "password123",
+                "new_password": "newpassword123",
+                "confirm_new_password": "newpassword123",
+            },
+        )
+        assert change_resp.status_code == 204
+
+        # The refresh token from before the change must now be dead.
+        refresh_resp = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": signup_refresh},
+        )
+        assert refresh_resp.status_code == 401
+
     def test_delete_me_then_me_is_unauthorized(self, client):
         headers = self._register_and_login(client)
         delete_resp = client.delete("/api/v1/users/me", headers=headers)

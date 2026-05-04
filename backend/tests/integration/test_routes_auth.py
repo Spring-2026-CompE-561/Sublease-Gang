@@ -347,3 +347,69 @@ class TestResetPassword:
             json={"token": token, "new_password": "short"},
         )
         assert resp.status_code == 400
+
+    def test_reset_token_is_single_use(self, client):
+        token = self._get_reset_token(client)
+        first = client.put(
+            "/api/v1/auth/reset_password",
+            json={"token": token, "new_password": "newpassword123"},
+        )
+        assert first.status_code == 200
+
+        # Replaying the same reset token must fail.
+        replay = client.put(
+            "/api/v1/auth/reset_password",
+            json={"token": token, "new_password": "anotherpassword456"},
+        )
+        assert replay.status_code == 400
+
+    def test_consuming_one_reset_token_burns_peers(self, client):
+        # User requests two reset tokens (e.g., spammy "forgot password" clicks).
+        first_token = self._get_reset_token(client)
+        second_resp = client.post(
+            "/api/v1/auth/forgot_password",
+            json={"email": "reset@example.com"},
+        )
+        second_token = second_resp.json()["reset_token"]
+        assert first_token != second_token
+
+        # Consuming the first should also dead-end the second.
+        consumed = client.put(
+            "/api/v1/auth/reset_password",
+            json={"token": first_token, "new_password": "newpassword123"},
+        )
+        assert consumed.status_code == 200
+
+        leftover = client.put(
+            "/api/v1/auth/reset_password",
+            json={"token": second_token, "new_password": "yetanother456"},
+        )
+        assert leftover.status_code == 400
+
+    def test_reset_token_without_jti_rejected(self, client, db_session):
+        import jwt
+        from datetime import UTC, datetime, timedelta
+
+        from app.core.auth import ALGORITHM, SECRET_KEY
+
+        # Sign up a user, then hand-craft a reset token without a jti claim.
+        client.post(
+            "/api/v1/auth/signup",
+            json=_signup_payload(email="rj@example.com", username="rjuser"),
+        )
+        user = db_session.query(User).filter(User.email == "rj@example.com").first()
+        forged = jwt.encode(
+            {
+                "sub": str(user.id),
+                "type": "reset",
+                "iat": datetime.now(UTC),
+                "exp": datetime.now(UTC) + timedelta(minutes=10),
+            },
+            SECRET_KEY,
+            algorithm=ALGORITHM,
+        )
+        resp = client.put(
+            "/api/v1/auth/reset_password",
+            json={"token": forged, "new_password": "newpassword123"},
+        )
+        assert resp.status_code == 400

@@ -11,6 +11,7 @@ from app.schemas.user import (
     UserResponse,
     UserUpdate,
 )
+from app.services.token import TokenService
 from app.services.user import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -56,6 +57,9 @@ async def change_password(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+    # Force every active session to re-authenticate on next refresh.
+    TokenService.revoke_all_refresh_for_user(db, current_user.id)
+    TokenService.revoke_all_reset_for_user(db, current_user.id)
 
 
 @router.get("/{user_id}", response_model=PublicUserResponse)

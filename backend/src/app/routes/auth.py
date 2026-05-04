@@ -148,15 +148,13 @@ async def forgot_password(
     email enumeration. In development mode the reset token is included
     in the response for testing convenience.
     """
-    from app.core.auth import create_reset_token
-
     response: dict = {
         "message": "If that email is registered, a reset link has been sent.",
     }
     user = UserService.get_by_email(db, payload.email)
     if user is None:
         return response
-    reset_token = create_reset_token(data={"sub": str(user.id)})
+    reset_token = TokenService.issue_reset_token(db, user.id)
     if settings.environment == "development":
         logger.info("Password reset token for user %s: %s", user.id, reset_token)
         response["reset_token"] = reset_token
@@ -170,13 +168,29 @@ async def reset_password(
     payload: ResetPasswordRequest,
     db: Session = Depends(get_db),
 ):
-    """Reset password using a token from forgot_password."""
+    """Reset password using a token from forgot_password.
+
+    Reset tokens are single-use. The jti is looked up server-side; if it
+    has already been consumed (or was never issued by us) the request is
+    rejected. After a successful reset every active reset and refresh
+    token for the user is revoked.
+    """
     token_payload = verify_token(payload.token)
     if token_payload is None or token_payload.get("type") != "reset":
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    jti = token_payload.get("jti")
+    if jti is None:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    record = TokenService.get_reset_record(db, jti)
+    if record is None or record.revoked_at is not None:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
     user_id = token_payload.get("sub")
     user = UserService.get_by_id(db, int(user_id))
     if user is None:
         raise HTTPException(status_code=400, detail="Invalid reset token")
     UserService.reset_password(db, user, payload.new_password)
+    # Burn the consumed jti and any peers; also revoke the user's refresh
+    # tokens so a stolen pair can't outlive a reset.
+    TokenService.revoke_all_reset_for_user(db, user.id)
+    TokenService.revoke_all_refresh_for_user(db, user.id)
     return {"message": "Password has been reset successfully."}
