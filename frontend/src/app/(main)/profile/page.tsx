@@ -251,7 +251,7 @@ export default function Profile() {
                 ) : (
                   <>
                     <p className="text-xs text-gray-500">Username</p>
-                    <p className="text-sm">@{user?.username}</p>
+                    <p className="text-sm">{user?.username}</p>
                   </>
                 )}
               </div>
