@@ -16,6 +16,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { ListingBrowseCard } from "@/components/listings/listing-browse-card";
+import { getAccessToken } from "@/lib/auth";
 import { MOCK_MY_LISTINGS, type BrowseListing } from "@/lib/listings";
 
 export default function MyListingsPage() {
@@ -25,7 +26,7 @@ export default function MyListingsPage() {
 	const [pendingDelete, setPendingDelete] = useState<BrowseListing | null>(null);
 
 	useEffect(() => {
-		const token = localStorage.getItem("access_token");
+		const token = getAccessToken();
 		if (!token) {
 			router.push("/signin");
 			return;
