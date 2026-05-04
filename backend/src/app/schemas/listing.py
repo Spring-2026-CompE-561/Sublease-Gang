@@ -1,21 +1,21 @@
 from datetime import datetime
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class ListingCreate(BaseModel):
     """Schema for creating a new listing."""
 
-    title: str
-    description: str
-    price: float
-    location: str
-    room_type: str | None = None
-    sqft: int | None = None
+    title: str = Field(..., min_length=1)
+    description: str = Field(..., min_length=1)
+    price: float = Field(..., gt=0)
+    location: str = Field(..., min_length=1)
+    room_type: str = Field(..., min_length=1)
+    sqft: int = Field(..., gt=0)
     start_date: datetime
     end_date: datetime
     college_id: int | None = None
-    thumbnail_url: str | None = None
+    thumbnail_url: str = Field(..., min_length=1)
     latitude: float
     longitude: float
 
@@ -50,11 +50,23 @@ class ListingUpdate(BaseModel):
         return self
 
 
-class ListingResponse(ListingCreate):
-    """Schema for listing response."""
+class ListingResponse(BaseModel):
+    """Schema for listing response (DB rows may predate stricter create rules)."""
 
-    host_id: int
     id: int
+    host_id: int
+    title: str
+    description: str
+    price: float
+    location: str
+    room_type: str | None = None
+    sqft: int | None = None
+    start_date: datetime
+    end_date: datetime
+    college_id: int | None = None
+    thumbnail_url: str | None = None
+    latitude: float
+    longitude: float
     created_at: datetime
     updated_at: datetime
 
