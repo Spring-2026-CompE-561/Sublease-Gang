@@ -184,4 +184,33 @@ export async function postApiJsonWithFallback<TResponse, TBody>(
 		lastError ?? new Error("Failed to save data to all fallback endpoints.")
 	);
 }
-//the above file is used from the professors repo 
+
+
+export async function postApiJson<TResponse, TBody>(
+	path: string,
+	accessToken: string,
+	body: TBody,
+): Promise<TResponse> {
+	const response = await fetch(`${API_BASE_URL}${path}`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${accessToken}`,
+		},
+		body: JSON.stringify(body),
+	});
+
+	if (response.status === 401) {
+		throw new ApiUnauthorizedError();
+	}
+
+	if (!response.ok) {
+		const apiErrorMessage = await readApiErrorMessage(response);
+		const errorSuffix = apiErrorMessage ? ` - ${apiErrorMessage}` : "";
+		throw new Error(
+			`Failed to save to ${path}: ${response.status} ${response.statusText}${errorSuffix}`,
+		);
+	}
+
+	return (await response.json()) as TResponse;
+}
