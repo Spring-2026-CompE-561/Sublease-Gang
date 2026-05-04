@@ -175,6 +175,28 @@ class TestForgotPassword:
         assert "message" in data
         assert "reset_token" not in data
 
+    def test_production_mode_omits_token_from_response_and_logs(
+        self, client, monkeypatch, caplog
+    ):
+        from app.routes import auth as auth_routes
+
+        monkeypatch.setattr(auth_routes.settings, "environment", "production")
+        client.post(
+            "/api/v1/auth/signup",
+            json=_signup_payload(email="prod@example.com", username="produser"),
+        )
+        with caplog.at_level("INFO", logger="app.routes.auth"):
+            resp = client.post(
+                "/api/v1/auth/forgot_password",
+                json={"email": "prod@example.com"},
+            )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "reset_token" not in data
+        # No log record should contain a JWT (three dot-separated base64 segments).
+        for record in caplog.records:
+            assert record.getMessage().count(".") < 2 or "eyJ" not in record.getMessage()
+
 
 class TestResetPassword:
     def _get_reset_token(self, client):

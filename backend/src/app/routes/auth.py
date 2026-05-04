@@ -118,9 +118,11 @@ async def forgot_password(
     if user is None:
         return response
     reset_token = create_reset_token(data={"sub": str(user.id)})
-    logger.info("Password reset token for user %s: %s", user.id, reset_token)
     if settings.environment == "development":
+        logger.info("Password reset token for user %s: %s", user.id, reset_token)
         response["reset_token"] = reset_token
+    else:
+        logger.info("Password reset requested for user %s", user.id)
     return response
 
 
