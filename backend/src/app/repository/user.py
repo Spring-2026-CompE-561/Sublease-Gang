@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -46,6 +48,7 @@ def update_user(db: Session, user: User, updates: UserUpdate) -> User:
 
 def update_password(db: Session, user: User, new_password_hash: str) -> User:
     user.password_hash = new_password_hash
+    user.password_changed_at = datetime.now(UTC)
     db.commit()
     db.refresh(user)
     return user
