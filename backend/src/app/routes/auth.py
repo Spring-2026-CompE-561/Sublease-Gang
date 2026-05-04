@@ -1,5 +1,5 @@
 import logging
-from datetime import timedelta
+from datetime import UTC, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -85,6 +85,16 @@ async def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or account disabled",
+        )
+    iat = token_payload.get("iat")
+    pca = user.password_changed_at
+    if pca.tzinfo is None:
+        pca = pca.replace(tzinfo=UTC)
+    if iat is None or iat < int(pca.timestamp()):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = create_access_token(
         data={"sub": str(user.id)},
