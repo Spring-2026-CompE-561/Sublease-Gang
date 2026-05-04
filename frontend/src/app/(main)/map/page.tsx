@@ -5,11 +5,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Filter } from "lucide-react";
 import {
 	collegeOptionsFromMockListings,
+	fetchBrowseListings,
+	fetchCollegeFilterOptions,
 	filterBrowseListings,
-	MOCK_BROWSE_LISTINGS,
 	PRICE_FILTER_MAX,
 	SQFT_FILTER_MAX,
 	type BrowseFiltersState,
+	type BrowseListing,
+	type CollegeFilterOption,
 } from "@/lib/listings";
 import { FiltersBody } from "@/components/listings/filters-body";
 import type { FlyToTarget } from "@/components/Map";
@@ -34,8 +37,44 @@ export default function MapPage() {
 	const [collegeId, setCollegeId] = useState<number | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [flyTo, setFlyTo] = useState<FlyToTarget | undefined>();
+	const [listings, setListings] = useState<BrowseListing[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [loadError, setLoadError] = useState<string | null>(null);
+	const [collegeOptions, setCollegeOptions] = useState<CollegeFilterOption[]>(
+		() => collegeOptionsFromMockListings(),
+	);
 
-	const collegeOptions = useMemo(() => collegeOptionsFromMockListings(), []);
+	useEffect(() => {
+		let cancelled = false;
+		fetchBrowseListings()
+			.then((data) => {
+				if (!cancelled) setListings(data);
+			})
+			.catch((e) => {
+				console.error("fetchBrowseListings", e);
+				if (!cancelled) setLoadError("Could not load listings.");
+			})
+			.finally(() => {
+				if (!cancelled) setLoading(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	useEffect(() => {
+		let cancelled = false;
+		fetchCollegeFilterOptions()
+			.then((opts) => {
+				if (!cancelled) setCollegeOptions(opts);
+			})
+			.catch(() => {
+				if (!cancelled) setCollegeOptions(collegeOptionsFromMockListings());
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
 
 	useEffect(() => {
 		if (typeof window === "undefined" || !("geolocation" in navigator)) return;
@@ -68,21 +107,23 @@ export default function MapPage() {
 	);
 
 	const filtered = useMemo(
-		() => filterBrowseListings(MOCK_BROWSE_LISTINGS, filters),
-		[filters],
+		() => filterBrowseListings(listings, filters),
+		[listings, filters],
 	);
 
 	const pins = useMemo(
 		() =>
-			filtered.map((l) => ({
-				id: String(l.id),
-				latitude: l.latitude,
-				longitude: l.longitude,
-				title: l.title,
-				price: l.price,
-				thumbnailUrl: l.thumbnail_url ?? undefined,
-				location: l.location,
-			})),
+			filtered
+				.filter((l) => l.latitude !== 0 || l.longitude !== 0)
+				.map((l) => ({
+					id: String(l.id),
+					latitude: l.latitude,
+					longitude: l.longitude,
+					title: l.title,
+					price: l.price,
+					thumbnailUrl: l.thumbnail_url ?? undefined,
+					location: l.location,
+				})),
 		[filtered],
 	);
 
@@ -160,7 +201,11 @@ export default function MapPage() {
 					</div>
 
 					<p className="mb-2 text-sm text-muted-foreground">
-						{pins.length} listing{pins.length !== 1 ? "s" : ""} on the map
+						{loading
+							? "Loading listings..."
+							: loadError
+								? loadError
+								: `${pins.length} listing${pins.length !== 1 ? "s" : ""} on the map`}
 					</p>
 
 					<div className="h-[calc(100vh-9rem)] w-full overflow-hidden rounded-xl lg:h-[calc(100vh-7rem)]">
