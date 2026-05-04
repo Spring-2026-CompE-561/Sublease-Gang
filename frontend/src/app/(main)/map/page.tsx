@@ -4,10 +4,10 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { Filter } from "lucide-react";
 import {
+	BROWSE_PRICE_SLIDER_MAX,
+	BROWSE_SQFT_SLIDER_MAX,
 	filterBrowseListings,
 	MOCK_BROWSE_LISTINGS,
-	PRICE_FILTER_MAX,
-	SQFT_FILTER_MAX,
 	type BrowseFiltersState,
 } from "@/lib/listings";
 import { FiltersBody } from "@/components/listings/filters-body";
@@ -26,11 +26,12 @@ import {
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
 export default function MapPage() {
-	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
-	const [sqftRange, setSqftRange] = useState<[number, number]>([0, SQFT_FILTER_MAX]);
+	const [priceRange, setPriceRange] = useState<[number, number]>([0, BROWSE_PRICE_SLIDER_MAX]);
+	const [sqftRange, setSqftRange] = useState<[number, number]>([0, BROWSE_SQFT_SLIDER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
 	const [university, setUniversity] = useState<string | null>(null);
+	const [roomTypeFilter, setRoomTypeFilter] = useState<string | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [flyTo, setFlyTo] = useState<FlyToTarget | undefined>();
 
@@ -60,8 +61,9 @@ export default function MapPage() {
 			bedrooms: bedroomFilter,
 			amenities: selectedAmenities,
 			university,
+			roomType: roomTypeFilter,
 		}),
-		[priceRange, sqftRange, bedroomFilter, selectedAmenities, university],
+		[priceRange, sqftRange, bedroomFilter, selectedAmenities, university, roomTypeFilter],
 	);
 
 	const filtered = useMemo(
@@ -77,7 +79,7 @@ export default function MapPage() {
 				longitude: l.longitude,
 				title: l.title,
 				price: l.price,
-				thumbnailUrl: l.thumbnail_url,
+				thumbnailUrl: l.thumbnail_url ?? undefined,
 				location: l.location,
 			})),
 		[filtered],
@@ -93,14 +95,17 @@ export default function MapPage() {
 	}
 
 	function resetFilters() {
-		setPriceRange([0, PRICE_FILTER_MAX]);
-		setSqftRange([0, SQFT_FILTER_MAX]);
+		setPriceRange([0, BROWSE_PRICE_SLIDER_MAX]);
+		setSqftRange([0, BROWSE_SQFT_SLIDER_MAX]);
 		setBedroomFilter(null);
 		setSelectedAmenities(new Set());
 		setUniversity(null);
+		setRoomTypeFilter(null);
 	}
 
 	const filterProps = {
+		priceSliderMax: BROWSE_PRICE_SLIDER_MAX,
+		sqftSliderMax: BROWSE_SQFT_SLIDER_MAX,
 		priceRange,
 		setPriceRange,
 		sqftRange,
@@ -111,6 +116,8 @@ export default function MapPage() {
 		toggleAmenity,
 		university,
 		setUniversity,
+		roomTypeFilter,
+		setRoomTypeFilter,
 		onReset: resetFilters,
 	};
 

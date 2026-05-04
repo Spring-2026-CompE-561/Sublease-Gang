@@ -4,10 +4,10 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Filter } from "lucide-react";
 import {
+	BROWSE_PRICE_SLIDER_MAX,
+	BROWSE_SQFT_SLIDER_MAX,
 	filterBrowseListings,
 	MOCK_BROWSE_LISTINGS,
-	PRICE_FILTER_MAX,
-	SQFT_FILTER_MAX,
 	type BrowseFiltersState,
 } from "@/lib/listings";
 import { ListingBrowseCard } from "@/components/listings/listing-browse-card";
@@ -26,11 +26,12 @@ import {
 export function ListingBrowseView() {
 	const searchParams = useSearchParams();
   	const query = searchParams.get("q") ?? "";
-	const [priceRange, setPriceRange] = useState<[number, number]>([0, PRICE_FILTER_MAX]);
-	const [sqftRange, setSqftRange] = useState<[number, number]>([0, SQFT_FILTER_MAX]);
+	const [priceRange, setPriceRange] = useState<[number, number]>([0, BROWSE_PRICE_SLIDER_MAX]);
+	const [sqftRange, setSqftRange] = useState<[number, number]>([0, BROWSE_SQFT_SLIDER_MAX]);
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
 	const [university, setUniversity] = useState<string | null>(null);
+	const [roomTypeFilter, setRoomTypeFilter] = useState<string | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
 
 
@@ -43,20 +44,27 @@ export function ListingBrowseView() {
 			bedrooms: bedroomFilter,
 			amenities: selectedAmenities,
 			university,
+			roomType: roomTypeFilter,
 		}),
-		[priceRange, sqftRange, bedroomFilter, selectedAmenities, university],
+		[priceRange, sqftRange, bedroomFilter, selectedAmenities, university, roomTypeFilter],
 	);
 
 	const filtered = useMemo(() => {
-  		const base = filterBrowseListings(MOCK_BROWSE_LISTINGS, filters);
-  		const trimmed = query.trim().toLowerCase();
-  		if (!trimmed) return base;
-  			return base.filter(
-    	(l) =>
-      	l.title.toLowerCase().includes(trimmed) ||
-      	l.location.toLowerCase().includes(trimmed) ||
-      	l.university.toLowerCase().includes(trimmed),
-  		);
+		const base = filterBrowseListings(MOCK_BROWSE_LISTINGS, filters);
+		const trimmed = query.trim().toLowerCase();
+		if (!trimmed) return base;
+		return base.filter((l) => {
+			const desc = (l.description ?? "").toLowerCase();
+			const rt = (l.room_type ?? "").toLowerCase();
+			return (
+				l.title.toLowerCase().includes(trimmed) ||
+				l.location.toLowerCase().includes(trimmed) ||
+				l.university.toLowerCase().includes(trimmed) ||
+				desc.includes(trimmed) ||
+				rt.includes(trimmed) ||
+				l.amenities.some((a) => a.toLowerCase().includes(trimmed))
+			);
+		});
 	}, [filters, query]);
 
 	function toggleAmenity(id: string) {
@@ -69,14 +77,17 @@ export function ListingBrowseView() {
 	}
 
 	function resetFilters() {
-		setPriceRange([0, PRICE_FILTER_MAX]);
-		setSqftRange([0, SQFT_FILTER_MAX]);
+		setPriceRange([0, BROWSE_PRICE_SLIDER_MAX]);
+		setSqftRange([0, BROWSE_SQFT_SLIDER_MAX]);
 		setBedroomFilter(null);
 		setSelectedAmenities(new Set());
 		setUniversity(null);
+		setRoomTypeFilter(null);
 	}
 
 	const filterProps = {
+		priceSliderMax: BROWSE_PRICE_SLIDER_MAX,
+		sqftSliderMax: BROWSE_SQFT_SLIDER_MAX,
 		priceRange,
 		setPriceRange,
 		sqftRange,
@@ -87,6 +98,8 @@ export function ListingBrowseView() {
 		toggleAmenity,
 		university,
 		setUniversity,
+		roomTypeFilter,
+		setRoomTypeFilter,
 		onReset: resetFilters,
 	};
 

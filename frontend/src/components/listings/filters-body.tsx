@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	AMENITY_OPTIONS,
-	PRICE_FILTER_MAX,
-	SQFT_FILTER_MAX,
-	UNIVERSITY_OPTIONS,
-} from "@/lib/listings";
+import { AMENITY_OPTIONS, ROOM_TYPE_OPTIONS, UNIVERSITY_OPTIONS } from "@/lib/listings";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -20,8 +15,11 @@ import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
 const ANY_UNIVERSITY = "__any__";
+const ANY_ROOM_TYPE = "__any_room__";
 
 export function FiltersBody({
+	priceSliderMax,
+	sqftSliderMax,
 	priceRange,
 	setPriceRange,
 	sqftRange,
@@ -32,8 +30,12 @@ export function FiltersBody({
 	toggleAmenity,
 	university,
 	setUniversity,
+	roomTypeFilter,
+	setRoomTypeFilter,
 	onReset,
 }: {
+	priceSliderMax: number;
+	sqftSliderMax: number;
 	priceRange: [number, number];
 	setPriceRange: (v: [number, number]) => void;
 	sqftRange: [number, number];
@@ -44,6 +46,8 @@ export function FiltersBody({
 	toggleAmenity: (id: string) => void;
 	university: string | null;
 	setUniversity: (v: string | null) => void;
+	roomTypeFilter: string | null;
+	setRoomTypeFilter: (v: string | null) => void;
 	onReset: () => void;
 }) {
 	const beds = [1, 2, 3, 4] as const;
@@ -74,10 +78,32 @@ export function FiltersBody({
 			</div>
 
 			<div className="space-y-3">
+				<h3 className="font-semibold">Room type</h3>
+				<Select
+					value={roomTypeFilter ?? ANY_ROOM_TYPE}
+					onValueChange={(v) => setRoomTypeFilter(v === ANY_ROOM_TYPE ? null : v)}
+				>
+					<SelectTrigger className="h-11 w-full min-w-0 max-w-full">
+						<SelectValue placeholder="Any room type">
+							{roomTypeFilter == null ? "Any room type" : roomTypeFilter}
+						</SelectValue>
+					</SelectTrigger>
+					<SelectContent className="max-w-[calc(100vw-2rem)] sm:max-w-none">
+						<SelectItem value={ANY_ROOM_TYPE}>Any room type</SelectItem>
+						{ROOM_TYPE_OPTIONS.map((rt) => (
+							<SelectItem key={rt} value={rt}>
+								{rt}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+
+			<div className="space-y-3">
 				<h3 className="font-semibold">Price Range</h3>
 				<Slider
 					min={0}
-					max={PRICE_FILTER_MAX}
+					max={priceSliderMax}
 					step={50}
 					value={priceRange}
 					onValueChange={(v) => setPriceRange(v as [number, number])}
@@ -92,7 +118,7 @@ export function FiltersBody({
 				<h3 className="font-semibold">Square Footage</h3>
 				<Slider
 					min={0}
-					max={SQFT_FILTER_MAX}
+					max={sqftSliderMax}
 					step={50}
 					value={sqftRange}
 					onValueChange={(v) => setSqftRange(v as [number, number])}
