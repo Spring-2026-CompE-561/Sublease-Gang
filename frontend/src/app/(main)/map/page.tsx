@@ -80,7 +80,7 @@ export default function MapPage() {
 				longitude: l.longitude,
 				title: l.title,
 				price: l.price,
-				thumbnailUrl: l.thumbnail_url,
+				thumbnailUrl: l.thumbnail_url ?? undefined,
 				location: l.location,
 			})),
 		[filtered],

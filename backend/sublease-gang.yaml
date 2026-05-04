@@ -24,8 +24,11 @@ paths:
                 - description
                 - price
                 - location
+                - room_type
+                - sqft
                 - start_date
                 - end_date
+                - image_urls
               properties:
                 title:
                   type: string
@@ -45,8 +48,12 @@ paths:
                 end_date:
                   type: string
                   format: date-time
-                thumbnail_url:
-                  type: string
+                image_urls:
+                  type: array
+                  minItems: 1
+                  maxItems: 12
+                  items:
+                    type: string
                 college_id:
                   type: integer
       responses:
@@ -905,6 +912,10 @@ components:
           type: integer
         thumbnail_url:
           type: string
+        image_urls:
+          type: array
+          items:
+            type: string
         created_at:
           type: string
           format: date-time

@@ -214,3 +214,54 @@ export async function postApiJson<TResponse, TBody>(
 
 	return (await response.json()) as TResponse;
 }
+//the above file is used from the professors repo 
+
+export async function patchApiJson<TResponse, TBody>(
+  path: string,
+  accessToken: string,
+  body: TBody,
+): Promise<TResponse> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (response.status === 401) throw new ApiUnauthorizedError();
+
+  if (!response.ok) {
+    const apiErrorMessage = await readApiErrorMessage(response);
+    const errorSuffix = apiErrorMessage ? ` - ${apiErrorMessage}` : "";
+    throw new Error(
+      `Failed to patch ${path}: ${response.status} ${response.statusText}${errorSuffix}`
+    );
+  }
+
+  return (await response.json()) as TResponse;
+}
+
+export async function deleteApiJson(
+  path: string,
+  accessToken: string,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (response.status === 401) throw new ApiUnauthorizedError();
+
+  if (!response.ok) {
+    const apiErrorMessage = await readApiErrorMessage(response);
+    const errorSuffix = apiErrorMessage ? ` - ${apiErrorMessage}` : "";
+    throw new Error(
+      `Failed to delete ${path}: ${response.status} ${response.statusText}${errorSuffix}`
+    );
+  }
+}
