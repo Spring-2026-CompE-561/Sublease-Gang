@@ -43,42 +43,48 @@ export default function MessagesPage() {
 
 	useEffect(() => {
 		async function load() {
-			const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-			if (!token) {
-				setNeedsSignIn(true);
+			try {
+				const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+				if (!token) {
+					setNeedsSignIn(true);
+					return;
+				}
+
+				const headers = { Authorization: `Bearer ${token}` };
+				const meRes = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
+					headers,
+				});
+				const convRes = await fetch(`${API_BASE_URL}/api/v1/conversations/`, {
+					headers,
+				});
+
+				if (meRes.status === 401 || convRes.status === 401) {
+					setNeedsSignIn(true);
+					return;
+				}
+
+				if (!meRes.ok || !convRes.ok) {
+					const detail =
+						(await readApiErrorMessage(
+							!meRes.ok ? meRes : convRes,
+						)) ?? "Could not load messages";
+					toast.error(detail);
+					return;
+				}
+
+				const meData = (await meRes.json()) as Me;
+				const convData = (await convRes.json()) as Conversation[];
+
+				setMe(meData);
+				setConversations(convData);
+				if (convData.length > 0) {
+					setActiveId(convData[0].id);
+				}
+			} catch {
+				toast.error("Could not load messages. Check your connection and try again.");
+			} finally {
 				setLoading(false);
-				return;
 			}
-
-			const headers = { Authorization: `Bearer ${token}` };
-			const meRes = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
-				headers,
-			});
-			const convRes = await fetch(`${API_BASE_URL}/api/v1/conversations/`, {
-				headers,
-			});
-
-			if (meRes.status === 401 || convRes.status === 401) {
-				setNeedsSignIn(true);
-				setLoading(false);
-				return;
-			}
-
-			if (!meRes.ok || !convRes.ok) {
-				toast.error("Could not load messages");
-				setLoading(false);
-				return;
-			}
-
-			const meData = (await meRes.json()) as Me;
-			const convData = (await convRes.json()) as Conversation[];
-
-			setMe(meData);
-			setConversations(convData);
-			if (convData.length > 0) {
-				setActiveId(convData[0].id);
-			}
-			setLoading(false);
 		}
 
 		load();
@@ -90,20 +96,48 @@ export default function MessagesPage() {
 		let cancelled = false;
 		async function loadMsgs() {
 			const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-			const res = await fetch(
-				`${API_BASE_URL}/api/v1/conversations/${activeId}/messages`,
-				{ headers: { Authorization: `Bearer ${token}` } },
-			);
-			if (cancelled) return;
-
-			if (!res.ok) {
-				console.error("loadMsgs failed", res.status);
-				setMessages([]);
+			if (!token) {
+				if (!cancelled) {
+					setNeedsSignIn(true);
+					setMessages([]);
+				}
 				return;
 			}
 
-			const data = (await res.json()) as Message[];
-			setMessages(data);
+			try {
+				const res = await fetch(
+					`${API_BASE_URL}/api/v1/conversations/${activeId}/messages`,
+					{ headers: { Authorization: `Bearer ${token}` } },
+				);
+				if (cancelled) return;
+
+				if (res.status === 401) {
+					setNeedsSignIn(true);
+					setMessages([]);
+					return;
+				}
+
+				if (!res.ok) {
+					const detail =
+						(await readApiErrorMessage(res)) ??
+						`Could not load conversation (${res.status})`;
+					toast.error(detail);
+					setMessages([]);
+					return;
+				}
+
+				const data = (await res.json()) as Message[];
+				if (!cancelled) {
+					setMessages(data);
+				}
+			} catch {
+				if (!cancelled) {
+					toast.error(
+						"Could not load conversation. Check your connection and try again.",
+					);
+					setMessages([]);
+				}
+			}
 		}
 
 		loadMsgs();
@@ -120,30 +154,45 @@ export default function MessagesPage() {
 		const text = draft.trim();
 		if (!text || activeId == null) return;
 
-		setSending(true);
 		const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-		const res = await fetch(
-			`${API_BASE_URL}/api/v1/conversations/${activeId}/messages`,
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify({ content: text }),
-			},
-		);
-		setSending(false);
-
-		if (!res.ok) {
-			const msg = (await readApiErrorMessage(res)) || res.statusText;
-			toast.error("Could not send: " + msg);
+		if (!token) {
+			setNeedsSignIn(true);
 			return;
 		}
 
-		const newMsg = (await res.json()) as Message;
-		setMessages((prev) => [...prev, newMsg]);
-		setDraft("");
+		setSending(true);
+		try {
+			const res = await fetch(
+				`${API_BASE_URL}/api/v1/conversations/${activeId}/messages`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({ content: text }),
+				},
+			);
+
+			if (res.status === 401) {
+				setNeedsSignIn(true);
+				return;
+			}
+
+			if (!res.ok) {
+				const msg = (await readApiErrorMessage(res)) || res.statusText;
+				toast.error("Could not send: " + msg);
+				return;
+			}
+
+			const newMsg = (await res.json()) as Message;
+			setMessages((prev) => [...prev, newMsg]);
+			setDraft("");
+		} catch {
+			toast.error("Could not send message. Check your connection and try again.");
+		} finally {
+			setSending(false);
+		}
 	}
 
 	function otherUserId(c: Conversation) {
