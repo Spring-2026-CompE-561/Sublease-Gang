@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { API_BASE_URL } from "@/lib/api";
 
 const formSchema = z.object({
   email: z.email("Invalid email address."),
@@ -42,7 +43,7 @@ export function ForgotPasswordForm({
   });
 
   async function onSubmit(data: ForgotPasswordValues) {
-    const res = await fetch("http://localhost:8000/api/v1/auth/forgot_password", {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot_password`, {
       method: "POST",
       headers: {
         Accept: "application/json",
