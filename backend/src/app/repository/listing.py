@@ -101,8 +101,6 @@ def search_listings(
         query = query.filter(Listing.start_date >= start_date)
     if end_date is not None:
         query = query.filter(Listing.end_date <= end_date)
-    if host_id is not None:
-        query = query.filter(Listing.host_id == host_id)
     count = query.count()
     results = query.offset(skip).limit(limit).all()
     return count, results
