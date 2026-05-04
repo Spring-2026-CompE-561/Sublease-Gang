@@ -2,11 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowLeft, Calendar, MapPin, Star } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Star, User as UserIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { MessageHostButton } from "@/components/MessageHostButton";
 import { ReportListingDialog } from "@/components/report-listing-dialog";
 import { fetchBrowseListingById } from "@/lib/listings";
+import { fetchPublicUserById } from "@/lib/users";
 
 type Props = {
 	params: Promise<{ id: string }>;
@@ -66,6 +67,7 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
 
 	const hero = listing.thumbnail_url;
 	const back = resolveBackLink(from);
+	const host = await fetchPublicUserById(listing.host_id);
 
 	return (
 		<main className="flex-1">
@@ -131,6 +133,22 @@ export default async function ListingDetailPage({ params, searchParams }: Props)
 							<h2 className="mb-2 text-lg font-semibold">About</h2>
 							<p className="text-muted-foreground leading-relaxed">{listing.description}</p>
 						</section>
+						{host ? (
+							<section>
+								<Link
+									href={`/users/${host.username}`}
+									className="inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground"
+								>
+									<UserIcon className="size-4 shrink-0" aria-hidden />
+									<span>
+										Hosted by{" "}
+										<span className="font-medium text-foreground underline-offset-2 hover:underline">
+											@{host.username}
+										</span>
+									</span>
+								</Link>
+							</section>
+						) : null}
 						<section className="flex items-center gap-2 text-sm text-muted-foreground">
 							<Calendar className="size-4 shrink-0" aria-hidden />
 							{formatRange(listing.start_date, listing.end_date)}
