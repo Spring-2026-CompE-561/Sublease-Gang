@@ -5,7 +5,13 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.repository.exceptions import ResourceConflictError
-from app.schemas.user import UserCreate, UserPasswordUpdate, UserResponse, UserUpdate
+from app.schemas.user import (
+    PublicUserResponse,
+    UserCreate,
+    UserPasswordUpdate,
+    UserResponse,
+    UserUpdate,
+)
 from app.services.user import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -53,9 +59,13 @@ async def change_password(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
-@router.get("/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int, db: Session = Depends(get_db)):
-    """Get a specific user's public profile."""
+@router.get("/{user_id}", response_model=PublicUserResponse)
+async def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a user's public profile (authenticated)."""
     user = UserService.get_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
