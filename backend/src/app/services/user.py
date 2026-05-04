@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.auth import (
@@ -9,8 +10,10 @@ from app.core.auth import (
     hash_password,
     verify_password,
 )
+from app.models.profiles import Profile
 from app.models.user import User
 from app.repository.exceptions import ResourceConflictError, ResourceNotFoundError
+from app.repository.profile import get_profile_by_username
 from app.repository.user import (
     create_user,
     delete_user,
@@ -21,6 +24,7 @@ from app.repository.user import (
     update_password,
     update_user,
 )
+from app.schemas.auth import SignupRequest
 from app.schemas.user import UserCreate, UserUpdate
 
 
@@ -34,6 +38,42 @@ class UserService:
         if get_user_by_username(db, payload.username):
             raise ResourceConflictError("Username already taken")
         return create_user(db, payload)
+
+    @staticmethod
+    def register_with_profile(db: Session, payload: SignupRequest) -> User:
+        """Create a User and its associated Profile in a single transaction."""
+        if get_user_by_email(db, payload.email):
+            raise ResourceConflictError("Email already registered")
+        if get_user_by_username(db, payload.username):
+            raise ResourceConflictError("Username already taken")
+        if get_profile_by_username(db, payload.username):
+            raise ResourceConflictError("Username already taken")
+
+        db_user = User(
+            email=payload.email,
+            username=payload.username,
+            password_hash=hash_password(payload.password),
+        )
+        db.add(db_user)
+        try:
+            db.flush()
+            db_profile = Profile(
+                user_id=db_user.id,
+                firstname=payload.firstname,
+                lastname=payload.lastname,
+                username=payload.username,
+                icon=payload.icon,
+                description=payload.description,
+                contact_email=payload.contact_email,
+                contact_phone=payload.contact_phone,
+            )
+            db.add(db_profile)
+            db.commit()
+            db.refresh(db_user)
+        except IntegrityError as e:
+            db.rollback()
+            raise ResourceConflictError("Email or username already in use") from e
+        return db_user
 
     @staticmethod
     def authenticate(db: Session, email: str, password: str) -> dict:

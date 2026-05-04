@@ -2,11 +2,23 @@
 
 import Logo from "@/components/Logo";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useState } from "react";
-import { Menu, Search } from "lucide-react";
+import {
+  LayoutGrid,
+  MapPin,
+  Menu,
+  MessageCircle,
+  PlusSquare,
+  Search,
+} from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import UserButton from "@/components/UserButton";
 import { useRouter } from "next/navigation";
@@ -17,6 +29,33 @@ export function Navbar() {
       <DesktopNavbar />
       <MobileNavbar />
     </>
+  );
+}
+
+function NavIconLink({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Link
+            href={href}
+            aria-label={label}
+            className={buttonVariants({ variant: "ghost", size: "icon" })}
+          >
+            {children}
+          </Link>
+        }
+      />
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -49,13 +88,19 @@ function DesktopNavbar() {
           />
         </form>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <Link href="/listings" className="text-sm">
-            Browse
-          </Link>
-          <Link href="/list" className="text-sm">
-            List your place
-          </Link>
+        <div className="flex shrink-0 items-center gap-1">
+          <NavIconLink href="/listings" label="Browse">
+            <LayoutGrid className="h-5 w-5" />
+          </NavIconLink>
+          <NavIconLink href="/map" label="Map">
+            <MapPin className="h-5 w-5" />
+          </NavIconLink>
+          <NavIconLink href="/list" label="List your place">
+            <PlusSquare className="h-5 w-5" />
+          </NavIconLink>
+          <NavIconLink href="/messages" label="Messages">
+            <MessageCircle className="h-5 w-5" />
+          </NavIconLink>
           <ModeToggle />
           <UserButton />
         </div>
@@ -85,28 +130,56 @@ function MobileNavbar() {
           <SheetTrigger render={<Button variant="ghost" size="icon" />}>
             <Menu />
           </SheetTrigger>
-          <SheetContent side="left" className="w-80">
-            <div className="pt-4">
-              <Logo />
+          <SheetContent
+            side="left"
+            className="flex h-dvh max-h-dvh w-[min(100vw-1rem,20rem)] max-w-[min(100vw-1rem,20rem)] flex-col overflow-hidden border-r p-0"
+          >
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
+              <div className="min-w-0 pr-10">
+                <Logo />
+              </div>
 
-              <form onSubmit={handleSubmit} className="relative mt-6">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <form onSubmit={handleSubmit} className="relative mt-6 min-w-0">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search by location, university..."
-                  className="pl-9 rounded-full bg-muted"
+                  className="min-w-0 w-full rounded-full bg-muted pl-9"
+                  enterKeyHint="search"
                 />
               </form>
 
-              <div className="flex flex-col gap-2 pt-6">
-                <Link href="/listings" onClick={() => setIsOpen(false)}>
+              <nav className="flex flex-col gap-1 pt-6">
+                <Link
+                  href="/listings"
+                  className="rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
+                  onClick={() => setIsOpen(false)}
+                >
                   Browse listings
                 </Link>
-                <Link href="/list" onClick={() => setIsOpen(false)}>
+                <Link
+                  href="/map"
+                  className="rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Map
+                </Link>
+                <Link
+                  href="/list"
+                  className="rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
+                  onClick={() => setIsOpen(false)}
+                >
                   List your place
                 </Link>
-              </div>
+                <Link
+                  href="/messages"
+                  className="rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Messages
+                </Link>
+              </nav>
             </div>
           </SheetContent>
         </Sheet>

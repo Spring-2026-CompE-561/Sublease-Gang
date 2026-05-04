@@ -10,6 +10,7 @@ export type BrowseListing = Listing & {
 };
 
 export const PRICE_FILTER_MAX = 2000;
+export const SQFT_FILTER_MAX = 2000;
 
 export const AMENITY_OPTIONS = [
 	"WiFi",
@@ -64,7 +65,7 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		end_date: "2026-08-14T00:00:00Z",
 		college_id: null,
 		thumbnail_url:
-			"https://images.unsplash.com/photo-1595526114035-0d68ed016cf2?auto=format&fit=crop&w=800&q=80",
+			"https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=800&q=80",
 		latitude: 37.4275,
 		longitude: -122.1697,
 		created_at: "2026-01-01T00:00:00Z",
@@ -171,14 +172,58 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 		bedrooms: 1,
 		amenities: ["WiFi", "Furnished", "Kitchen", "Utilities Included"],
 	},
+	{
+		id: 7,
+		host_id: 7,
+		title: "Sunny 2BR Steps from SDSU",
+		description: "Light-filled apartment minutes from College Ave trolley stop.",
+		price: 1250,
+		location: "College Area",
+		room_type: "2 bedroom",
+		sqft: 720,
+		start_date: "2026-05-20T00:00:00Z",
+		end_date: "2026-08-25T00:00:00Z",
+		college_id: null,
+		thumbnail_url:
+			"https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80",
+		latitude: 32.7757,
+		longitude: -117.0719,
+		created_at: "2026-01-01T00:00:00Z",
+		updated_at: "2026-01-01T00:00:00Z",
+		rating: 4.7,
+		university: "San Diego State University",
+		verified: true,
+		bedrooms: 2,
+		amenities: ["WiFi", "Furnished", "Parking", "Air Conditioning", "Laundry"],
+	},
+];
+
+/** Mock saved listings - subset of browse listings for user's saved collection. */
+export const MOCK_SAVED_LISTINGS: BrowseListing[] = [
+	MOCK_BROWSE_LISTINGS[0], // Modern Studio Near Campus
+	MOCK_BROWSE_LISTINGS[2], // Spacious 1BR in Student Housing
+	MOCK_BROWSE_LISTINGS[4], // Modern Apartment with Kitchen
+];
+
+/** Mock listings owned by the signed-in user. */
+export const MOCK_MY_LISTINGS: BrowseListing[] = [
+	MOCK_BROWSE_LISTINGS[1], // Cozy Dorm Room Available
+	MOCK_BROWSE_LISTINGS[5], // Bright Living Space Near University
 ];
 
 export interface BrowseFiltersState {
 	priceMin: number;
 	priceMax: number;
+	sqftMin: number;
+	sqftMax: number;
 	bedrooms: number | null;
 	amenities: Set<string>;
+	university: string | null;
 }
+
+export const UNIVERSITY_OPTIONS = Array.from(
+	new Set(MOCK_BROWSE_LISTINGS.map((l) => l.university)),
+).sort();
 
 export function filterBrowseListings(
 	listings: BrowseListing[],
@@ -186,7 +231,9 @@ export function filterBrowseListings(
 ): BrowseListing[] {
 	return listings.filter((l) => {
 		if (l.price < f.priceMin || l.price > f.priceMax) return false;
+		if (l.sqft < f.sqftMin || l.sqft > f.sqftMax) return false;
 		if (f.bedrooms != null && l.bedrooms !== f.bedrooms) return false;
+		if (f.university && l.university !== f.university) return false;
 		for (const a of f.amenities) {
 			if (!l.amenities.includes(a)) return false;
 		}
