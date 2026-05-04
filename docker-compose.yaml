@@ -1,0 +1,27 @@
+version: "1.0"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sublease-backend
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - sublease-network
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sublease-frontend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - sublease-network
+
+networks:
+  sublease-network:
+    driver: bridge
