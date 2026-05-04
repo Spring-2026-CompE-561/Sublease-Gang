@@ -1,3 +1,9 @@
+import {
+	clearTokens,
+	notifyAuthExpired,
+	refreshAccessToken,
+} from "@/lib/auth";
+
 export const API_BASE_URL =         
     (typeof window === "undefined"                                                                                                       
       ? process.env.INTERNAL_API_BASE_URL
@@ -68,21 +74,48 @@ export async function readApiErrorMessage(response: Response): Promise<string | 
 }
 
 
+function handleAuthExpired(): void {
+	clearTokens();
+	notifyAuthExpired();
+}
+
+async function authedFetch(
+	initialToken: string,
+	doRequest: (token: string) => Promise<Response>,
+): Promise<Response> {
+	const response = await doRequest(initialToken);
+	if (response.status !== 401) {
+		return response;
+	}
+
+	const newToken = await refreshAccessToken();
+	if (!newToken) {
+		handleAuthExpired();
+		throw new ApiUnauthorizedError();
+	}
+
+	const retried = await doRequest(newToken);
+	if (retried.status === 401) {
+		handleAuthExpired();
+		throw new ApiUnauthorizedError();
+	}
+	return retried;
+}
+
+
 export async function fetchApiJson<T>(
 	path: string,
 	accessToken: string,
 ): Promise<T> {
-	const response = await fetch(`${API_BASE_URL}${path}`, {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${accessToken}`,
-		},
-	});
-
-	if (response.status === 401) {
-		throw new ApiUnauthorizedError();
-	}
+	const response = await authedFetch(accessToken, (token) =>
+		fetch(`${API_BASE_URL}${path}`, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+		}),
+	);
 
 	if (!response.ok) {
 		const apiErrorMessage = await readApiErrorMessage(response);
@@ -151,18 +184,16 @@ export async function postApiJsonWithFallback<TResponse, TBody>(
 	let lastError: Error | null = null;
 
 	for (const path of paths) {
-		const response = await fetch(`${API_BASE_URL}${path}`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${accessToken}`,
-			},
-			body: JSON.stringify(body),
-		});
-
-		if (response.status === 401) {
-			throw new ApiUnauthorizedError();
-		}
+		const response = await authedFetch(accessToken, (token) =>
+			fetch(`${API_BASE_URL}${path}`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify(body),
+			}),
+		);
 
 		if (response.ok) {
 			return (await response.json()) as TResponse;
@@ -193,18 +224,16 @@ export async function postApiJson<TResponse, TBody>(
 	accessToken: string,
 	body: TBody,
 ): Promise<TResponse> {
-	const response = await fetch(`${API_BASE_URL}${path}`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${accessToken}`,
-		},
-		body: JSON.stringify(body),
-	});
-
-	if (response.status === 401) {
-		throw new ApiUnauthorizedError();
-	}
+	const response = await authedFetch(accessToken, (token) =>
+		fetch(`${API_BASE_URL}${path}`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(body),
+		}),
+	);
 
 	if (!response.ok) {
 		const apiErrorMessage = await readApiErrorMessage(response);
@@ -216,23 +245,23 @@ export async function postApiJson<TResponse, TBody>(
 
 	return (await response.json()) as TResponse;
 }
-//the above file is used from the professors repo 
+//the above file is used from the professors repo
 
 export async function patchApiJson<TResponse, TBody>(
   path: string,
   accessToken: string,
   body: TBody,
 ): Promise<TResponse> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (response.status === 401) throw new ApiUnauthorizedError();
+  const response = await authedFetch(accessToken, (token) =>
+    fetch(`${API_BASE_URL}${path}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    }),
+  );
 
   if (!response.ok) {
     const apiErrorMessage = await readApiErrorMessage(response);
@@ -249,15 +278,15 @@ export async function deleteApiJson(
   path: string,
   accessToken: string,
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (response.status === 401) throw new ApiUnauthorizedError();
+  const response = await authedFetch(accessToken, (token) =>
+    fetch(`${API_BASE_URL}${path}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }),
+  );
 
   if (!response.ok) {
     const apiErrorMessage = await readApiErrorMessage(response);

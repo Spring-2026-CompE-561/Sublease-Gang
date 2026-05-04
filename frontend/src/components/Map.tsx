@@ -119,7 +119,7 @@ export default function Map({
 					maxWidth="260px"
 				>
 					<Link
-						href={`/listings/${active.id}`}
+						href={`/listings/${active.id}?from=map`}
 						className="block w-56 overflow-hidden rounded-lg bg-background text-foreground"
 					>
 						{active.thumbnailUrl ? (
