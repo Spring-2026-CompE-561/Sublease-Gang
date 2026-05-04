@@ -9,8 +9,10 @@ export type BrowseListing = Listing & {
 	amenities: string[];
 };
 
-export const PRICE_FILTER_MAX = 2000;
-export const SQFT_FILTER_MAX = 2000;
+/** Upper bounds for browse/map sliders, derived from the mock catalog. */
+function roundUpToStep(value: number, step: number): number {
+	return Math.ceil(value / step) * step;
+}
 
 export const AMENITY_OPTIONS = [
 	"WiFi",
@@ -198,6 +200,22 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 	},
 ];
 
+export const BROWSE_PRICE_SLIDER_MAX = roundUpToStep(
+	Math.max(...MOCK_BROWSE_LISTINGS.map((l) => l.price), 50),
+	50,
+);
+
+export const BROWSE_SQFT_SLIDER_MAX = roundUpToStep(
+	Math.max(...MOCK_BROWSE_LISTINGS.map((l) => l.sqft ?? 0), 50),
+	50,
+);
+
+export const ROOM_TYPE_OPTIONS = Array.from(
+	new Set(
+		MOCK_BROWSE_LISTINGS.map((l) => l.room_type).filter((t): t is string => Boolean(t)),
+	),
+).sort((a, b) => a.localeCompare(b));
+
 /** Mock saved listings - subset of browse listings for user's saved collection. */
 export const MOCK_SAVED_LISTINGS: BrowseListing[] = [
 	MOCK_BROWSE_LISTINGS[0], // Modern Studio Near Campus
@@ -219,6 +237,7 @@ export interface BrowseFiltersState {
 	bedrooms: number | null;
 	amenities: Set<string>;
 	university: string | null;
+	roomType: string | null;
 }
 
 export const UNIVERSITY_OPTIONS = Array.from(
@@ -230,10 +249,12 @@ export function filterBrowseListings(
 	f: BrowseFiltersState,
 ): BrowseListing[] {
 	return listings.filter((l) => {
+		const sqft = l.sqft ?? 0;
 		if (l.price < f.priceMin || l.price > f.priceMax) return false;
-		if (l.sqft < f.sqftMin || l.sqft > f.sqftMax) return false;
+		if (sqft < f.sqftMin || sqft > f.sqftMax) return false;
 		if (f.bedrooms != null && l.bedrooms !== f.bedrooms) return false;
 		if (f.university && l.university !== f.university) return false;
+		if (f.roomType != null && (l.room_type ?? "") !== f.roomType) return false;
 		for (const a of f.amenities) {
 			if (!l.amenities.includes(a)) return false;
 		}
