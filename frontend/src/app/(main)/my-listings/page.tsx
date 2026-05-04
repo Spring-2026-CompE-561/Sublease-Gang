@@ -149,6 +149,7 @@ export default function MyListingsPage() {
 							<ListingBrowseCard
 								key={listing.id}
 								listing={listing}
+								from="my-listings"
 								actions={
 									<>
 										<Button
