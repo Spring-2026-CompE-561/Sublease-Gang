@@ -50,10 +50,6 @@ export const profileService = {
   getPublicProfile: (username: string): Promise<ProfileResponse> =>
     fetchApiJson(`/api/v1/profiles/${username}`),
 
-  // GET /users/{user_id} — public user info
-  getPublicUser: (userId: number): Promise<UserResponse> =>
-    fetchApiJson(`/api/v1/users/${userId}`),
-
   // GET /listings/?host_id={user_id} — user's listings
   getUserListings: (userId: number, limit: number = 100): Promise<ListingsResponse> =>
     fetchApiJson(`/api/v1/listings/?host_id=${userId}&limit=${limit}`),
