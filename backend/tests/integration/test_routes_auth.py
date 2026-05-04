@@ -149,6 +149,25 @@ class TestRefresh:
         assert resp.status_code == 401
         assert resp.json()["detail"] == "User not found or account disabled"
 
+    def test_refresh_token_issued_before_password_change_rejected(
+        self, client, db_session
+    ):
+        from datetime import UTC, datetime, timedelta
+
+        tokens = self._login(client)
+        user = db_session.query(User).filter(User.email == "ref@example.com").first()
+        assert user is not None
+        # Simulate a password change after the refresh token was minted.
+        user.password_changed_at = datetime.now(UTC) + timedelta(days=1)
+        db_session.commit()
+
+        resp = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": tokens["refresh_token"]},
+        )
+        assert resp.status_code == 401
+        assert "Invalid or expired refresh token" in resp.json()["detail"]
+
 
 class TestForgotPassword:
     def test_registered_email(self, client):

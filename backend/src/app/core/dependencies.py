@@ -1,3 +1,5 @@
+from datetime import UTC
+
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -30,6 +32,16 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    iat = payload.get("iat")
+    pca = user.password_changed_at
+    if pca.tzinfo is None:
+        pca = pca.replace(tzinfo=UTC)
+    if iat is None or iat < int(pca.timestamp()):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
     if user.account_disabled:
