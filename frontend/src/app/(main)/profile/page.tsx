@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { clearTokens, getAccessToken } from "@/lib/auth";
+import { ApiUnauthorizedError } from "@/lib/api";
 import { profileService } from "@/lib/profileService";
 import type { UserResponse, ProfileResponse } from "@/lib/profile";
 
@@ -60,7 +61,10 @@ export default function Profile() {
           contact_phone: profileData.contact_phone ?? "",
           description: profileData.description ?? "",
         });
-      } catch {
+      } catch (err) {
+        if (err instanceof ApiUnauthorizedError) {
+          return;
+        }
         toast.error("Failed to load profile");
       } finally {
         setIsLoading(false);
@@ -106,6 +110,9 @@ export default function Profile() {
       setIsEditing(false);
       toast.success("Profile updated successfully");
     } catch (err) {
+      if (err instanceof ApiUnauthorizedError) {
+        return;
+      }
       const message = err instanceof Error ? err.message : "Failed to update profile";
       toast.error(message);
     } finally {
@@ -141,6 +148,9 @@ export default function Profile() {
       toast.success("Your account has been deleted.");
       router.push("/");
     } catch (err) {
+      if (err instanceof ApiUnauthorizedError) {
+        return;
+      }
       const message = err instanceof Error ? err.message : "Failed to delete account";
       toast.error(message);
     } finally {
