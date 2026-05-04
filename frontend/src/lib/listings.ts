@@ -297,8 +297,8 @@ export function listingFromListRow(row: ListingListApiRow): Listing {
 		end_date: row.end_date ?? "",
 		college_id: row.college ?? null,
 		thumbnail_url: row.thumbnail_url ?? null,
-		latitude: 0,
-		longitude: 0,
+		latitude: row.latitude ?? 0,
+		longitude: row.longitude ?? 0,
 		created_at: row.created_at ?? "",
 		updated_at: row.created_at ?? "",
 	};
