@@ -38,7 +38,7 @@ export type MapPin = {
 	longitude: number;
 	title?: string;
 	price?: number;
-	thumbnailUrl?: string;
+	thumbnailUrl?: string | null;
 	location?: string;
 };
 
