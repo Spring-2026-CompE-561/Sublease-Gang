@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 
 type MeResponse = { id: number; username: string };
 type ListingTitleResponse = { id: number; title: string };
+type UserNameResponse = { id: number; username: string };
 
 function parseConversationQuery(raw: string | null): number | null {
 	if (!raw) return null;
@@ -59,6 +60,7 @@ export function MessagesView() {
 	const [listingTitles, setListingTitles] = useState<Record<number, string>>(
 		{},
 	);
+	const [userNames, setUserNames] = useState<Record<number, string>>({});
 
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [messagesLoading, setMessagesLoading] = useState(false);
@@ -240,6 +242,55 @@ export function MessagesView() {
 			cancelled = true;
 		};
 	}, [conversations, listingTitles]);
+
+	useEffect(() => {
+		if (conversations.length === 0 || meId === null) return;
+
+		const missing = Array.from(
+			new Set(
+				conversations
+					.map((c) => otherParticipantId(c, meId))
+					.filter((id) => userNames[id] === undefined),
+			),
+		);
+		if (missing.length === 0) return;
+
+		const token = getAccessToken();
+		if (!token) return;
+
+		let cancelled = false;
+		(async () => {
+			const results = await Promise.all(
+				missing.map(async (id) => {
+					try {
+						const data = await fetchApiJson<UserNameResponse>(
+							`/api/v1/users/${id}`,
+							token,
+						);
+						return [id, data.username] as const;
+					} catch {
+						return null;
+					}
+				}),
+			);
+			if (cancelled) return;
+			const additions = results.filter(
+				(entry): entry is readonly [number, string] => entry !== null,
+			);
+			if (additions.length === 0) return;
+			setUserNames((prev) => {
+				const next = { ...prev };
+				for (const [id, username] of additions) {
+					next[id] = username;
+				}
+				return next;
+			});
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [conversations, meId, userNames]);
 
 	/* eslint-enable react-hooks/set-state-in-effect */
 
@@ -426,7 +477,7 @@ export function MessagesView() {
 														`Listing #${c.listing_id}`}
 												</span>
 												<span className="text-xs text-muted-foreground">
-													with user #{other}
+													with {userNames[other] ?? `user #${other}`}
 												</span>
 											</button>
 										</li>
@@ -452,11 +503,16 @@ export function MessagesView() {
 											`Listing #${selected.listing_id}`)
 										: `Conversation #${selectedId}`}
 								</h2>
-								{selected && meId !== null ? (
-									<p className="text-xs text-muted-foreground">
-										with user #{otherParticipantId(selected, meId)}
-									</p>
-								) : null}
+								{selected && meId !== null
+									? (() => {
+											const other = otherParticipantId(selected, meId);
+											return (
+												<p className="text-xs text-muted-foreground">
+													with {userNames[other] ?? `user #${other}`}
+												</p>
+											);
+										})()
+									: null}
 							</div>
 
 							<div className="flex min-h-0 flex-1 flex-col">
