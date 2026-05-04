@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-import { ACCESS_TOKEN_KEY } from "@/lib/api";
+import { ACCESS_TOKEN_KEY, API_BASE_URL } from "@/lib/api";
 
 export const REFRESH_TOKEN_KEY = "refresh_token";
 
 const AUTH_CHANGED_EVENT = "sublease:auth-changed";
+export const AUTH_EXPIRED_EVENT = "sublease:auth-expired";
 
 export interface AuthTokens {
 	access_token: string;
@@ -47,6 +48,57 @@ export function getRefreshToken(): string | null {
 		return null;
 	}
 	return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+let refreshInFlight: Promise<string | null> | null = null;
+
+export function refreshAccessToken(): Promise<string | null> {
+	if (refreshInFlight) {
+		return refreshInFlight;
+	}
+
+	const token = getRefreshToken();
+	if (!token) {
+		return Promise.resolve(null);
+	}
+
+	refreshInFlight = (async () => {
+		try {
+			const res = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ refresh_token: token }),
+			});
+			if (!res.ok) {
+				return null;
+			}
+			const data = (await res.json()) as {
+				access_token?: string;
+				refresh_token?: string;
+			};
+			if (!data.access_token) {
+				return null;
+			}
+			saveTokens({
+				access_token: data.access_token,
+				refresh_token: data.refresh_token,
+			});
+			return data.access_token;
+		} catch {
+			return null;
+		} finally {
+			refreshInFlight = null;
+		}
+	})();
+
+	return refreshInFlight;
+}
+
+export function notifyAuthExpired(): void {
+	if (typeof window === "undefined") {
+		return;
+	}
+	window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
 }
 
 export function useIsAuthenticated(): boolean {
