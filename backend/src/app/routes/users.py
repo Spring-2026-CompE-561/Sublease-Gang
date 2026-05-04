@@ -7,7 +7,6 @@ from app.models.user import User
 from app.repository.exceptions import ResourceConflictError
 from app.schemas.user import (
     PublicUserResponse,
-    UserCreate,
     UserPasswordUpdate,
     UserResponse,
     UserUpdate,
@@ -70,12 +69,3 @@ async def get_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
-
-
-@router.post("/", response_model=UserResponse, status_code=201)
-async def create_user(payload: UserCreate, db: Session = Depends(get_db)):
-    """Create a new user account."""
-    try:
-        return UserService.register(db, payload)
-    except ResourceConflictError as e:
-        raise HTTPException(status_code=409, detail=e.detail) from e
