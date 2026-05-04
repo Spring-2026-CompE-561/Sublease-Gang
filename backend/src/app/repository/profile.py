@@ -71,3 +71,13 @@ def delete_profile(db: Session, user_id: int) -> None:
         raise ResourceNotFoundError("Profile not found")
     db.delete(db_profile)
     db.commit()
+
+
+def set_profile_icon(db: Session, user_id: int, icon_url: str | None) -> Profile:
+    db_profile = get_profile(db, user_id)
+    if db_profile is None:
+        raise ResourceNotFoundError("Profile not found")
+    db_profile.icon = icon_url
+    db.commit()
+    db.refresh(db_profile)
+    return db_profile

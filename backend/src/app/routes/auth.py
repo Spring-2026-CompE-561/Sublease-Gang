@@ -20,9 +20,9 @@ from app.schemas.auth import (
     LoginRequest,
     RefreshRequest,
     ResetPasswordRequest,
+    SignupRequest,
     TokenResponse,
 )
-from app.schemas.user import UserCreate, UserResponse
 from app.services.user import UserService
 
 logger = logging.getLogger(__name__)
@@ -30,14 +30,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/signup", response_model=UserResponse, status_code=201)
-async def signup(payload: UserCreate, db: Session = Depends(get_db)):
-    """Create a new user account."""
+@router.post("/signup", response_model=TokenResponse, status_code=201)
+async def signup(payload: SignupRequest, db: Session = Depends(get_db)):
+    """Create a new user account, its profile, and return auth tokens."""
     try:
-        user = UserService.register(db, payload)
+        user = UserService.register_with_profile(db, payload)
     except ResourceConflictError as e:
         raise HTTPException(status_code=409, detail=e.detail) from e
-    return user
+    access_token = create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
 
 
 @router.post("/login", response_model=TokenResponse)
