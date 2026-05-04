@@ -62,6 +62,7 @@ class TestUserRepository:
         assert user.email == "new@example.com"
         assert user.username == "newuser"
         assert user.password_hash != "password123"
+        assert user.password_changed_at is not None
 
     def test_get_user_by_id(self, db_session, make_user):
         user = make_user()
@@ -99,9 +100,12 @@ class TestUserRepository:
     def test_update_password(self, db_session, make_user):
         user = make_user()
         old_hash = user.password_hash
+        old_pw_changed = user.password_changed_at
+        assert old_pw_changed is not None
         updated = update_password(db_session, user, "new_hashed_password")
         assert updated.password_hash == "new_hashed_password"
         assert updated.password_hash != old_hash
+        assert updated.password_changed_at >= old_pw_changed
 
     def test_disable_user(self, db_session, make_user):
         user = make_user()
