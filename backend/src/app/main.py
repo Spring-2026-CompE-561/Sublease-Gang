@@ -1,8 +1,10 @@
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.routes import api_router
 from app.core.database import Base, engine
@@ -65,3 +67,9 @@ app.add_exception_handler(ConflictError, conflict_exception_handler)
 app.add_exception_handler(Exception, server_exception_handler)
 
 app.include_router(api_router)
+
+# Local-disk media storage for uploaded assets (profile icons, etc.).
+# TODO: swap to object storage (S3/R2) before deploy.
+MEDIA_DIR = Path("media")
+MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
