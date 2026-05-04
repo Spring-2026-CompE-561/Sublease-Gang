@@ -36,6 +36,7 @@ COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /usr/src/app/.next .next
 COPY --from=prerelease /usr/src/app/package.json .
 COPY --from=prerelease /usr/src/app/public ./public
+COPY --from=prerelease /usr/src/app/next.config.ts ./next.config.ts
 
 RUN chown -R bun:bun /usr/src/app
 
