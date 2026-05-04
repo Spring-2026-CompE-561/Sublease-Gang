@@ -8,14 +8,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { profileService, type ListingsResponse } from "@/lib/profileService";
-import type { UserResponse, ProfileResponse } from "@/lib/profile";
+import type { ProfileResponse } from "@/lib/profile";
+import { Listing } from "@/types/listing";
 import { ListingCard } from "@/components/ListingCard";
 
 export default function PublicUserProfile() {
   const params = useParams();
   const username = params.username as string;
 
-  const [user, setUser] = useState<UserResponse | null>(null);
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [listings, setListings] = useState<ListingsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,9 +25,6 @@ export default function PublicUserProfile() {
       try {
         const profileData = await profileService.getPublicProfile(username);
         setProfile(profileData);
-
-        const userData = await profileService.getPublicUser(profileData.user_id);
-        setUser(userData);
 
         const listingsData = await profileService.getUserListings(profileData.user_id);
         setListings(listingsData);
@@ -48,7 +45,7 @@ export default function PublicUserProfile() {
     );
   }
 
-  if (!profile || !user) {
+  if (!profile) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
@@ -135,15 +132,23 @@ export default function PublicUserProfile() {
           {listings && listings.results.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {listings.results.map((item) => {
-                const listing = {
-                  ...item,
+                const listing: Listing = {
+                  id: item.id,
+                  host_id: profile.user_id,
+                  title: item.title,
+                  description: item.description,
+                  price: item.price,
                   location: item.location_text,
-                  host_id: 0,
-                  description: "",
-                  latitude: 0,
-                  longitude: 0,
+                  room_type: item.room_type,
+                  sqft: item.sqft,
+                  start_date: item.start_date || new Date().toISOString(),
+                  end_date: item.end_date || new Date().toISOString(),
+                  thumbnail_url: item.thumbnail_url || undefined,
+                  image_urls: item.image_urls,
+                  latitude: item.latitude || 0,
+                  longitude: item.longitude || 0,
                   created_at: item.created_at || new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
+                  updated_at: item.created_at || new Date().toISOString(),
                 };
                 return <ListingCard key={listing.id} listing={listing} />;
               })}
