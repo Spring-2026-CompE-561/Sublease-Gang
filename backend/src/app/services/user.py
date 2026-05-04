@@ -6,10 +6,10 @@ from sqlalchemy.orm import Session
 from app.core.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
-    create_refresh_token,
     hash_password,
     verify_password,
 )
+from app.services.token import TokenService
 from app.models.profiles import Profile
 from app.models.user import User
 from app.repository.exceptions import ResourceConflictError, ResourceNotFoundError
@@ -87,7 +87,7 @@ class UserService:
             data={"sub": str(user.id)},
             expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
         )
-        refresh_token = create_refresh_token(data={"sub": str(user.id)})
+        refresh_token = TokenService.issue_refresh_token(db, user.id)
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,

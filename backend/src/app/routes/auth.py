@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 from app.core.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
-    create_refresh_token,
     verify_token,
 )
 from app.core.database import get_db
@@ -23,6 +22,7 @@ from app.schemas.auth import (
     SignupRequest,
     TokenResponse,
 )
+from app.services.token import TokenService
 from app.services.user import UserService
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ async def signup(payload: SignupRequest, db: Session = Depends(get_db)):
         data={"sub": str(user.id)},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
-    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+    refresh_token = TokenService.issue_refresh_token(db, user.id)
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -96,11 +96,40 @@ async def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
             detail="Invalid or expired refresh token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # Rotation + reuse detection. Every refresh token has a server-tracked jti.
+    # If the row is missing, the token is a forgery / from before tracking
+    # started. If the row is already revoked, the same token has been
+    # presented twice — assume compromise and burn every active refresh
+    # token for this user.
+    jti = token_payload.get("jti")
+    if jti is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    record = TokenService.get_refresh_record(db, jti)
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if record.revoked_at is not None:
+        TokenService.revoke_all_refresh_for_user(db, user.id)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    TokenService.revoke_refresh(db, record)
+
     access_token = create_access_token(
         data={"sub": str(user.id)},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
-    new_refresh = create_refresh_token(data={"sub": str(user.id)})
+    new_refresh = TokenService.issue_refresh_token(db, user.id)
     return {
         "access_token": access_token,
         "refresh_token": new_refresh,
