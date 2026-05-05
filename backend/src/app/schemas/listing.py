@@ -1,6 +1,30 @@
+import re
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+# Accepts: https URLs, /media/ relative paths, or base64-encoded data URIs
+# whose MIME is one of the four bitmap formats we support. Rejects
+# javascript:, file:, data:image/svg+xml, and unscoped data: URIs.
+_IMAGE_URL_RE = re.compile(
+    r"^(?:https?://|/media/|data:image/(?:jpeg|jpg|png|gif|webp);base64,)",
+    re.IGNORECASE,
+)
+
+
+def _validate_image_urls(values: list[str]) -> list[str]:
+    for u in values:
+        s = str(u).strip()
+        if not s:
+            raise ValueError("image_urls entries must be non-empty strings")
+        if len(s) > 2_800_000:
+            raise ValueError("each image_urls entry is too large")
+        if not _IMAGE_URL_RE.match(s):
+            raise ValueError(
+                "image_urls must be https URLs, /media/ paths, or "
+                "data:image/(jpeg|png|gif|webp);base64 URIs"
+            )
+    return values
 
 
 class ListingCreate(BaseModel):
@@ -22,12 +46,7 @@ class ListingCreate(BaseModel):
     @field_validator("image_urls")
     @classmethod
     def validate_image_urls(cls, v: list[str]) -> list[str]:
-        for u in v:
-            if not u or not str(u).strip():
-                raise ValueError("image_urls entries must be non-empty strings")
-            if len(u) > 2_800_000:
-                raise ValueError("each image_urls entry is too large")
-        return v
+        return _validate_image_urls(v)
 
     @model_validator(mode="after")
     def check_dates(self):
@@ -52,6 +71,13 @@ class ListingUpdate(BaseModel):
     image_urls: list[str] | None = None
     latitude: float | None = None
     longitude: float | None = None
+
+    @field_validator("image_urls")
+    @classmethod
+    def validate_image_urls(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        return _validate_image_urls(v)
 
     @model_validator(mode="after")
     def check_dates(self):

@@ -131,6 +131,32 @@ class TestListingCreate:
         with pytest.raises(ValidationError, match="end_date must be after start_date"):
             ListingCreate(**self._defaults(start_date=now, end_date=now))
 
+    def test_image_url_javascript_scheme_rejected(self):
+        with pytest.raises(ValidationError, match="image_urls must be"):
+            ListingCreate(
+                **self._defaults(image_urls=["javascript:alert(1)"])
+            )
+
+    def test_image_url_data_svg_rejected(self):
+        with pytest.raises(ValidationError, match="image_urls must be"):
+            ListingCreate(
+                **self._defaults(
+                    image_urls=["data:image/svg+xml;base64,PHN2Zw=="]
+                )
+            )
+
+    def test_image_url_media_path_accepted(self):
+        listing = ListingCreate(
+            **self._defaults(image_urls=["/media/listings/abc.jpg"])
+        )
+        assert listing.image_urls == ["/media/listings/abc.jpg"]
+
+    def test_image_url_data_png_base64_accepted(self):
+        listing = ListingCreate(
+            **self._defaults(image_urls=["data:image/png;base64,iVBORw0KGgo="])
+        )
+        assert listing.image_urls[0].startswith("data:image/png;base64,")
+
 
 class TestListingUpdate:
     def test_valid_partial(self):
@@ -142,6 +168,10 @@ class TestListingUpdate:
         now = datetime.now(UTC)
         with pytest.raises(ValidationError, match="end_date must be after start_date"):
             ListingUpdate(start_date=now, end_date=now - timedelta(days=1))
+
+    def test_image_url_validator_runs_on_update(self):
+        with pytest.raises(ValidationError, match="image_urls must be"):
+            ListingUpdate(image_urls=["javascript:alert(1)"])
 
     def test_single_date_ok(self):
         now = datetime.now(UTC)
