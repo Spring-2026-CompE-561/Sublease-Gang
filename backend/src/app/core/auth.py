@@ -1,4 +1,6 @@
+import secrets
 from datetime import UTC, datetime, timedelta
+from uuid import uuid4
 
 import jwt
 from fastapi.security import OAuth2PasswordBearer
@@ -15,10 +17,16 @@ RESET_TOKEN_EXPIRE_MINUTES = settings.reset_token_expire_minutes
 
 password_hash = PasswordHash.recommended()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/user/login")
+# Pre-computed Argon2 hash used to keep login / forgot-password paths
+# constant-time when the email isn't registered. We never want this to
+# match a real input — hashing a random secret means verify_password
+# against it always returns False.
+DUMMY_PASSWORD_HASH = password_hash.hash(secrets.token_hex(32))
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 oauth2_scheme_optional = OAuth2PasswordBearer(
-	tokenUrl="/api/v1/user/login",
-	auto_error=False,
+    tokenUrl="/api/v1/auth/login",
+    auto_error=False,
 )
 
 
@@ -34,28 +42,39 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         str: The encoded JWT token
     """
     to_encode = data.copy()
+    now = datetime.now(UTC)
     if expires_delta:
-        expire = datetime.now(UTC) + expires_delta
+        expire = now + expires_delta
     else:
-        expire = datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire, "type": "access"})
+        expire = now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire, "iat": now, "type": "access"})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_refresh_token(
+    data: dict,
+    expires_delta: timedelta | None = None,
+    jti: str | None = None,
+) -> str:
     to_encode = data.copy()
+    now = datetime.now(UTC)
     if expires_delta:
-        expire = datetime.now(UTC) + expires_delta
+        expire = now + expires_delta
     else:
-        expire = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode.update({"exp": expire, "type": "refresh"})
+        expire = now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    if jti is None:
+        jti = uuid4().hex
+    to_encode.update({"exp": expire, "iat": now, "type": "refresh", "jti": jti})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def create_reset_token(data: dict) -> str:
+def create_reset_token(data: dict, jti: str | None = None) -> str:
     to_encode = data.copy()
-    expire = datetime.now(UTC) + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire, "type": "reset"})
+    now = datetime.now(UTC)
+    expire = now + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
+    if jti is None:
+        jti = uuid4().hex
+    to_encode.update({"exp": expire, "iat": now, "type": "reset", "jti": jti})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 

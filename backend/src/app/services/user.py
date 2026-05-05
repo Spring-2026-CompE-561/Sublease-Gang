@@ -5,11 +5,12 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
+    DUMMY_PASSWORD_HASH,
     create_access_token,
-    create_refresh_token,
     hash_password,
     verify_password,
 )
+from app.services.token import TokenService
 from app.models.profiles import Profile
 from app.models.user import User
 from app.repository.exceptions import ResourceConflictError, ResourceNotFoundError
@@ -79,7 +80,13 @@ class UserService:
     def authenticate(db: Session, email: str, password: str) -> dict:
         """Validate credentials and return token data."""
         user = get_user_by_email(db, email)
-        if user is None or not verify_password(password, user.password_hash):
+        if user is None:
+            # Constant-time defense: pay Argon2's verification cost even
+            # when the email is unknown so login latency doesn't telegraph
+            # whether the email is registered.
+            verify_password(password, DUMMY_PASSWORD_HASH)
+            raise ResourceNotFoundError("Invalid email or password")
+        if not verify_password(password, user.password_hash):
             raise ResourceNotFoundError("Invalid email or password")
         if user.account_disabled:
             raise ResourceNotFoundError("Account is disabled")
@@ -87,7 +94,7 @@ class UserService:
             data={"sub": str(user.id)},
             expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
         )
-        refresh_token = create_refresh_token(data={"sub": str(user.id)})
+        refresh_token = TokenService.issue_refresh_token(db, user.id)
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,

@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { clearTokens, getAccessToken } from "@/lib/auth";
+import { clearTokens, getAccessToken, signOut } from "@/lib/auth";
 import { ApiUnauthorizedError } from "@/lib/api";
 import { profileService } from "@/lib/profileService";
 import type { UserResponse, ProfileResponse } from "@/lib/profile";
@@ -132,7 +132,7 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const handleSignOut = () => { clearTokens(); router.push("/"); };
+  const handleSignOut = async () => { await signOut(); router.push("/"); };
 
   const handleDeleteAccount = async () => {
     if (!token) return;

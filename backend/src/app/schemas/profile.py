@@ -1,9 +1,11 @@
 import re
 
-from pydantic import BaseModel, EmailStr, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator, model_validator
 
 
 class ProfileCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     # user_id — comes from JWT, not request body
     firstname: str
     lastname: str
@@ -68,6 +70,8 @@ class ProfileCreate(BaseModel):
 
 
 class ProfileUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     firstname: str | None = None
     lastname: str | None = None
     username: str | None = None

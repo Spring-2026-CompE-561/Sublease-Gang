@@ -4,6 +4,8 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class ConversationStartRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     listing_id: int
     other_user_id: int
 
