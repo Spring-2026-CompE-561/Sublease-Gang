@@ -24,6 +24,10 @@ password_hash = PasswordHash.recommended()
 DUMMY_PASSWORD_HASH = password_hash.hash(secrets.token_hex(32))
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/user/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(
+	tokenUrl="/api/v1/user/login",
+	auto_error=False,
+)
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
