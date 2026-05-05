@@ -94,6 +94,19 @@ ALLOWED_ICON_TYPES: dict[str, str] = {
 MAX_ICON_BYTES = 5 * 1024 * 1024
 
 
+def _sniff_image_mime(data: bytes) -> str | None:
+    """Return the MIME type implied by the first few bytes, or None."""
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
 @router.post("/me/icon", response_model=ProfileResponse)
 async def upload_my_icon(
     file: Annotated[UploadFile, File()],
@@ -112,6 +125,12 @@ async def upload_my_icon(
         raise HTTPException(
             status_code=413,
             detail=f"Icon exceeds {MAX_ICON_BYTES // (1024 * 1024)}MB limit.",
+        )
+    sniffed = _sniff_image_mime(contents)
+    if sniffed is None or sniffed != file.content_type:
+        raise HTTPException(
+            status_code=415,
+            detail="File contents do not match the declared image type.",
         )
     ICON_DIR.mkdir(parents=True, exist_ok=True)
     filename = f"{current_user.id}_{uuid.uuid4().hex}{extension}"

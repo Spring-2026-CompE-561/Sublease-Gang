@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, field_validator
 class MessageSend(BaseModel):
     """Body for POST /conversations/{id}/messages (sender comes from auth)."""
 
+    model_config = ConfigDict(extra="forbid")
+
     content: str
 
     @field_validator("content")

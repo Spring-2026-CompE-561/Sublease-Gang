@@ -5,7 +5,13 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.repository.exceptions import ResourceConflictError
-from app.schemas.user import UserCreate, UserPasswordUpdate, UserResponse, UserUpdate
+from app.schemas.user import (
+    PublicUserResponse,
+    UserPasswordUpdate,
+    UserResponse,
+    UserUpdate,
+)
+from app.services.token import TokenService
 from app.services.user import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -51,21 +57,19 @@ async def change_password(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+    # Force every active session to re-authenticate on next refresh.
+    TokenService.revoke_all_refresh_for_user(db, current_user.id)
+    TokenService.revoke_all_reset_for_user(db, current_user.id)
 
 
-@router.get("/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int, db: Session = Depends(get_db)):
-    """Get a specific user's public profile."""
+@router.get("/{user_id}", response_model=PublicUserResponse)
+async def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a user's public profile (authenticated)."""
     user = UserService.get_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
-
-
-@router.post("/", response_model=UserResponse, status_code=201)
-async def create_user(payload: UserCreate, db: Session = Depends(get_db)):
-    """Create a new user account."""
-    try:
-        return UserService.register(db, payload)
-    except ResourceConflictError as e:
-        raise HTTPException(status_code=409, detail=e.detail) from e
