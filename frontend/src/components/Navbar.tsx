@@ -16,7 +16,6 @@ import {
   MapPin,
   Menu,
   MessageCircle,
-  PlusSquare,
   Search,
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -95,9 +94,6 @@ function DesktopNavbar() {
           <NavIconLink href="/map" label="Map">
             <MapPin className="h-5 w-5" />
           </NavIconLink>
-          <NavIconLink href="/list" label="List your place">
-            <PlusSquare className="h-5 w-5" />
-          </NavIconLink>
           <NavIconLink href="/messages" label="Messages">
             <MessageCircle className="h-5 w-5" />
           </NavIconLink>
@@ -164,13 +160,6 @@ function MobileNavbar() {
                   onClick={() => setIsOpen(false)}
                 >
                   Map
-                </Link>
-                <Link
-                  href="/list"
-                  className="rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
-                  onClick={() => setIsOpen(false)}
-                >
-                  List your place
                 </Link>
                 <Link
                   href="/messages"
