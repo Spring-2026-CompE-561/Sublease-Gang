@@ -173,10 +173,16 @@ export function ListingForm({
 
 	const addImageFiles = useCallback(
 		async (files: FileList | File[]) => {
-			const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+			const all = Array.from(files);
+			const list = all.filter(
+				(f) => f.type === "image/png" || f.type === "image/jpeg",
+			);
 			if (list.length === 0) {
-				toast.error("Please choose image files");
+				toast.error("Photos must be PNG or JPEG images");
 				return;
+			}
+			if (list.length < all.length) {
+				toast.warning("Some files were skipped — only PNG and JPEG are allowed");
 			}
 			const current = form.getValues("photos").length;
 			let added = 0;
@@ -498,14 +504,14 @@ export function ListingForm({
 								<FieldLabel htmlFor="form-listing-photos-trigger">Photos</FieldLabel>
 								<p className="mb-3 text-sm text-muted-foreground" id="form-listing-photos-hint">
 									Drag and drop images here or click to browse. First photo is the cover (up to{" "}
-									{MAX_PHOTOS} images, 1.5 MB each).
+									{MAX_PHOTOS} PNG or JPEG images, 1.5 MB each).
 								</p>
 
 								<input
 									ref={fileInputRef}
 									id="form-listing-photos-input"
 									type="file"
-									accept="image/*"
+									accept="image/png,image/jpeg"
 									multiple
 									className="sr-only"
 									tabIndex={-1}
