@@ -51,6 +51,14 @@ class Settings(BaseSettings):
         description="Allowed CORS origins for the frontend",
     )
 
+    trusted_proxies: list[str] = Field(
+        default=[],
+        description=(
+            "Reverse-proxy IPs we trust to set X-Forwarded-For. Empty by "
+            "default — only enable when running behind a known proxy."
+        ),
+    )
+
     max_request_body_bytes: int = Field(
         default=35 * 1024 * 1024,
         description=(
@@ -74,6 +82,30 @@ class Settings(BaseSettings):
                 f"SECRET_KEY must be at least {_MIN_SECRET_KEY_BYTES} bytes "
                 "in production."
             )
+        return self
+
+    @model_validator(mode="after")
+    def _enforce_safe_cors_in_production(self) -> "Settings":
+        if self.environment != "production":
+            return self
+        for origin in self.cors_origins:
+            normalized = origin.strip().lower()
+            if not normalized:
+                raise ValueError("CORS origins must not be blank in production.")
+            if "*" in normalized:
+                raise ValueError(
+                    "Wildcard CORS origins are not allowed in production."
+                )
+            if normalized.startswith("http://"):
+                raise ValueError(
+                    "Plaintext http:// CORS origins are not allowed in "
+                    "production. Use https://."
+                )
+            if "localhost" in normalized or "127.0.0.1" in normalized:
+                raise ValueError(
+                    "localhost/127.0.0.1 CORS origins are not allowed in "
+                    "production."
+                )
         return self
 
 
