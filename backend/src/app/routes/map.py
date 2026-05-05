@@ -21,7 +21,7 @@ async def get_map_listings(
     room_type: str | None = None,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
-    limit: int = 100,
+    limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
 ):
     """Get map pins for listings within the given bounds."""
