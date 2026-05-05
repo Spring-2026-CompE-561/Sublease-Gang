@@ -1,7 +1,15 @@
 # scripts/seed_colleges.py
 # Run with: python -m scripts.seed_colleges
 
-from app.db import SessionLocal
+import sys
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+# Make `app` importable when running this file directly.
+SRC = Path(__file__).resolve().parent.parent / "src"
+sys.path.insert(0, str(SRC))
+
+from app.core.database import  SessionLocal
 from app.models.college import College
 
 COLLEGES = [
