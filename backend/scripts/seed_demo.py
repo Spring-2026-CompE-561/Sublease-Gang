@@ -25,6 +25,7 @@ sys.path.insert(0, str(SRC))
 
 from app.core.auth import hash_password  # noqa: E402
 from app.core.database import Base, SessionLocal, engine  # noqa: E402
+from app.models.college import College 
 from app.models.listing import Listing  # noqa: E402
 from app.models.profiles import Profile  # noqa: E402
 from app.models.user import User  # noqa: E402
