@@ -13,7 +13,10 @@ if (isProd && !apiBaseUrl.startsWith("http://")) {
 // Origins the app legitimately talks to. Listed explicitly so a future change
 // (e.g. adding a CDN) shows up in this file rather than being silently allowed.
 const apiOrigin = new URL(apiBaseUrl).origin;
-const externalImageHosts = ["https://tile.openstreetmap.org"];
+const externalImageHosts = [
+  "https://tile.openstreetmap.org",
+  "https://images.unsplash.com",
+];
 const externalConnectHosts = ["https://tile.openstreetmap.org"];
 
 const csp = [
@@ -58,10 +61,12 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: isProd ? { exclude: ["error", "warn"] } : false,
   },
-  // No remote image hosts are actually used today — listings come in as
-  // base64 data URLs and profile icons are same-origin via /media. Add
-  // specific hostnames here when a real CDN is adopted.
-  images: { remotePatterns: [] },
+  // Allow remote image hosts that match the CSP img-src list above.
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+    ],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

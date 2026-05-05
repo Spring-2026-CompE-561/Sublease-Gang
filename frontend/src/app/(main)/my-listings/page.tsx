@@ -43,7 +43,7 @@ export default function MyListingsPage() {
 
 		try {
 			const me = await fetchApiJson<MeResponse>("/api/v1/users/me", token);
-			const rows = await fetchListingsByHost(me.id);
+			const rows = await fetchListingsByHost(me.id, token);
 			setListings(rows);
 			setIsAuthorized(true);
 		} catch (e) {

@@ -340,13 +340,15 @@ export async function fetchBrowseListings(
 	return data.results.map((row) => toBrowseListing(listingFromListRow(row)));
 }
 
-export async function fetchListingsByHost(hostId: number): Promise<BrowseListing[]> {
+export async function fetchListingsByHost(
+	hostId: number,
+	token: string,
+): Promise<BrowseListing[]> {
 	const qs = new URLSearchParams({ host_id: String(hostId), limit: "100" });
-	const res = await fetch(`${API_BASE_URL}/api/v1/listings/?${qs.toString()}`);
-	if (!res.ok) {
-		throw new Error("Failed to load listings");
-	}
-	const data = (await res.json()) as { results: ListingListApiRow[] };
+	const data = await fetchApiJson<{ results: ListingListApiRow[] }>(
+		`/api/v1/listings/?${qs.toString()}`,
+		token,
+	);
 	return data.results.map((row) => toBrowseListing(listingFromListRow(row)));
 }
 
