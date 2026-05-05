@@ -26,6 +26,7 @@ def _validate_image_urls(values: list[str]) -> list[str]:
             )
     return values
 
+from app.schemas.college import CollegeRead
 
 class ListingCreate(BaseModel):
     """Schema for creating a new listing."""
@@ -105,6 +106,7 @@ class ListingResponse(BaseModel):
     start_date: datetime
     end_date: datetime
     college_id: int | None = None
+    college: CollegeRead | None = None
     thumbnail_url: str | None = None
     image_urls: list[str] | None = None
     latitude: float
