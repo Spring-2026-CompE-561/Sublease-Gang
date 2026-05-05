@@ -46,9 +46,9 @@ export const profileService = {
   updateMyProfile: (token: string, payload: ProfileUpdate): Promise<ProfileResponse> =>
     patchApiJson("/api/v1/profiles/me", token, payload),
 
-  // GET /profiles/{username} — public profile
+  // GET /profiles/{username} — public profile (no auth required)
   getPublicProfile: (username: string): Promise<ProfileResponse> =>
-    fetchApiJson(`/api/v1/profiles/${username}`),
+    fetchApiJson(`/api/v1/profiles/${encodeURIComponent(username)}`),
 
   // GET /listings/?host_id={user_id} — user's listings
   getUserListings: (userId: number, limit: number = 100): Promise<ListingsResponse> =>
