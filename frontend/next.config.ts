@@ -14,11 +14,7 @@ if (isProd && !apiBaseUrl.startsWith("https://")) {
 // (e.g. adding a CDN) shows up in this file rather than being silently allowed.
 const apiOrigin = new URL(apiBaseUrl).origin;
 const externalImageHosts = ["https://tile.openstreetmap.org"];
-const externalConnectHosts = [
-  "https://tile.openstreetmap.org",
-  // Removed once geocoding is proxied through the backend (audit Stage 19).
-  "https://nominatim.openstreetmap.org",
-];
+const externalConnectHosts = ["https://tile.openstreetmap.org"];
 
 const csp = [
   "default-src 'self'",
