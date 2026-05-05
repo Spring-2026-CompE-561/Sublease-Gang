@@ -101,6 +101,34 @@ export function notifyAuthExpired(): void {
 	window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
 }
 
+/**
+ * User-initiated sign out. Tells the backend to revoke this session's
+ * refresh token, then clears local storage. Best-effort: a failed
+ * server call (network down, etc.) does not block the local logout.
+ */
+export async function signOut(): Promise<void> {
+	if (typeof window === "undefined") {
+		return;
+	}
+	const accessToken = getAccessToken();
+	const refreshToken = getRefreshToken();
+	if (accessToken) {
+		try {
+			await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${accessToken}`,
+				},
+				body: JSON.stringify(refreshToken ? { refresh_token: refreshToken } : {}),
+			});
+		} catch {
+			// Network / server unavailable — fall through to local cleanup.
+		}
+	}
+	clearTokens();
+}
+
 export function useIsAuthenticated(): boolean {
 	const [isAuthed, setIsAuthed] = useState(false);
 
