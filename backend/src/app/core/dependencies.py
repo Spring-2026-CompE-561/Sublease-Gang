@@ -27,7 +27,7 @@ def get_current_user(
             detail="Invalid token payload",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user = db.query(User).filter(User.id == int(user_id)).first()
+    user = db.get(User, int(user_id))
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -54,19 +54,19 @@ def get_current_user(
 
 
 def get_current_user_optional(
-	token: str | None = Depends(oauth2_scheme_optional),
-	db: Session = Depends(get_db),
+    token: str | None = Depends(oauth2_scheme_optional),
+    db: Session = Depends(get_db),
 ) -> User | None:
-	"""Return the authenticated user, or None if no/invalid token (no exception)."""
-	if token is None:
-		return None
-	payload = verify_token(token)
-	if payload is None:
-		return None
-	user_id: int | None = payload.get("sub")
-	if user_id is None:
-		return None
-	user = db.query(User).filter(User.id == int(user_id)).first()
-	if user is None or user.account_disabled:
-		return None
-	return user
+    """Return the authenticated user, or None if no/invalid token (no exception)."""
+    if token is None:
+        return None
+    payload = verify_token(token)
+    if payload is None or payload.get("type") != "access":
+        return None
+    user_id: int | None = payload.get("sub")
+    if user_id is None:
+        return None
+    user = db.get(User, int(user_id))
+    if user is None or user.account_disabled:
+        return None
+    return user

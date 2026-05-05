@@ -23,10 +23,10 @@ password_hash = PasswordHash.recommended()
 # against it always returns False.
 DUMMY_PASSWORD_HASH = password_hash.hash(secrets.token_hex(32))
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/user/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 oauth2_scheme_optional = OAuth2PasswordBearer(
-	tokenUrl="/api/v1/user/login",
-	auto_error=False,
+    tokenUrl="/api/v1/auth/login",
+    auto_error=False,
 )
 
 
