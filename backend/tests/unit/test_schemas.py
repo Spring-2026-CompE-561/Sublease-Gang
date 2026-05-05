@@ -17,7 +17,7 @@ class TestUserCreate:
         u = UserCreate(
             email="test@example.com",
             username="testuser",
-            password="password123",
+            password="password1234",
         )
         assert u.email == "test@example.com"
         assert u.username == "testuser"
@@ -35,7 +35,7 @@ class TestUserCreate:
             UserCreate(
                 email="test@example.com",
                 username="ab",
-                password="password123",
+                password="password1234",
             )
 
     def test_username_too_long(self):
@@ -43,7 +43,7 @@ class TestUserCreate:
             UserCreate(
                 email="test@example.com",
                 username="a" * 51,
-                password="password123",
+                password="password1234",
             )
 
     def test_invalid_email(self):
@@ -51,7 +51,7 @@ class TestUserCreate:
             UserCreate(
                 email="not-an-email",
                 username="testuser",
-                password="password123",
+                password="password1234",
             )
 
 
@@ -70,24 +70,24 @@ class TestUserUpdate:
 class TestUserPasswordUpdate:
     def test_valid(self):
         u = UserPasswordUpdate(
-            current_password="oldpass123",
-            new_password="newpass123",
-            confirm_new_password="newpass123",
+            current_password="oldpassword1234",
+            new_password="newpassword1234",
+            confirm_new_password="newpassword1234",
         )
-        assert u.new_password == "newpass123"
+        assert u.new_password == "newpassword1234"
 
     def test_passwords_dont_match(self):
         with pytest.raises(ValidationError, match="passwords do not match"):
             UserPasswordUpdate(
-                current_password="oldpass123",
-                new_password="newpass123",
+                current_password="oldpassword1234",
+                new_password="newpassword1234",
                 confirm_new_password="different123",
             )
 
     def test_new_password_too_short(self):
         with pytest.raises(ValidationError):
             UserPasswordUpdate(
-                current_password="oldpass123",
+                current_password="oldpassword1234",
                 new_password="short",
                 confirm_new_password="short",
             )
@@ -131,6 +131,32 @@ class TestListingCreate:
         with pytest.raises(ValidationError, match="end_date must be after start_date"):
             ListingCreate(**self._defaults(start_date=now, end_date=now))
 
+    def test_image_url_javascript_scheme_rejected(self):
+        with pytest.raises(ValidationError, match="image_urls must be"):
+            ListingCreate(
+                **self._defaults(image_urls=["javascript:alert(1)"])
+            )
+
+    def test_image_url_data_svg_rejected(self):
+        with pytest.raises(ValidationError, match="image_urls must be"):
+            ListingCreate(
+                **self._defaults(
+                    image_urls=["data:image/svg+xml;base64,PHN2Zw=="]
+                )
+            )
+
+    def test_image_url_media_path_accepted(self):
+        listing = ListingCreate(
+            **self._defaults(image_urls=["/media/listings/abc.jpg"])
+        )
+        assert listing.image_urls == ["/media/listings/abc.jpg"]
+
+    def test_image_url_data_png_base64_accepted(self):
+        listing = ListingCreate(
+            **self._defaults(image_urls=["data:image/png;base64,iVBORw0KGgo="])
+        )
+        assert listing.image_urls[0].startswith("data:image/png;base64,")
+
 
 class TestListingUpdate:
     def test_valid_partial(self):
@@ -142,6 +168,10 @@ class TestListingUpdate:
         now = datetime.now(UTC)
         with pytest.raises(ValidationError, match="end_date must be after start_date"):
             ListingUpdate(start_date=now, end_date=now - timedelta(days=1))
+
+    def test_image_url_validator_runs_on_update(self):
+        with pytest.raises(ValidationError, match="image_urls must be"):
+            ListingUpdate(image_urls=["javascript:alert(1)"])
 
     def test_single_date_ok(self):
         now = datetime.now(UTC)

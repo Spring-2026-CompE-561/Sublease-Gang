@@ -16,6 +16,7 @@ from app.errors.permission import PermissionError, permission_exception_handler
 from app.errors.server import server_exception_handler
 from app.errors.validation import validation_exception_handler
 from app.middleware import (
+    BodySizeLimitMiddleware,
     LoggingMiddleware,
     RateLimitMiddleware,
     RequestIDMiddleware,
@@ -31,10 +32,17 @@ logging.basicConfig(
 # create DB tables
 Base.metadata.create_all(bind=engine)
 
+_is_prod = settings.environment == "production"
+
 app = FastAPI(
     title=settings.app_name,
     description="API for Sublease Marketplace",
     version=settings.app_version,
+    # Hide interactive docs in production — they ease recon and pull
+    # external CDN scripts that don't fit a strict API CSP.
+    docs_url=None if _is_prod else "/docs",
+    redoc_url=None if _is_prod else "/redoc",
+    openapi_url=None if _is_prod else "/openapi.json",
 )
 
 # Request ID
@@ -46,8 +54,17 @@ app.add_middleware(LoggingMiddleware)
 # Security headers
 app.add_middleware(SecurityHeadersMiddleware)
 
+# Body size limit (fast-fail on oversized payloads before they reach handlers)
+app.add_middleware(
+    BodySizeLimitMiddleware,
+    max_bytes=settings.max_request_body_bytes,
+)
+
 # Rate limiting
-app.add_middleware(RateLimitMiddleware)
+app.add_middleware(
+    RateLimitMiddleware,
+    trusted_proxies=settings.trusted_proxies,
+)
 
 # CORS
 app.add_middleware(

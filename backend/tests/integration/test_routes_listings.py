@@ -326,7 +326,7 @@ class TestListingOwnershipWithAuth:
             client,
             email="owner@example.com",
             username="owneruser",
-            password="password123",
+            password="password1234",
         )
         listing_id = self._create_listing(client, owner_headers, "Owner Listing")
 
@@ -334,7 +334,7 @@ class TestListingOwnershipWithAuth:
             client,
             email="other@example.com",
             username="otheruser",
-            password="password123",
+            password="password1234",
         )
         resp = client.put(
             f"/api/v1/listings/{listing_id}",
@@ -349,7 +349,7 @@ class TestListingOwnershipWithAuth:
             client,
             email="owner2@example.com",
             username="owneruser2",
-            password="password123",
+            password="password1234",
         )
         listing_id = self._create_listing(client, owner_headers, "Owner Listing")
 
@@ -357,7 +357,7 @@ class TestListingOwnershipWithAuth:
             client,
             email="other2@example.com",
             username="otheruser2",
-            password="password123",
+            password="password1234",
         )
         resp = client.delete(f"/api/v1/listings/{listing_id}", headers=other_headers)
         assert resp.status_code == 403

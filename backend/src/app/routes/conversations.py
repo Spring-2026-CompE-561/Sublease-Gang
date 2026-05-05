@@ -50,9 +50,17 @@ async def create_conversation(
     if other_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     try:
-        ListingService.get_or_raise(db, payload.listing_id)
+        listing = ListingService.get_or_raise(db, payload.listing_id)
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.detail) from e
+    if (
+        current_user.id != listing.host_id
+        and payload.other_user_id != listing.host_id
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Conversation must include the listing host",
+        )
     return ConversationService.get_or_create(
         db,
         payload.listing_id,

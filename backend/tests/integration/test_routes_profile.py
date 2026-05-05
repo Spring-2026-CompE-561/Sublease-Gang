@@ -12,7 +12,7 @@ def _register_and_login(client, email="profile@example.com", username="authuser"
         json={
             "email": email,
             "username": username,
-            "password": "password123",
+            "password": "password1234",
             "firstname": "Jane",
             "lastname": "Doe",
         },
@@ -229,6 +229,9 @@ class TestSeedPublicProfile:
         assert r.json()["firstname"] == "Seed"
 
 
+PNG_HEADER = b"\x89PNG\r\n\x1a\n"
+
+
 class TestProfileIconUpload:
     def test_unauthorized(self, client):
         r = client.post(
@@ -271,7 +274,7 @@ class TestProfileIconUpload:
         r = client.post(
             "/api/v1/profiles/me/icon",
             headers=headers,
-            files={"file": ("a.png", b"fake-image-bytes", "image/png")},
+            files={"file": ("a.png", PNG_HEADER + b"fake-image-bytes", "image/png")},
         )
         assert r.status_code == 200
         data = r.json()
@@ -284,7 +287,22 @@ class TestProfileIconUpload:
 
         written = list(icon_dir.iterdir())
         assert len(written) == 1
-        assert written[0].read_bytes() == b"fake-image-bytes"
+        assert written[0].read_bytes() == PNG_HEADER + b"fake-image-bytes"
+
+    def test_html_payload_with_image_mime_rejected(self, client, tmp_path, monkeypatch):
+        """A non-image payload with image/png MIME must be rejected."""
+        from app.routes import profile as profile_route
+
+        monkeypatch.setattr(profile_route, "ICON_DIR", tmp_path / "icons")
+        headers = _register_and_login(client)
+        r = client.post(
+            "/api/v1/profiles/me/icon",
+            headers=headers,
+            files={
+                "file": ("evil.png", b"<html><script>x</script></html>", "image/png")
+            },
+        )
+        assert r.status_code == 415
 
     def test_user_without_profile_returns_404(
         self, client, make_user, tmp_path, monkeypatch
@@ -298,7 +316,7 @@ class TestProfileIconUpload:
         r = client.post(
             "/api/v1/profiles/me/icon",
             headers=headers,
-            files={"file": ("a.png", b"fake-image-bytes", "image/png")},
+            files={"file": ("a.png", PNG_HEADER + b"fake-image-bytes", "image/png")},
         )
         assert r.status_code == 404
         # The route unlinks the file on failure; directory should be empty.
