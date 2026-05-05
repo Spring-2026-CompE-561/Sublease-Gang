@@ -46,11 +46,15 @@ export const profileService = {
   updateMyProfile: (token: string, payload: ProfileUpdate): Promise<ProfileResponse> =>
     patchApiJson("/api/v1/profiles/me", token, payload),
 
-  // GET /profiles/{username} — public profile
-  getPublicProfile: (username: string): Promise<ProfileResponse> =>
-    fetchApiJson(`/api/v1/profiles/${username}`),
+  // GET /profiles/{username} — requires authentication
+  getPublicProfile: (token: string, username: string): Promise<ProfileResponse> =>
+    fetchApiJson(`/api/v1/profiles/${username}`, token),
 
-  // GET /listings/?host_id={user_id} — user's listings
-  getUserListings: (userId: number, limit: number = 100): Promise<ListingsResponse> =>
-    fetchApiJson(`/api/v1/listings/?host_id=${userId}&limit=${limit}`),
+  // GET /listings/?host_id={user_id} — user's listings (auth required)
+  getUserListings: (
+    token: string,
+    userId: number,
+    limit: number = 100,
+  ): Promise<ListingsResponse> =>
+    fetchApiJson(`/api/v1/listings/?host_id=${userId}&limit=${limit}`, token),
 };
