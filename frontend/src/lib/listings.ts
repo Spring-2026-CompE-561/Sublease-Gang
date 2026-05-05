@@ -231,9 +231,10 @@ export function collegeOptionsFromMockListings(): CollegeFilterOption[] {
 }
 
 export async function fetchCollegeFilterOptions(): Promise<CollegeFilterOption[]> {
-	const merged = new Map<number, string>();
+	/** Used only to resolve odd API names (e.g. numeric placeholders); not merged wholesale into options. */
+	const mockLabelsById = new Map<number, string>();
 	for (const opt of collegeOptionsFromMockListings()) {
-		merged.set(opt.id, opt.label);
+		mockLabelsById.set(opt.id, opt.label);
 	}
 	try {
 		const res = await fetch(`${API_BASE_URL}/api/v1/listings/filters`);
@@ -243,19 +244,22 @@ export async function fetchCollegeFilterOptions(): Promise<CollegeFilterOption[]
 		const data = (await res.json()) as {
 			colleges?: { id: number; name: string | number }[];
 		};
+		const merged = new Map<number, string>();
 		for (const c of data.colleges ?? []) {
 			const nameStr =
 				typeof c.name === "string" ? c.name.trim() : String(c.name);
 			const looksLikeRealName = nameStr.length > 0 && Number(nameStr) !== c.id;
-			const label = looksLikeRealName ? nameStr : (merged.get(c.id) ?? `College ${c.id}`);
+			const label = looksLikeRealName
+				? nameStr
+				: (mockLabelsById.get(c.id) ?? `College ${c.id}`);
 			merged.set(c.id, label);
 		}
+		return Array.from(merged.entries())
+			.map(([id, label]) => ({ id, label }))
+			.sort((a, b) => a.label.localeCompare(b.label));
 	} catch {
 		return collegeOptionsFromMockListings();
 	}
-	return Array.from(merged.entries())
-		.map(([id, label]) => ({ id, label }))
-		.sort((a, b) => a.label.localeCompare(b.label));
 }
 
 export function filterBrowseListings(

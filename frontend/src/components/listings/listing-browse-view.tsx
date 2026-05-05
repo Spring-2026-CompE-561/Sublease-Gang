@@ -35,7 +35,7 @@ export function ListingBrowseView() {
 	const [bedroomFilter, setBedroomFilter] = useState<number | null>(null);
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
 	const [collegeId, setCollegeId] = useState<number | null>(null);
-	const [collegeOptions, setCollegeOptions] = useState<CollegeFilterOption[]>(() => collegeOptionsFromMockListings());
+	const [collegeOptions, setCollegeOptions] = useState<CollegeFilterOption[]>([]);
 	const [mobileOpen, setMobileOpen] = useState(false);
 
 	const [listings, setListings] = useState<BrowseListing[]>([]);
