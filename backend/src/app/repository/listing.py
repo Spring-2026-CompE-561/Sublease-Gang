@@ -1,6 +1,7 @@
 from sqlalchemy import func as sql_func
 from sqlalchemy.orm import Session
 
+from app.models.college import College
 from app.models.listing import Listing
 from app.models.user import User
 from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
@@ -115,16 +116,15 @@ def get_listing_filter_options(db: Session) -> dict:
         .filter(Listing.room_type.isnot(None))
         .all()
     ]
-    colleges = [
-        {"id": c[0], "name": c[0]}
-        for c in db.query(Listing.college_id)
+    colleges = (
+        db.query(College.id, College.name)
+        .join(Listing, Listing.college_id == College.id)
         .distinct()
-        .filter(Listing.college_id.isnot(None))
         .all()
-    ]
+    )
     return {
         "room_types": room_types,
-        "colleges": colleges,
+        "colleges": [{"id": c.id, "name": c.name} for c in colleges],
         "price_min": db.query(sql_func.min(Listing.price)).scalar(),
         "price_max": db.query(sql_func.max(Listing.price)).scalar(),
         "sqft_min": db.query(sql_func.min(Listing.sqft)).scalar(),

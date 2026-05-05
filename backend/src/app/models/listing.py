@@ -20,11 +20,12 @@ class Listing(Base):
     sqft = Column(Integer, nullable=True)
     start_date = Column(DateTime(timezone=True), nullable=False)
     end_date = Column(DateTime(timezone=True), nullable=False)
-    college_id = Column(Integer, nullable=True)
+    college_id = Column(Integer, ForeignKey("colleges.id"), nullable=True)
     thumbnail_url = Column(String, nullable=True, default=None)
     image_urls = Column(JSON, nullable=True)
     latitude = Column(Numeric(9, 6), nullable=False)
     longitude = Column(Numeric(9, 6), nullable=False)
 
     user = relationship("User", back_populates="listings")
+    college = relationship("College", back_populates="listings")
     conversations = relationship("Conversation", back_populates="listing")
