@@ -54,7 +54,10 @@ app.add_middleware(
 )
 
 # Rate limiting
-app.add_middleware(RateLimitMiddleware)
+app.add_middleware(
+    RateLimitMiddleware,
+    trusted_proxies=settings.trusted_proxies,
+)
 
 # CORS
 app.add_middleware(
