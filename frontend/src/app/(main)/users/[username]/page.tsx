@@ -8,7 +8,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ApiUnauthorizedError } from "@/lib/api";
-import { clearTokens, getAccessToken } from "@/lib/auth";
+import {
+  AUTH_CHANGED_EVENT,
+  clearTokens,
+  getAccessToken,
+} from "@/lib/auth";
 import { profileService, type ListingsResponse } from "@/lib/profileService";
 import type { ProfileResponse } from "@/lib/profile";
 import { Listing } from "@/types/listing";
@@ -59,6 +63,21 @@ export default function PublicUserProfile() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Sign-out only clears localStorage; this page would keep showing cached data
+  // until the user navigates. Re-check when auth state changes (same tab).
+  useEffect(() => {
+    const onAuthChanged = () => {
+      if (!getAccessToken()) {
+        setProfile(null);
+        setListings(null);
+        setIsLoading(false);
+        router.replace("/signin");
+      }
+    };
+    window.addEventListener(AUTH_CHANGED_EVENT, onAuthChanged);
+    return () => window.removeEventListener(AUTH_CHANGED_EVENT, onAuthChanged);
+  }, [router]);
 
   if (isLoading) {
     return (
