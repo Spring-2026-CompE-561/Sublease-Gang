@@ -40,9 +40,7 @@ export default function MapPage() {
 	const [listings, setListings] = useState<BrowseListing[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState<string | null>(null);
-	const [collegeOptions, setCollegeOptions] = useState<CollegeFilterOption[]>(
-		() => collegeOptionsFromMockListings(),
-	);
+	const [collegeOptions, setCollegeOptions] = useState<CollegeFilterOption[]>([]);
 
 	useEffect(() => {
 		let cancelled = false;
