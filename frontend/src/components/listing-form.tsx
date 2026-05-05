@@ -30,19 +30,19 @@ import type { Listing } from "@/types/listing";
 const MAX_PHOTOS = 12;
 const MAX_IMAGE_BYTES = 1_500_000;
 
-const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
-
 async function geocodeAddress(query: string): Promise<{ lat: number; lng: number } | null> {
-	const url = `${NOMINATIM_URL}?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
+	// Routed through the backend proxy so the user's IP and a TOS-compliant
+	// User-Agent stay correct upstream.
+	const url = `${API_BASE_URL}/api/v1/map/geocode?address=${encodeURIComponent(query)}`;
 	const res = await fetch(url, { headers: { Accept: "application/json" } });
 	if (!res.ok) return null;
-	const data = (await res.json()) as Array<{ lat?: string; lon?: string }>;
-	const hit = data[0];
-	if (!hit?.lat || !hit?.lon) return null;
-	const lat = Number(hit.lat);
-	const lng = Number(hit.lon);
-	if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-	return { lat, lng };
+	const payload = (await res.json()) as {
+		results?: Array<{ lat?: number; lon?: number }>;
+	};
+	const hit = payload.results?.[0];
+	if (typeof hit?.lat !== "number" || typeof hit?.lon !== "number") return null;
+	if (!Number.isFinite(hit.lat) || !Number.isFinite(hit.lon)) return null;
+	return { lat: hit.lat, lng: hit.lon };
 }
 
 const photoRowSchema = z.object({

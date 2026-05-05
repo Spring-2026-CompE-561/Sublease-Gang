@@ -1,5 +1,8 @@
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_DEFAULT_SECRET_KEY = "change_me_to_a_secure_32_byte_secret_key"
+_MIN_SECRET_KEY_BYTES = 32
 
 
 class Settings(BaseSettings):
@@ -9,7 +12,7 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
 
     secret_key: str = Field(
-        default="change_me_to_a_secure_32_byte_secret_key",
+        default=_DEFAULT_SECRET_KEY,
         description="Secret key for JWT",
     )
 
@@ -47,6 +50,63 @@ class Settings(BaseSettings):
         default=["http://localhost:3000"],
         description="Allowed CORS origins for the frontend",
     )
+
+    trusted_proxies: list[str] = Field(
+        default=[],
+        description=(
+            "Reverse-proxy IPs we trust to set X-Forwarded-For. Empty by "
+            "default — only enable when running behind a known proxy."
+        ),
+    )
+
+    max_request_body_bytes: int = Field(
+        default=35 * 1024 * 1024,
+        description=(
+            "Maximum accepted request body size in bytes. Sized to fit a "
+            "fully-loaded listing while base64 image URLs are still in use; "
+            "tighten once the multipart upload pipeline ships."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _enforce_secret_key_in_production(self) -> "Settings":
+        if self.environment != "production":
+            return self
+        if self.secret_key == _DEFAULT_SECRET_KEY:
+            raise ValueError(
+                "SECRET_KEY is set to the default placeholder. "
+                "Set a unique SECRET_KEY in the production environment."
+            )
+        if len(self.secret_key.encode("utf-8")) < _MIN_SECRET_KEY_BYTES:
+            raise ValueError(
+                f"SECRET_KEY must be at least {_MIN_SECRET_KEY_BYTES} bytes "
+                "in production."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _enforce_safe_cors_in_production(self) -> "Settings":
+        if self.environment != "production":
+            return self
+        for origin in self.cors_origins:
+            normalized = origin.strip().lower()
+            if not normalized:
+                raise ValueError("CORS origins must not be blank in production.")
+            if "*" in normalized:
+                raise ValueError(
+                    "Wildcard CORS origins are not allowed in production."
+                )
+            if normalized.startswith("http://"):
+                raise ValueError(
+                    "Plaintext http:// CORS origins are not allowed in "
+                    "production. Use https://."
+                )
+            if "localhost" in normalized or "127.0.0.1" in normalized:
+                raise ValueError(
+                    "localhost/127.0.0.1 CORS origins are not allowed in "
+                    "production."
+                )
+        return self
 
 
 settings = Settings()
