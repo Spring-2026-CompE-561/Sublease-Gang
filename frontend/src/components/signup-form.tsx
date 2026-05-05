@@ -533,6 +533,26 @@ export function SignupForm({
         </CardContent>
         <CardFooter>
           <div className="flex w-full flex-col gap-4">
+            <p className="rounded-md border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground">
+              By creating an account you agree that SubLease will store the
+              personal information you provide above (name, email, and any
+              optional contact details) to help connect you with other students.
+              See our{" "}
+              <Link
+                href="/privacy"
+                className="font-medium text-foreground underline underline-offset-4"
+              >
+                Privacy Policy
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/terms"
+                className="font-medium text-foreground underline underline-offset-4"
+              >
+                Terms of Service
+              </Link>
+              .
+            </p>
             <Field orientation="horizontal">
               <Button
                 type="button"
