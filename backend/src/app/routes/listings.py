@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_user_optional
 from app.models.user import User
 from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
 from app.schemas.listing import ListingCreate, ListingResponse, ListingUpdate
@@ -43,8 +43,20 @@ async def list_listings(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_current_user_optional),
 ):
-    """Search listings with filters and sorting."""
+    """Search listings with filters and sorting.
+
+    Filtering by ``host_id`` requires authentication so host listings are not
+    anonymously scraped; other searches remain public.
+    """
+    if host_id is not None:
+        if current_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
     count, listings = ListingService.search(
         db,
         college_id=college_id,
