@@ -17,8 +17,6 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox"
 import { Slider } from "@/components/ui/slider"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
 import { useEffect, useState } from 'react'
 import { API_BASE_URL } from "@/lib/api"
 
@@ -33,8 +31,8 @@ type FilterOptions = {
 
 export function FilterPanel() {
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
-  const [selectedRoomType, setSelectedRoomType] = useState<string>("");
-  const [selectedCollege, setSelectedCollege] = useState<string>("");
+  const [, setSelectedRoomType] = useState<string>("");
+  const [, setSelectedCollege] = useState<string>("");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000]);
   const [sqftRange, setSqftRange] = useState<[number, number]>([0, 2000]);
 
