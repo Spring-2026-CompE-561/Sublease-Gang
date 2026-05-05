@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { User, Mail, Phone, Loader2 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { ApiUnauthorizedError } from "@/lib/api";
+import {
+  AUTH_CHANGED_EVENT,
+  clearTokens,
+  getAccessToken,
+} from "@/lib/auth";
 import { profileService, type ListingsResponse } from "@/lib/profileService";
 import type { ProfileResponse } from "@/lib/profile";
 import { Listing } from "@/types/listing";
@@ -14,28 +20,64 @@ import { ListingCard } from "@/components/ListingCard";
 
 export default function PublicUserProfile() {
   const params = useParams();
+  const router = useRouter();
   const username = params.username as string;
 
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [listings, setListings] = useState<ListingsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const profileData = await profileService.getPublicProfile(username);
-        setProfile(profileData);
+  const load = useCallback(async () => {
+    const token = getAccessToken();
+    if (!token) {
+      setIsLoading(false);
+      router.replace("/signin");
+      return;
+    }
 
-        const listingsData = await profileService.getUserListings(profileData.user_id);
-        setListings(listingsData);
-      } catch {
-        toast.error("Failed to load user profile");
-      } finally {
+    setIsLoading(true);
+    try {
+      const profileData = await profileService.getPublicProfile(token, username);
+      setProfile(profileData);
+
+      const listingsData = await profileService.getUserListings(
+        token,
+        profileData.user_id,
+      );
+      setListings(listingsData);
+    } catch (e) {
+      if (e instanceof ApiUnauthorizedError) {
+        clearTokens();
+        toast.error(e.message);
+        router.replace("/signin");
+        return;
+      }
+      toast.error("Failed to load user profile");
+      setProfile(null);
+      setListings(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [router, username]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  // Sign-out only clears localStorage; this page would keep showing cached data
+  // until the user navigates. Re-check when auth state changes (same tab).
+  useEffect(() => {
+    const onAuthChanged = () => {
+      if (!getAccessToken()) {
+        setProfile(null);
+        setListings(null);
         setIsLoading(false);
+        router.replace("/signin");
       }
     };
-    load();
-  }, [username]);
+    window.addEventListener(AUTH_CHANGED_EVENT, onAuthChanged);
+    return () => window.removeEventListener(AUTH_CHANGED_EVENT, onAuthChanged);
+  }, [router]);
 
   if (isLoading) {
     return (

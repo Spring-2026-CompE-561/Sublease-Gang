@@ -16,6 +16,10 @@ RESET_TOKEN_EXPIRE_MINUTES = settings.reset_token_expire_minutes
 password_hash = PasswordHash.recommended()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/user/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(
+	tokenUrl="/api/v1/user/login",
+	auto_error=False,
+)
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
