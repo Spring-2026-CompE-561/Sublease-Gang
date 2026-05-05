@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 # Accepts: https URLs, /media/ relative paths, or base64-encoded data URIs
 # whose MIME is one of the four bitmap formats we support. Rejects
@@ -30,6 +30,8 @@ def _validate_image_urls(values: list[str]) -> list[str]:
 class ListingCreate(BaseModel):
     """Schema for creating a new listing."""
 
+    model_config = ConfigDict(extra="forbid")
+
     title: str = Field(..., min_length=1)
     description: str = Field(..., min_length=1)
     price: float = Field(..., gt=0)
@@ -57,6 +59,8 @@ class ListingCreate(BaseModel):
 
 class ListingUpdate(BaseModel):
     """Schema for updating a listing."""
+
+    model_config = ConfigDict(extra="forbid")
 
     title: str | None = None
     description: str | None = None

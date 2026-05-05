@@ -3,14 +3,14 @@ class TestGetUser:
         signup = {
             "email": email,
             "username": username,
-            "password": "password123",
+            "password": "password1234",
             "firstname": "Jane",
             "lastname": "Doe",
         }
         client.post("/api/v1/auth/signup", json=signup)
         login = client.post(
             "/api/v1/auth/login",
-            json={"email": email, "password": "password123"},
+            json={"email": email, "password": "password1234"},
         )
         token = login.json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
@@ -57,8 +57,8 @@ class TestAuthProtectedEndpoints:
             "/api/v1/users/me/password",
             json={
                 "current_password": "old",
-                "new_password": "newpass123",
-                "confirm_new_password": "newpass123",
+                "new_password": "newpassword1234",
+                "confirm_new_password": "newpassword1234",
             },
         )
         assert resp.status_code == 401
@@ -69,7 +69,7 @@ class TestAuthenticatedUserRoutes:
         signup = {
             "email": "me@example.com",
             "username": "meuser",
-            "password": "password123",
+            "password": "password1234",
             "firstname": "Jane",
             "lastname": "Doe",
         }
@@ -107,16 +107,16 @@ class TestAuthenticatedUserRoutes:
             "/api/v1/users/me/password",
             headers=headers,
             json={
-                "current_password": "password123",
-                "new_password": "newpassword123",
-                "confirm_new_password": "newpassword123",
+                "current_password": "password1234",
+                "new_password": "newpassword1234",
+                "confirm_new_password": "newpassword1234",
             },
         )
         assert change_resp.status_code == 204
 
         login_resp = client.post(
             "/api/v1/auth/login",
-            json={"email": "me@example.com", "password": "newpassword123"},
+            json={"email": "me@example.com", "password": "newpassword1234"},
         )
         assert login_resp.status_code == 200
 
@@ -127,7 +127,7 @@ class TestAuthenticatedUserRoutes:
             json={
                 "email": "cp@example.com",
                 "username": "cpuser",
-                "password": "password123",
+                "password": "password1234",
                 "firstname": "Jane",
                 "lastname": "Doe",
             },
@@ -139,9 +139,9 @@ class TestAuthenticatedUserRoutes:
             "/api/v1/users/me/password",
             headers=headers,
             json={
-                "current_password": "password123",
-                "new_password": "newpassword123",
-                "confirm_new_password": "newpassword123",
+                "current_password": "password1234",
+                "new_password": "newpassword1234",
+                "confirm_new_password": "newpassword1234",
             },
         )
         assert change_resp.status_code == 204

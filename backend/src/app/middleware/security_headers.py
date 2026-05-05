@@ -20,6 +20,13 @@ if settings.environment == "production":
 # Routes that should have Cache-Control: no-store
 _SENSITIVE_PREFIXES = ("/api/v1/auth/", "/api/v1/users/me")
 
+# Strict CSP for API JSON responses. We deliberately skip /docs (Swagger UI
+# loads CDN scripts) and /media (StaticFiles serves uploaded images that
+# don't need a CSP).
+_API_CSP = "default-src 'none'; frame-ancestors 'none'"
+_CSP_PREFIXES = ("/api/",)
+_CSP_SKIP_PREFIXES = ("/docs", "/redoc", "/openapi.json", "/media")
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add common security headers to every response for browser-level protection."""
@@ -33,8 +40,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         for header, value in SECURITY_HEADERS.items():
             response.headers.setdefault(header, value)
 
+        path = request.url.path
+        # CSP: lock down API JSON responses; skip docs and uploaded media.
+        if (
+            any(path.startswith(p) for p in _CSP_PREFIXES)
+            and not any(path.startswith(s) for s in _CSP_SKIP_PREFIXES)
+        ):
+            response.headers.setdefault("Content-Security-Policy", _API_CSP)
+
         # Only apply no-store to sensitive endpoints
-        if any(request.url.path.startswith(p) for p in _SENSITIVE_PREFIXES):
+        if any(path.startswith(p) for p in _SENSITIVE_PREFIXES):
             response.headers.setdefault("Cache-Control", "no-store")
 
         return response

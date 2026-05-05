@@ -187,7 +187,7 @@ class TestSendMessage:
 
 class TestConversationMessagePermissionsWithAuth:
     def _register_and_login(self, client, *, email: str, username: str):
-        password = "password123"
+        password = "password1234"
         client.post(
             "/api/v1/auth/signup",
             json={

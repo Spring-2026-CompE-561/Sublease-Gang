@@ -7,7 +7,7 @@ def _signup_payload(**overrides) -> dict:
     payload = {
         "email": "new@example.com",
         "username": "newuser",
-        "password": "password123",
+        "password": "password1234",
         "firstname": "Jane",
         "lastname": "Doe",
     }
@@ -62,7 +62,7 @@ class TestLogin:
         self._create_user(client)
         resp = client.post(
             "/api/v1/auth/login",
-            json={"email": "login@example.com", "password": "password123"},
+            json={"email": "login@example.com", "password": "password1234"},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -81,7 +81,7 @@ class TestLogin:
     def test_nonexistent_user(self, client):
         resp = client.post(
             "/api/v1/auth/login",
-            json={"email": "nobody@example.com", "password": "password123"},
+            json={"email": "nobody@example.com", "password": "password1234"},
         )
         assert resp.status_code == 401
 
@@ -108,7 +108,7 @@ class TestLogout:
         )
         client.post(
             "/api/v1/auth/login",
-            json={"email": "logout1@example.com", "password": "password123"},
+            json={"email": "logout1@example.com", "password": "password1234"},
         )
 
         resp = client.post(
@@ -136,7 +136,7 @@ class TestLogout:
         )
         client.post(
             "/api/v1/auth/login",
-            json={"email": "logout2@example.com", "password": "password123"},
+            json={"email": "logout2@example.com", "password": "password1234"},
         )
 
         resp = client.post(
@@ -191,7 +191,7 @@ class TestRefresh:
         )
         resp = client.post(
             "/api/v1/auth/login",
-            json={"email": "ref@example.com", "password": "password123"},
+            json={"email": "ref@example.com", "password": "password1234"},
         )
         return resp.json()
 
@@ -433,20 +433,20 @@ class TestResetPassword:
         token = self._get_reset_token(client)
         resp = client.put(
             "/api/v1/auth/reset_password",
-            json={"token": token, "new_password": "newpassword123"},
+            json={"token": token, "new_password": "newpassword1234"},
         )
         assert resp.status_code == 200
         assert "message" in resp.json()
         login_resp = client.post(
             "/api/v1/auth/login",
-            json={"email": "reset@example.com", "password": "newpassword123"},
+            json={"email": "reset@example.com", "password": "newpassword1234"},
         )
         assert login_resp.status_code == 200
 
     def test_invalid_token(self, client):
         resp = client.put(
             "/api/v1/auth/reset_password",
-            json={"token": "bad.token.value", "new_password": "newpassword123"},
+            json={"token": "bad.token.value", "new_password": "newpassword1234"},
         )
         assert resp.status_code == 400
 
@@ -462,7 +462,7 @@ class TestResetPassword:
         token = self._get_reset_token(client)
         first = client.put(
             "/api/v1/auth/reset_password",
-            json={"token": token, "new_password": "newpassword123"},
+            json={"token": token, "new_password": "newpassword1234"},
         )
         assert first.status_code == 200
 
@@ -486,7 +486,7 @@ class TestResetPassword:
         # Consuming the first should also dead-end the second.
         consumed = client.put(
             "/api/v1/auth/reset_password",
-            json={"token": first_token, "new_password": "newpassword123"},
+            json={"token": first_token, "new_password": "newpassword1234"},
         )
         assert consumed.status_code == 200
 
@@ -520,6 +520,6 @@ class TestResetPassword:
         )
         resp = client.put(
             "/api/v1/auth/reset_password",
-            json={"token": forged, "new_password": "newpassword123"},
+            json={"token": forged, "new_password": "newpassword1234"},
         )
         assert resp.status_code == 400

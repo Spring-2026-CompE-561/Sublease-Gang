@@ -32,10 +32,17 @@ logging.basicConfig(
 # create DB tables
 Base.metadata.create_all(bind=engine)
 
+_is_prod = settings.environment == "production"
+
 app = FastAPI(
     title=settings.app_name,
     description="API for Sublease Marketplace",
     version=settings.app_version,
+    # Hide interactive docs in production — they ease recon and pull
+    # external CDN scripts that don't fit a strict API CSP.
+    docs_url=None if _is_prod else "/docs",
+    redoc_url=None if _is_prod else "/redoc",
+    openapi_url=None if _is_prod else "/openapi.json",
 )
 
 # Request ID
