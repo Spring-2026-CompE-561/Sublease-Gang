@@ -1,5 +1,5 @@
 import type { Listing, ListingListApiRow } from "@/types/listing";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, fetchApiJson, postApiJson, deleteApiJson } from "@/lib/api";
 
 /** Listing fields used on browse + cards (mock/API may grow over time). */
 export type BrowseListing = Listing & {
@@ -199,13 +199,6 @@ export const MOCK_BROWSE_LISTINGS: BrowseListing[] = [
 	},
 ];
 
-/** Mock saved listings - subset of browse listings for user's saved collection. */
-export const MOCK_SAVED_LISTINGS: BrowseListing[] = [
-	MOCK_BROWSE_LISTINGS[0], // Modern Studio Near Campus
-	MOCK_BROWSE_LISTINGS[2], // Spacious 1BR in Student Housing
-	MOCK_BROWSE_LISTINGS[4], // Modern Apartment with Kitchen
-];
-
 /** Mock listings owned by the signed-in user. */
 export const MOCK_MY_LISTINGS: BrowseListing[] = [
 	MOCK_BROWSE_LISTINGS[1], // Cozy Dorm Room Available
@@ -377,4 +370,20 @@ export async function fetchBrowseListingById(id: string): Promise<BrowseListing 
 	}
 
 	return fromMock ?? null;
+}
+
+export async function fetchSavedListings(token: string): Promise<BrowseListing[]> {
+	const res = await fetchApiJson<{ count: number; results: ListingListApiRow[] }>(
+		"/api/v1/saved-listings",
+		token,
+	);
+	return res.results.map((row) => toBrowseListing(listingFromListRow(row)));
+}
+
+export async function saveListing(token: string, listingId: number): Promise<void> {
+	await postApiJson(`/api/v1/saved-listings/${listingId}`, token, {});
+}
+
+export async function unsaveListing(token: string, listingId: number): Promise<void> {
+	await deleteApiJson(`/api/v1/saved-listings/${listingId}`, token);
 }
