@@ -4,5 +4,6 @@ from app.models.messages import Message
 from app.models.profiles import Profile
 from app.models.token import Token
 from app.models.user import User
+from app.models.college import College
 
-__all__ = ["Conversation", "Listing", "Message", "Profile", "Token", "User"]
+__all__ = ["Conversation", "Listing", "Message", "Profile", "Token", "User", "College"]

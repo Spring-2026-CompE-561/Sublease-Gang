@@ -15,4 +15,4 @@ COPY ./scripts ./scripts
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "uv run python scripts/seed_demo.py && uv run fastapi run src/app/main.py --port 8000 --host 0.0.0.0"]
+CMD ["sh", "-c", "uv run python scripts/seed_colleges.py && uv run python scripts/seed_demo.py && uv run fastapi run src/app/main.py --port 8000 --host 0.0.0.0"]

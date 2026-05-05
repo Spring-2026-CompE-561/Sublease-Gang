@@ -25,6 +25,7 @@ sys.path.insert(0, str(SRC))
 
 from app.core.auth import hash_password  # noqa: E402
 from app.core.database import Base, SessionLocal, engine  # noqa: E402
+from app.models.college import College 
 from app.models.listing import Listing  # noqa: E402
 from app.models.profiles import Profile  # noqa: E402
 from app.models.user import User  # noqa: E402
@@ -90,6 +91,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 520,
         "latitude": 32.7762,
         "longitude": -117.0712,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200",
             "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=1200",
@@ -105,6 +107,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 220,
         "latitude": 32.7711,
         "longitude": -117.0679,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200",
         ],
@@ -120,6 +123,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 410,
         "latitude": 32.7710,
         "longitude": -117.1535,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200",
             "https://images.unsplash.com/photo-1494203484021-3c454daf695d?w=1200",
@@ -135,6 +139,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 320,
         "latitude": 32.7705,
         "longitude": -117.0660,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200",
         ],
@@ -150,6 +155,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 780,
         "latitude": 32.7649,
         "longitude": -117.0727,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1486304873000-235643847519?w=1200",
             "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200",
@@ -165,6 +171,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 180,
         "latitude": 32.7753,
         "longitude": -117.0696,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=1200",
         ],
@@ -180,6 +187,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 600,
         "latitude": 32.7479,
         "longitude": -117.1297,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200",
         ],
@@ -194,6 +202,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 240,
         "latitude": 32.7795,
         "longitude": -117.0566,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=1200",
         ],
@@ -209,6 +218,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 540,
         "latitude": 32.7689,
         "longitude": -117.0742,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1502673530728-f79b4cab31b1?w=1200",
             "https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=1200",
@@ -224,6 +234,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 280,
         "latitude": 32.7741,
         "longitude": -117.0608,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200",
         ],
@@ -239,6 +250,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 200,
         "latitude": 32.7612,
         "longitude": -117.0577,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=1200",
         ],
@@ -253,6 +265,7 @@ DEMO_LISTINGS: list[dict] = [
         "sqft": 320,
         "latitude": 32.7727,
         "longitude": -117.0702,
+        "college_id": 26,
         "image_urls": [
             "https://images.unsplash.com/photo-1554995207-c18c203602cb?w=1200",
         ],
@@ -328,7 +341,7 @@ def upsert_listings(db, users_by_username: dict[str, User]) -> int:
             sqft=spec["sqft"],
             start_date=start,
             end_date=end,
-            college_id=1,
+            college_id=26,
             thumbnail_url=urls[0],
             image_urls=urls,
             latitude=spec["latitude"],
@@ -340,7 +353,6 @@ def upsert_listings(db, users_by_username: dict[str, User]) -> int:
 
     db.commit()
     return created
-
 
 def main() -> None:
     Base.metadata.create_all(bind=engine)  # safety net if DB is fresh
