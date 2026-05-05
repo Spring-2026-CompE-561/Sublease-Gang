@@ -4,8 +4,10 @@ import {
 	refreshAccessToken,
 } from "@/lib/auth";
 
-export const API_BASE_URL =
-	process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+export const API_BASE_URL =         
+    (typeof window === "undefined"                                                                                                       
+      ? process.env.INTERNAL_API_BASE_URL
+      : process.env.NEXT_PUBLIC_API_BASE_URL) ?? "http://localhost:8000";
 export const ACCESS_TOKEN_KEY = "access_token";
 
 

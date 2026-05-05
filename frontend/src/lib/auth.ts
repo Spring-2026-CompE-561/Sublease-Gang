@@ -6,7 +6,7 @@ import { ACCESS_TOKEN_KEY, API_BASE_URL } from "@/lib/api";
 
 export const REFRESH_TOKEN_KEY = "refresh_token";
 
-const AUTH_CHANGED_EVENT = "sublease:auth-changed";
+export const AUTH_CHANGED_EVENT = "sublease:auth-changed";
 export const AUTH_EXPIRED_EVENT = "sublease:auth-expired";
 
 export interface AuthTokens {

@@ -68,17 +68,22 @@ class TestProfileAuthRequired:
 
 
 class TestGetProfileByUsername:
-    def test_public_get_found(self, client):
+    def test_get_by_username_found(self, client):
         # Signup auto-creates a profile under the signup username.
-        _register_and_login(client)
-        r = client.get("/api/v1/profiles/authuser")
+        headers = _register_and_login(client)
+        r = client.get("/api/v1/profiles/authuser", headers=headers)
         assert r.status_code == 200
         data = r.json()
         assert data["username"] == "authuser"
         assert data["firstname"] == "Jane"
 
-    def test_public_get_not_found(self, client):
+    def test_get_by_username_requires_auth(self, client):
         r = client.get("/api/v1/profiles/doesnotexist999")
+        assert r.status_code == 401
+
+    def test_get_by_username_not_found(self, client):
+        headers = _register_and_login(client)
+        r = client.get("/api/v1/profiles/doesnotexist999", headers=headers)
         assert r.status_code == 404
 
 
@@ -215,7 +220,11 @@ class TestSeedPublicProfile:
                 contact_email="seed@example.com",
             ),
         )
-        r = client.get("/api/v1/profiles/seeduser")
+        token = create_access_token(data={"sub": str(user.id)})
+        r = client.get(
+            "/api/v1/profiles/seeduser",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert r.status_code == 200
         assert r.json()["firstname"] == "Seed"
 
