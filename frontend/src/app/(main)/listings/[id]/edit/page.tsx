@@ -16,19 +16,19 @@ export default function EditListingPage() {
 	const params = useParams<{ id: string }>();
 	const listingId = Number(params.id);
 
+	const isInvalidId = !Number.isFinite(listingId) || listingId <= 0;
+
 	const [listing, setListing] = useState<Listing | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [loading, setLoading] = useState(!isInvalidId);
+	const [error, setError] = useState<string | null>(
+		isInvalidId ? "Invalid listing id." : null,
+	);
 
 	useEffect(() => {
+		if (isInvalidId) return;
 		const token = getAccessToken();
 		if (!token) {
 			router.replace("/signin");
-			return;
-		}
-		if (!Number.isFinite(listingId) || listingId <= 0) {
-			setError("Invalid listing id.");
-			setLoading(false);
 			return;
 		}
 
@@ -64,7 +64,7 @@ export default function EditListingPage() {
 		return () => {
 			cancelled = true;
 		};
-	}, [listingId, router]);
+	}, [listingId, router, isInvalidId]);
 
 	if (loading) {
 		return (

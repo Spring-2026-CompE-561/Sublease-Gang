@@ -39,14 +39,12 @@ export default function MyListingsPage() {
 			return;
 		}
 
-		setLoading(true);
-		setError(null);
-
 		try {
 			const me = await fetchApiJson<MeResponse>("/api/v1/users/me", token);
 			const rows = await fetchListingsByHost(me.id, token);
 			setListings(rows);
 			setIsAuthorized(true);
+			setError(null);
 		} catch (e) {
 			if (e instanceof ApiUnauthorizedError) {
 				clearTokens();
@@ -63,6 +61,9 @@ export default function MyListingsPage() {
 	}, [router]);
 
 	useEffect(() => {
+		// fetch-on-mount; setState calls inside loadMyListings happen after await,
+		// not synchronously in the effect body.
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		void loadMyListings();
 	}, [loadMyListings]);
 
