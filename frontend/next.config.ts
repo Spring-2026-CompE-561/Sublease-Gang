@@ -4,7 +4,7 @@ const isProd = process.env.NODE_ENV === "production";
 const apiBaseUrl =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
-if (isProd && !apiBaseUrl.startsWith("https://")) {
+if (isProd && !apiBaseUrl.startsWith("http://")) {
   throw new Error(
     `NEXT_PUBLIC_API_BASE_URL must use https:// in production builds. Got: ${apiBaseUrl}`,
   );
