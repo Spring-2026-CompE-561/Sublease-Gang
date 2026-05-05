@@ -16,6 +16,7 @@ from app.errors.permission import PermissionError, permission_exception_handler
 from app.errors.server import server_exception_handler
 from app.errors.validation import validation_exception_handler
 from app.middleware import (
+    BodySizeLimitMiddleware,
     LoggingMiddleware,
     RateLimitMiddleware,
     RequestIDMiddleware,
@@ -45,6 +46,12 @@ app.add_middleware(LoggingMiddleware)
 
 # Security headers
 app.add_middleware(SecurityHeadersMiddleware)
+
+# Body size limit (fast-fail on oversized payloads before they reach handlers)
+app.add_middleware(
+    BodySizeLimitMiddleware,
+    max_bytes=settings.max_request_body_bytes,
+)
 
 # Rate limiting
 app.add_middleware(RateLimitMiddleware)

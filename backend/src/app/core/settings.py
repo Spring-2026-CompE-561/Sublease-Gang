@@ -51,6 +51,15 @@ class Settings(BaseSettings):
         description="Allowed CORS origins for the frontend",
     )
 
+    max_request_body_bytes: int = Field(
+        default=35 * 1024 * 1024,
+        description=(
+            "Maximum accepted request body size in bytes. Sized to fit a "
+            "fully-loaded listing while base64 image URLs are still in use; "
+            "tighten once the multipart upload pipeline ships."
+        ),
+    )
+
     @model_validator(mode="after")
     def _enforce_secret_key_in_production(self) -> "Settings":
         if self.environment != "production":

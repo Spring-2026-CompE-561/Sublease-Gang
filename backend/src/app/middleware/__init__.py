@@ -1,3 +1,4 @@
+from app.middleware.body_size import BodySizeLimitMiddleware
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.request_id import RequestIDMiddleware

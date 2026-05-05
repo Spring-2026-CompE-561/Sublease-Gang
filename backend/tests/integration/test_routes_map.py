@@ -59,6 +59,17 @@ class TestMapListings:
         assert results[0]["price"] == 500.0
 
 
+    def test_limit_above_cap_rejected(self, client):
+        resp = client.get(
+            "/api/v1/map/listings",
+            params={
+                "north": 41, "south": 40, "east": -73, "west": -75,
+                "limit": 10_000_000,
+            },
+        )
+        assert resp.status_code in (400, 422)
+
+
 class TestGeocode:
     def test_with_address(self, client):
         resp = client.get("/api/v1/map/geocode", params={"address": "New York"})
