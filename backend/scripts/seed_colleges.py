@@ -9,7 +9,7 @@ from pathlib import Path
 SRC = Path(__file__).resolve().parent.parent / "src"
 sys.path.insert(0, str(SRC))
 
-from app.core.database import  SessionLocal
+from app.core.database import Base, SessionLocal, engine
 from app.models.college import College
 
 COLLEGES = [
@@ -373,8 +373,8 @@ COLLEGES = [
     {"name": "University of Wyoming", "city": "Laramie, WY"},
 ]
 
-
 def seed():
+    Base.metadata.create_all(bind=engine) 
     db = SessionLocal()
     try:
         new_count = 0

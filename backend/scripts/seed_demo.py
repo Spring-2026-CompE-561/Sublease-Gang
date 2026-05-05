@@ -354,7 +354,6 @@ def upsert_listings(db, users_by_username: dict[str, User]) -> int:
     db.commit()
     return created
 
-
 def main() -> None:
     Base.metadata.create_all(bind=engine)  # safety net if DB is fresh
     db = SessionLocal()
