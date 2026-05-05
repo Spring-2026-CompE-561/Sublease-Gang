@@ -10,19 +10,18 @@ import { ACCESS_TOKEN_KEY } from "@/lib/api";
 
 export default function SavedListingsPage() {
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized] = useState(() =>
+    typeof window !== "undefined" && !!localStorage.getItem(ACCESS_TOKEN_KEY)
+  );
   const [listings, setListings] = useState<BrowseListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-    if (!token) {
-      router.push("/signin");
-      return;
-    }
-    setIsAuthorized(true);
-  }, [router]);
+useEffect(() => {
+  if (!isAuthorized) {
+    router.push("/signin");
+  }
+}, [isAuthorized, router]);
 
   useEffect(() => {
     if (!isAuthorized) return;
