@@ -126,8 +126,8 @@ export function SignupForm({
 
   function handleIconChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
-    if (file && !file.type.startsWith("image/")) {
-      toast.error("Please select an image file.");
+    if (file && file.type !== "image/png" && file.type !== "image/jpeg") {
+      toast.error("Profile photo must be a PNG or JPEG image.");
       event.target.value = "";
       return;
     }
@@ -245,7 +245,7 @@ export function SignupForm({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg"
                     onChange={handleIconChange}
                     className="hidden"
                   />

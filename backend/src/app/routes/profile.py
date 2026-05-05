@@ -88,22 +88,20 @@ ICON_DIR = Path("media") / "icons"
 ALLOWED_ICON_TYPES: dict[str, str] = {
     "image/jpeg": ".jpg",
     "image/png": ".png",
-    "image/webp": ".webp",
-    "image/gif": ".gif",
 }
 MAX_ICON_BYTES = 5 * 1024 * 1024
 
 
 def _sniff_image_mime(data: bytes) -> str | None:
-    """Return the MIME type implied by the first few bytes, or None."""
+    """Return the MIME type implied by the first few bytes, or None.
+
+    Restricted to PNG and JPEG — other formats (gif, webp, svg, etc.)
+    are rejected even if the client sets a matching Content-Type header.
+    """
     if data.startswith(b"\xff\xd8\xff"):
         return "image/jpeg"
     if data.startswith(b"\x89PNG\r\n\x1a\n"):
         return "image/png"
-    if data[:6] in (b"GIF87a", b"GIF89a"):
-        return "image/gif"
-    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
-        return "image/webp"
     return None
 
 
@@ -118,7 +116,7 @@ async def upload_my_icon(
     if extension is None:
         raise HTTPException(
             status_code=415,
-            detail="Unsupported image type. Use jpg, png, webp, or gif.",
+            detail="Unsupported image type. Only PNG and JPEG are allowed.",
         )
     contents = await file.read()
     if len(contents) > MAX_ICON_BYTES:
