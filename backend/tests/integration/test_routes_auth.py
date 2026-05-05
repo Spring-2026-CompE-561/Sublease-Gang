@@ -87,9 +87,100 @@ class TestLogin:
 
 
 class TestLogout:
+    def _signup_and_get_tokens(self, client, *, email, username):
+        resp = client.post(
+            "/api/v1/auth/signup",
+            json=_signup_payload(email=email, username=username),
+        )
+        return resp.json()
+
     def test_requires_auth(self, client):
         resp = client.post("/api/v1/auth/logout")
         assert resp.status_code in (401, 403)
+
+    def test_revokes_only_supplied_refresh_token(self, client, db_session):
+        from app.models.token import Token
+
+        # Sign up once for one session, then log in again to mint a second
+        # refresh token (simulating two devices).
+        first = self._signup_and_get_tokens(
+            client, email="logout1@example.com", username="logout1"
+        )
+        client.post(
+            "/api/v1/auth/login",
+            json={"email": "logout1@example.com", "password": "password123"},
+        )
+
+        resp = client.post(
+            "/api/v1/auth/logout",
+            headers={"Authorization": f"Bearer {first['access_token']}"},
+            json={"refresh_token": first["refresh_token"]},
+        )
+        assert resp.status_code == 204
+
+        # Exactly one refresh row should be revoked, the other still active.
+        # We assert at the DB layer because hitting /refresh with the revoked
+        # token would (correctly) trigger reuse detection and cascade-burn
+        # the other session — that's a different code path.
+        rows = db_session.query(Token).filter(Token.token_type == "refresh").all()
+        revoked = [r for r in rows if r.revoked_at is not None]
+        active = [r for r in rows if r.revoked_at is None]
+        assert len(revoked) == 1
+        assert len(active) == 1
+
+    def test_logout_without_body_revokes_all_refresh_tokens(self, client, db_session):
+        from app.models.token import Token
+
+        first = self._signup_and_get_tokens(
+            client, email="logout2@example.com", username="logout2"
+        )
+        client.post(
+            "/api/v1/auth/login",
+            json={"email": "logout2@example.com", "password": "password123"},
+        )
+
+        resp = client.post(
+            "/api/v1/auth/logout",
+            headers={"Authorization": f"Bearer {first['access_token']}"},
+        )
+        assert resp.status_code == 204
+
+        active = (
+            db_session.query(Token)
+            .filter(Token.token_type == "refresh", Token.revoked_at.is_(None))
+            .count()
+        )
+        assert active == 0
+
+    def test_logout_with_other_users_refresh_token_falls_back_to_revoke_all(
+        self, client, db_session
+    ):
+        from app.models.token import Token
+
+        attacker = self._signup_and_get_tokens(
+            client, email="atk@example.com", username="atkuser"
+        )
+        victim = self._signup_and_get_tokens(
+            client, email="vic@example.com", username="vicuser"
+        )
+
+        # Attacker tries to log out using the victim's refresh token. Should
+        # fall back to revoking all of the *attacker's* refresh tokens, never
+        # the victim's.
+        resp = client.post(
+            "/api/v1/auth/logout",
+            headers={"Authorization": f"Bearer {attacker['access_token']}"},
+            json={"refresh_token": victim["refresh_token"]},
+        )
+        assert resp.status_code == 204
+
+        active = (
+            db_session.query(Token)
+            .filter(Token.token_type == "refresh", Token.revoked_at.is_(None))
+            .all()
+        )
+        # Only the victim's token should remain active.
+        assert len(active) == 1
 
 
 class TestRefresh:
