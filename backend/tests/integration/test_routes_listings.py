@@ -1,5 +1,6 @@
 from datetime import UTC
 
+from app.core.auth import create_access_token
 from app.core.dependencies import get_current_user
 from app.main import app
 
@@ -119,6 +120,28 @@ class TestSearchListings:
         resp = client.get("/api/v1/listings/", params={"limit": 2, "offset": 4})
         data = resp.json()
         assert len(data["results"]) == 1
+
+
+class TestListingsHostFilterAuth:
+    def test_host_id_requires_auth(self, client, make_user, make_listing):
+        user = make_user()
+        make_listing(user.id)
+        resp = client.get("/api/v1/listings/", params={"host_id": user.id})
+        assert resp.status_code == 401
+
+    def test_host_id_with_auth(self, client, make_user, make_listing):
+        user = make_user()
+        make_listing(user.id)
+        token = create_access_token(data={"sub": str(user.id)})
+        headers = {"Authorization": f"Bearer {token}"}
+        resp = client.get(
+            "/api/v1/listings/",
+            params={"host_id": user.id},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["count"] == 1
 
 
 class TestGetListing:
