@@ -45,7 +45,13 @@ export function MessagesView() {
 		[searchParams],
 	);
 
+	const threadScrollRef = useRef<HTMLDivElement>(null);
 	const bottomAnchorRef = useRef<HTMLDivElement>(null);
+	const pendingScrollToBottomRef = useRef(false);
+	const selectedIdRef = useRef<number | null>(null);
+	const messagesRef = useRef<Message[]>([]);
+	const pollInFlightRef = useRef(false);
+	const pollGenerationRef = useRef(0);
 
 	const [sessionReady, setSessionReady] = useState(false);
 	const [sessionError, setSessionError] = useState<string | null>(null);
@@ -71,10 +77,22 @@ export function MessagesView() {
 	const [draft, setDraft] = useState("");
 	const [sendBusy, setSendBusy] = useState(false);
 
+	const [isPageVisible, setIsPageVisible] = useState(() => {
+		if (typeof document === "undefined") return true;
+		return document.visibilityState === "visible";
+	});
+
 	const scrollToBottom = useCallback(() => {
 		requestAnimationFrame(() => {
 			bottomAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
 		});
+	}, []);
+
+	const isThreadNearBottom = useCallback((thresholdPx = 120) => {
+		const el = threadScrollRef.current;
+		if (!el) return true;
+		const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+		return distance <= thresholdPx;
 	}, []);
 
 	const handleUnauthorized = useCallback(() => {
@@ -173,6 +191,7 @@ export function MessagesView() {
 					skip: 0,
 					limit: MESSAGES_PAGE_SIZE,
 				});
+				pendingScrollToBottomRef.current = true;
 				setMessages(batch);
 				setHasMoreMessages(batch.length === MESSAGES_PAGE_SIZE);
 			} catch (error) {
@@ -295,9 +314,83 @@ export function MessagesView() {
 	/* eslint-enable react-hooks/set-state-in-effect */
 
 	useEffect(() => {
-		if (messagesLoading || messages.length === 0) return;
+		selectedIdRef.current = selectedId;
+	}, [selectedId]);
+
+	useEffect(() => {
+		messagesRef.current = messages;
+	}, [messages]);
+
+	useEffect(() => {
+		const handler = () => setIsPageVisible(document.visibilityState === "visible");
+		document.addEventListener("visibilitychange", handler);
+		return () => document.removeEventListener("visibilitychange", handler);
+	}, []);
+
+	useEffect(() => {
+		if (!pendingScrollToBottomRef.current) return;
+		pendingScrollToBottomRef.current = false;
 		scrollToBottom();
-	}, [messagesLoading, messages, scrollToBottom]);
+	}, [messages.length, scrollToBottom]);
+
+	useEffect(() => {
+		pollGenerationRef.current += 1;
+		const generation = pollGenerationRef.current;
+		if (selectedId === null || !isPageVisible) return;
+
+		selectedIdRef.current = selectedId;
+		let cancelled = false;
+		const POLL_INTERVAL_MS = 60_000;
+
+		const tick = async () => {
+			if (cancelled) return;
+			if (pollInFlightRef.current) return;
+
+			const token = getAccessToken();
+			if (!token) {
+				handleUnauthorized();
+				return;
+			}
+
+			const conversationId = selectedIdRef.current;
+			if (conversationId === null) return;
+
+			const shouldAutoScroll = isThreadNearBottom();
+			const skip = messagesRef.current.length;
+
+			pollInFlightRef.current = true;
+			try {
+				const batch = await fetchConversationMessages(token, conversationId, {
+					skip,
+					limit: MESSAGES_PAGE_SIZE,
+				});
+				if (cancelled || generation !== pollGenerationRef.current) return;
+				if (batch.length === 0) return;
+
+				setMessages((prev) => {
+					const existingIds = new Set(prev.map((m) => m.id));
+					const additions = batch.filter((m) => !existingIds.has(m.id));
+					if (additions.length === 0) return prev;
+					if (shouldAutoScroll) pendingScrollToBottomRef.current = true;
+					return [...prev, ...additions];
+				});
+			} catch (error) {
+				if (isApiUnauthorizedError(error)) {
+					handleUnauthorized();
+					return;
+				}
+			} finally {
+				pollInFlightRef.current = false;
+			}
+		};
+
+		void tick();
+		const intervalId = window.setInterval(() => void tick(), POLL_INTERVAL_MS);
+		return () => {
+			cancelled = true;
+			window.clearInterval(intervalId);
+		};
+	}, [selectedId, isPageVisible, handleUnauthorized, isThreadNearBottom]);
 
 	async function loadMoreMessages() {
 		if (selectedId === null || messagesLoadingMore || !hasMoreMessages) return;
@@ -356,6 +449,7 @@ export function MessagesView() {
 				if (prev.some((m) => m.id === created.id)) {
 					return prev;
 				}
+				pendingScrollToBottomRef.current = true;
 				return [...prev, created];
 			});
 		} catch (error) {
@@ -545,7 +639,10 @@ export function MessagesView() {
 							</div>
 
 							<div className="flex min-h-0 flex-1 flex-col">
-								<div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
+								<div
+									ref={threadScrollRef}
+									className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4"
+								>
 									{messagesLoading ? (
 										<p className="flex items-center gap-2 text-sm text-muted-foreground">
 											<Loader2 className="size-4 animate-spin" aria-hidden />
