@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -24,7 +26,7 @@ def create_user(db: Session, user: UserCreate) -> User:
 
 
 def get_user_by_id(db: Session, user_id: int) -> User | None:
-    return db.query(User).filter(User.id == user_id).first()
+    return db.get(User, user_id)
 
 
 def get_user_by_email(db: Session, email: str) -> User | None:
@@ -46,6 +48,7 @@ def update_user(db: Session, user: User, updates: UserUpdate) -> User:
 
 def update_password(db: Session, user: User, new_password_hash: str) -> User:
     user.password_hash = new_password_hash
+    user.password_changed_at = datetime.now(UTC)
     db.commit()
     db.refresh(user)
     return user

@@ -117,6 +117,40 @@ class TestCreateConversation:
         finally:
             app.dependency_overrides.pop(get_current_user, None)
 
+    def test_rejects_when_neither_party_is_host(
+        self, client, make_user, make_listing
+    ):
+        host = make_user()
+        attacker = make_user()
+        victim = make_user()
+        listing = make_listing(host.id)
+        app.dependency_overrides[get_current_user] = lambda: attacker
+        try:
+            resp = client.post(
+                "/api/v1/conversations/",
+                json={"listing_id": listing.id, "other_user_id": victim.id},
+            )
+            assert resp.status_code == 403
+            assert "host" in resp.json()["detail"].lower()
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+
+    def test_buyer_initiating_with_host_is_allowed(
+        self, client, make_user, make_listing
+    ):
+        host = make_user()
+        buyer = make_user()
+        listing = make_listing(host.id)
+        app.dependency_overrides[get_current_user] = lambda: buyer
+        try:
+            resp = client.post(
+                "/api/v1/conversations/",
+                json={"listing_id": listing.id, "other_user_id": host.id},
+            )
+            assert resp.status_code == 201
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+
 
 class TestListMessages:
     def test_returns_empty_list(self, client, db_session):
@@ -153,7 +187,7 @@ class TestSendMessage:
 
 class TestConversationMessagePermissionsWithAuth:
     def _register_and_login(self, client, *, email: str, username: str):
-        password = "password123"
+        password = "password1234"
         client.post(
             "/api/v1/auth/signup",
             json={

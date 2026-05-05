@@ -48,7 +48,7 @@ export const profileService = {
 
   // GET /profiles/{username} — requires authentication
   getPublicProfile: (token: string, username: string): Promise<ProfileResponse> =>
-    fetchApiJson(`/api/v1/profiles/${username}`, token),
+    fetchApiJson(`/api/v1/profiles/${encodeURIComponent(username)}`, token),
 
   // GET /listings/?host_id={user_id} — user's listings (auth required)
   getUserListings: (

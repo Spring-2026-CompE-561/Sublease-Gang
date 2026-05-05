@@ -14,6 +14,9 @@ class User(Base):
     password_hash = Column(String(512), nullable=False)
     account_disabled = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    password_changed_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
 
     profile = relationship(
         "Profile",

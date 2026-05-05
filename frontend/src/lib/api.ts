@@ -105,17 +105,19 @@ async function authedFetch(
 
 export async function fetchApiJson<T>(
 	path: string,
-	accessToken: string,
+	accessToken?: string,
 ): Promise<T> {
-	const response = await authedFetch(accessToken, (token) =>
-		fetch(`${API_BASE_URL}${path}`, {
-			method: "GET",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
-			},
-		}),
-	);
+	const buildRequest = (token?: string) => {
+		const headers: Record<string, string> = { "Content-Type": "application/json" };
+		if (token) {
+			headers.Authorization = `Bearer ${token}`;
+		}
+		return fetch(`${API_BASE_URL}${path}`, { method: "GET", headers });
+	};
+
+	const response = accessToken
+		? await authedFetch(accessToken, buildRequest)
+		: await buildRequest();
 
 	if (!response.ok) {
 		const apiErrorMessage = await readApiErrorMessage(response);
