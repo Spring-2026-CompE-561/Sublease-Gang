@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -176,11 +177,20 @@ export default function MyListingsPage() {
 						))}
 					</div>
 				) : (
-					<Card className="flex flex-col items-center justify-center gap-3 py-16">
+					<Card className="flex flex-col items-center justify-center gap-4 py-16">
 						<p className="text-lg font-medium text-foreground">No listings yet</p>
 						<p className="text-sm text-muted-foreground">
 							You haven&apos;t posted any subleases yet.
 						</p>
+						<Button
+							nativeButton={false}
+							render={
+								<Link href="/list">
+									<Plus className="size-4" aria-hidden />
+									Create a listing
+								</Link>
+							}
+						/>
 					</Card>
 				)}
 			</div>
