@@ -465,10 +465,17 @@ export function MessagesView() {
 										meId !== null ? otherParticipantId(c, meId) : c.user_two_id;
 									return (
 										<li key={c.id}>
-											<button
-												type="button"
+											<div
+												role="button"
+												tabIndex={0}
 												onClick={() => selectConversation(c.id)}
-												className={`flex w-full flex-col rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-muted/80 ${
+												onKeyDown={(e) => {
+													if (e.key === "Enter" || e.key === " ") {
+														e.preventDefault();
+														selectConversation(c.id);
+													}
+												}}
+												className={`flex w-full cursor-pointer flex-col rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-muted/80 ${
 													active ? "bg-muted font-medium" : ""
 												}`}
 											>
@@ -477,9 +484,20 @@ export function MessagesView() {
 														`Listing #${c.listing_id}`}
 												</span>
 												<span className="text-xs text-muted-foreground">
-													with {userNames[other] ?? `user #${other}`}
+													with{" "}
+													{userNames[other] ? (
+														<Link
+															href={`/users/${userNames[other]}`}
+															onClick={(e) => e.stopPropagation()}
+															className="font-medium underline-offset-2 hover:text-foreground hover:underline"
+														>
+															@{userNames[other]}
+														</Link>
+													) : (
+														`user #${other}`
+													)}
 												</span>
-											</button>
+											</div>
 										</li>
 									);
 								})}
@@ -506,9 +524,20 @@ export function MessagesView() {
 								{selected && meId !== null
 									? (() => {
 											const other = otherParticipantId(selected, meId);
+											const username = userNames[other];
 											return (
 												<p className="text-xs text-muted-foreground">
-													with {userNames[other] ?? `user #${other}`}
+													with{" "}
+													{username ? (
+														<Link
+															href={`/users/${username}`}
+															className="font-medium text-foreground underline-offset-2 hover:underline"
+														>
+															@{username}
+														</Link>
+													) : (
+														`user #${other}`
+													)}
 												</p>
 											);
 										})()
