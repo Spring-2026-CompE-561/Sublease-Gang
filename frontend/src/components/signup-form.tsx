@@ -33,6 +33,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL, readApiErrorMessage } from "@/lib/api";
@@ -117,7 +119,11 @@ export function SignupForm({
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<SignupValues | null>(null);
+  const [phase, setPhase] = useState<"confirm" | "submitting" | "success">(
+    "confirm",
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const dialogBusy = phase !== "confirm";
 
   const firstnameValue = form.watch("firstname");
   const initials = firstnameValue
@@ -154,37 +160,46 @@ export function SignupForm({
 
   function handleRequestConfirm(data: SignupValues) {
     setPendingValues(data);
+    setPhase("confirm");
     setConfirmOpen(true);
   }
 
   async function handleConfirmCreate() {
     if (!pendingValues) return;
-    setConfirmOpen(false);
+    setPhase("submitting");
     await onSubmit(pendingValues);
   }
 
   async function onSubmit(data: SignupValues) {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/signup`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: data.email,
-        username: data.username,
-        password: data.password,
-        firstname: data.firstname,
-        lastname: data.lastname,
-        contact_email: data.contact_email || undefined,
-        contact_phone: data.contact_phone || undefined,
-        description: data.description || undefined,
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE_URL}/api/v1/auth/signup`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: data.email,
+          username: data.username,
+          password: data.password,
+          firstname: data.firstname,
+          lastname: data.lastname,
+          contact_email: data.contact_email || undefined,
+          contact_phone: data.contact_phone || undefined,
+          description: data.description || undefined,
+        }),
+      });
+    } catch {
+      toast.error("Could not reach the server. Please try again.");
+      setPhase("confirm");
+      return;
+    }
 
     if (!res.ok) {
       const message = await readApiErrorMessage(res);
       toast.error(`Registration failed: ${message ?? "Unknown error"}`);
+      setPhase("confirm");
       return;
     }
 
@@ -194,6 +209,8 @@ export function SignupForm({
     };
     if (!tokens.access_token) {
       toast.success("Account created. Please sign in to continue.");
+      setPhase("success");
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       router.push("/signin");
       return;
     }
@@ -224,6 +241,8 @@ export function SignupForm({
     }
 
     toast.success("Welcome to SubLease!");
+    setPhase("success");
+    await new Promise((resolve) => setTimeout(resolve, 1800));
     router.push("/");
     router.refresh();
   }
@@ -545,46 +564,78 @@ export function SignupForm({
     <Dialog
       open={confirmOpen}
       onOpenChange={(open) => {
-        if (form.formState.isSubmitting) return;
+        if (dialogBusy) return;
         setConfirmOpen(open);
       }}
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Before you create your account</DialogTitle>
-          <DialogDescription>
-            To create your SubLease account, we collect personal information
-            including your name, email, and (if you provide it) a contact phone
-            number. By continuing you agree to our{" "}
-            <Link href="/terms" target="_blank" rel="noopener noreferrer">
-              Terms of Service
-            </Link>{" "}
-            and acknowledge our{" "}
-            <Link href="/privacy" target="_blank" rel="noopener noreferrer">
-              Privacy Policy
-            </Link>
-            , which describe how your information is used and stored.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setConfirmOpen(false)}
-            disabled={form.formState.isSubmitting}
+      <DialogContent showCloseButton={phase === "confirm"}>
+        {phase === "confirm" && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Before you create your account</DialogTitle>
+              <DialogDescription>
+                To create your SubLease account, we collect personal
+                information including your name, email, and (if you provide
+                it) a contact phone number. By continuing you agree to our{" "}
+                <Link href="/terms" target="_blank" rel="noopener noreferrer">
+                  Terms of Service
+                </Link>{" "}
+                and acknowledge our{" "}
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Privacy Policy
+                </Link>
+                , which describe how your information is used and stored.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleConfirmCreate}>
+                I agree, create account
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+        {phase === "submitting" && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col items-center gap-3 py-6 text-center"
           >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={handleConfirmCreate}
-            disabled={form.formState.isSubmitting}
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+            <DialogTitle>Creating your account…</DialogTitle>
+            <DialogDescription>
+              Hang tight while we set things up.
+            </DialogDescription>
+          </div>
+        )}
+        {phase === "success" && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col items-center gap-3 py-6 text-center"
           >
-            {form.formState.isSubmitting
-              ? "Creating account…"
-              : "I agree, create account"}
-          </Button>
-        </DialogFooter>
+            <HugeiconsIcon
+              icon={CheckmarkCircle02Icon}
+              className="h-10 w-10 text-emerald-500"
+              strokeWidth={2}
+            />
+            <DialogTitle>Account created!</DialogTitle>
+            <DialogDescription>
+              Welcome to SubLease. Redirecting you now…
+            </DialogDescription>
+            <div className="mt-1 h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
     </>
