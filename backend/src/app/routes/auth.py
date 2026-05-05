@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
+    DUMMY_PASSWORD_HASH,
     create_access_token,
+    verify_password,
     verify_token,
 )
 from app.core.database import get_db
@@ -180,6 +182,9 @@ async def forgot_password(
     }
     user = UserService.get_by_email(db, payload.email)
     if user is None:
+        # Pay the Argon2 verification cost so timing doesn't reveal whether
+        # the email is registered. The dummy hash never matches anything.
+        verify_password(payload.email, DUMMY_PASSWORD_HASH)
         return response
     reset_token = TokenService.issue_reset_token(db, user.id)
     if settings.environment == "development":

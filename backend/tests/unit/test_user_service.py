@@ -46,6 +46,25 @@ class TestUserServiceAuthenticate:
         ):
             UserService.authenticate(db, "missing@example.com", "password123")
 
+    def test_authenticate_runs_dummy_verify_for_missing_user(self):
+        """Constant-time guard: unknown email still pays Argon2 cost."""
+        db = MagicMock()
+        with (
+            patch("app.services.user.get_user_by_email", return_value=None),
+            patch(
+                "app.services.user.verify_password", return_value=False
+            ) as verify,
+            pytest.raises(ResourceNotFoundError),
+        ):
+            UserService.authenticate(db, "missing@example.com", "guess")
+
+        verify.assert_called_once()
+        # The dummy hash, not a real password_hash, must be the second arg.
+        args, _ = verify.call_args
+        from app.core.auth import DUMMY_PASSWORD_HASH
+
+        assert args[1] == DUMMY_PASSWORD_HASH
+
     def test_authenticate_raises_for_disabled_user(self):
         db = MagicMock()
         user = MagicMock(id=4, account_disabled=True, password_hash="hashed")

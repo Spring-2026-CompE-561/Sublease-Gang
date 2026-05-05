@@ -1,3 +1,4 @@
+import secrets
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
@@ -15,6 +16,12 @@ REFRESH_TOKEN_EXPIRE_DAYS = settings.refresh_token_expire_days
 RESET_TOKEN_EXPIRE_MINUTES = settings.reset_token_expire_minutes
 
 password_hash = PasswordHash.recommended()
+
+# Pre-computed Argon2 hash used to keep login / forgot-password paths
+# constant-time when the email isn't registered. We never want this to
+# match a real input — hashing a random secret means verify_password
+# against it always returns False.
+DUMMY_PASSWORD_HASH = password_hash.hash(secrets.token_hex(32))
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/user/login")
 

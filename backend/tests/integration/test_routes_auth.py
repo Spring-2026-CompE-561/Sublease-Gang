@@ -375,6 +375,25 @@ class TestForgotPassword:
         assert "message" in data
         assert "reset_token" not in data
 
+    def test_unknown_email_runs_dummy_verify(self, client, monkeypatch):
+        """forgot_password must pay Argon2 cost on the unknown-email path."""
+        from app.routes import auth as auth_routes
+
+        calls: list[tuple] = []
+
+        def spy_verify(plain, hashed):
+            calls.append((plain, hashed))
+            return False
+
+        monkeypatch.setattr(auth_routes, "verify_password", spy_verify)
+        resp = client.post(
+            "/api/v1/auth/forgot_password",
+            json={"email": "ghost@example.com"},
+        )
+        assert resp.status_code == 200
+        assert len(calls) == 1
+        assert calls[0][1] == auth_routes.DUMMY_PASSWORD_HASH
+
     def test_production_mode_omits_token_from_response_and_logs(
         self, client, monkeypatch, caplog
     ):
