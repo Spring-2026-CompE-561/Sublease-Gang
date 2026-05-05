@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MOCK_SAVED_LISTINGS } from "@/lib/listings";
+import { ApiUnauthorizedError } from "@/lib/api";
+import { fetchSavedListings, type BrowseListing } from "@/lib/listings";
 import { ListingBrowseCard } from "@/components/listings/listing-browse-card";
 import { Card } from "@/components/ui/card";
 
 export default function SavedListingsPage() {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [listings, setListings] = useState<BrowseListing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -18,6 +22,33 @@ export default function SavedListingsPage() {
     }
     setIsAuthorized(true);
   }, [router]);
+
+  useEffect(() => {
+    if (!isAuthorized) return;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetchSavedListings()
+      .then((data) => {
+        if (!cancelled) setListings(data);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        if (err instanceof ApiUnauthorizedError) {
+          router.push("/signin");
+          return;
+        }
+        setError(
+          err instanceof Error ? err.message : "Failed to load saved listings",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthorized, router]);
 
   if (!isAuthorized) {
     return (
@@ -33,15 +64,26 @@ export default function SavedListingsPage() {
         <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Saved Listings</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {MOCK_SAVED_LISTINGS.length} listing{MOCK_SAVED_LISTINGS.length !== 1 ? "s" : ""} saved
+            {loading
+              ? "Loading..."
+              : `${listings.length} listing${listings.length !== 1 ? "s" : ""} saved`}
           </p>
         </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-        {MOCK_SAVED_LISTINGS.length > 0 ? (
+        {error ? (
+          <Card className="flex flex-col items-center justify-center gap-3 py-16">
+            <p className="text-lg font-medium text-foreground">Couldn&apos;t load saved listings</p>
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </Card>
+        ) : loading ? (
+          <Card className="flex flex-col items-center justify-center gap-3 py-16">
+            <p className="text-sm text-muted-foreground">Loading saved listings...</p>
+          </Card>
+        ) : listings.length > 0 ? (
           <div className="grid auto-rows-max gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {MOCK_SAVED_LISTINGS.map((listing) => (
+            {listings.map((listing) => (
               <ListingBrowseCard key={listing.id} listing={listing} from="saved-listings" />
             ))}
           </div>
