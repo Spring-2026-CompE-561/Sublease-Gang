@@ -55,13 +55,13 @@ class TestUserRepository:
         schema = UserCreate(
             email="new@example.com",
             username="newuser",
-            password="password123",
+            password="password1234",
         )
         user = create_user(db_session, schema)
         assert user.id is not None
         assert user.email == "new@example.com"
         assert user.username == "newuser"
-        assert user.password_hash != "password123"
+        assert user.password_hash != "password1234"
         assert user.password_changed_at is not None
 
     def test_get_user_by_id(self, db_session, make_user):

@@ -44,7 +44,7 @@ class TestUserServiceAuthenticate:
             patch("app.services.user.get_user_by_email", return_value=None),
             pytest.raises(ResourceNotFoundError, match="Invalid email or password"),
         ):
-            UserService.authenticate(db, "missing@example.com", "password123")
+            UserService.authenticate(db, "missing@example.com", "password1234")
 
     def test_authenticate_runs_dummy_verify_for_missing_user(self):
         """Constant-time guard: unknown email still pays Argon2 cost."""
@@ -74,7 +74,7 @@ class TestUserServiceAuthenticate:
             patch("app.services.user.verify_password", return_value=True),
             pytest.raises(ResourceNotFoundError, match="Account is disabled"),
         ):
-            UserService.authenticate(db, "disabled@example.com", "password123")
+            UserService.authenticate(db, "disabled@example.com", "password1234")
 
     def test_authenticate_returns_token_payload(self):
         db = MagicMock()
@@ -89,7 +89,7 @@ class TestUserServiceAuthenticate:
                 return_value="refresh_tok",
             ),
         ):
-            result = UserService.authenticate(db, "ok@example.com", "password123")
+            result = UserService.authenticate(db, "ok@example.com", "password1234")
 
         assert result["access_token"] == "access_tok"
         assert result["refresh_token"] == "refresh_tok"

@@ -12,7 +12,7 @@ def _register_and_login(client, email="profile@example.com", username="authuser"
         json={
             "email": email,
             "username": username,
-            "password": "password123",
+            "password": "password1234",
             "firstname": "Jane",
             "lastname": "Doe",
         },

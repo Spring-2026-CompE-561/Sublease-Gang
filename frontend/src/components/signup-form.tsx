@@ -55,8 +55,8 @@ const signupSchema = z
       ),
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters.")
-      .max(32, "Password must be at most 32 characters."),
+      .min(12, "Password must be at least 12 characters.")
+      .max(128, "Password must be at most 128 characters."),
     confirmPassword: z.string(),
     contact_email: z
       .union([z.literal(""), z.email("Invalid contact email.")])
