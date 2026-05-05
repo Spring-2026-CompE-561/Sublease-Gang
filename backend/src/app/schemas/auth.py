@@ -1,9 +1,17 @@
 import re
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+# Argon2 happily handles long inputs; the cap is just to bound payload size.
+PASSWORD_MIN_LENGTH = 12
+PASSWORD_MAX_LENGTH = 128
+
+_strict = ConfigDict(extra="forbid")
 
 
 class LoginRequest(BaseModel):
+    model_config = _strict
+
     email: EmailStr
     password: str
 
@@ -15,20 +23,30 @@ class TokenResponse(BaseModel):
 
 
 class RefreshRequest(BaseModel):
+    model_config = _strict
+
     refresh_token: str
 
 
 class LogoutRequest(BaseModel):
+    model_config = _strict
+
     refresh_token: str | None = None
 
 
 class ForgotPasswordRequest(BaseModel):
+    model_config = _strict
+
     email: EmailStr
 
 
 class ResetPasswordRequest(BaseModel):
+    model_config = _strict
+
     token: str
-    new_password: str = Field(min_length=8)
+    new_password: str = Field(
+        min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH
+    )
 
 
 class SignupRequest(BaseModel):
@@ -38,10 +56,14 @@ class SignupRequest(BaseModel):
     rules stay aligned. Contact fields are optional at signup.
     """
 
+    model_config = _strict
+
     # User fields
     email: EmailStr
     username: str
-    password: str = Field(min_length=8, max_length=32)
+    password: str = Field(
+        min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH
+    )
 
     # Profile fields
     firstname: str = Field(max_length=50)

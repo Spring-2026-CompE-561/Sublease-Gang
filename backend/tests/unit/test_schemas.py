@@ -17,7 +17,7 @@ class TestUserCreate:
         u = UserCreate(
             email="test@example.com",
             username="testuser",
-            password="password123",
+            password="password1234",
         )
         assert u.email == "test@example.com"
         assert u.username == "testuser"
@@ -35,7 +35,7 @@ class TestUserCreate:
             UserCreate(
                 email="test@example.com",
                 username="ab",
-                password="password123",
+                password="password1234",
             )
 
     def test_username_too_long(self):
@@ -43,7 +43,7 @@ class TestUserCreate:
             UserCreate(
                 email="test@example.com",
                 username="a" * 51,
-                password="password123",
+                password="password1234",
             )
 
     def test_invalid_email(self):
@@ -51,7 +51,7 @@ class TestUserCreate:
             UserCreate(
                 email="not-an-email",
                 username="testuser",
-                password="password123",
+                password="password1234",
             )
 
 
@@ -70,24 +70,24 @@ class TestUserUpdate:
 class TestUserPasswordUpdate:
     def test_valid(self):
         u = UserPasswordUpdate(
-            current_password="oldpass123",
-            new_password="newpass123",
-            confirm_new_password="newpass123",
+            current_password="oldpassword1234",
+            new_password="newpassword1234",
+            confirm_new_password="newpassword1234",
         )
-        assert u.new_password == "newpass123"
+        assert u.new_password == "newpassword1234"
 
     def test_passwords_dont_match(self):
         with pytest.raises(ValidationError, match="passwords do not match"):
             UserPasswordUpdate(
-                current_password="oldpass123",
-                new_password="newpass123",
+                current_password="oldpassword1234",
+                new_password="newpassword1234",
                 confirm_new_password="different123",
             )
 
     def test_new_password_too_short(self):
         with pytest.raises(ValidationError):
             UserPasswordUpdate(
-                current_password="oldpass123",
+                current_password="oldpassword1234",
                 new_password="short",
                 confirm_new_password="short",
             )
