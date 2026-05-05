@@ -23,7 +23,7 @@ _SENSITIVE_PREFIXES = ("/api/v1/auth/", "/api/v1/users/me")
 # Strict CSP for API JSON responses. We deliberately skip /docs (Swagger UI
 # loads CDN scripts) and /media (StaticFiles serves uploaded images that
 # don't need a CSP).
-_API_CSP = "default-src 'none'; frame-ancestors 'none'"
+_API_CSP = "default-src 'none'"
 _CSP_PREFIXES = ("/api/",)
 _CSP_SKIP_PREFIXES = ("/docs", "/redoc", "/openapi.json", "/media")
 
