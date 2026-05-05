@@ -73,9 +73,10 @@ async def delete_my_profile(
 @router.get("/{username}", response_model=ProfileResponse)
 async def get_profile_by_username(
     username: str,
+    _current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get a public profile by username. No auth required."""
+    """Get a profile by username. Requires authentication."""
     profile = ProfileService.get_by_username(db, username)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
