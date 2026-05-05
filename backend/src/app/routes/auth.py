@@ -17,6 +17,7 @@ from app.repository.exceptions import ResourceConflictError, ResourceNotFoundErr
 from app.schemas.auth import (
     ForgotPasswordRequest,
     LoginRequest,
+    LogoutRequest,
     RefreshRequest,
     ResetPasswordRequest,
     SignupRequest,
@@ -64,8 +65,34 @@ async def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/logout", status_code=204)
-async def logout(current_user: User = Depends(get_current_user)):
-    """Logout (client should discard the token)."""
+async def logout(
+    payload: LogoutRequest | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Revoke the caller's refresh token.
+
+    If a refresh_token is supplied and validates as belonging to the
+    caller, that single jti is revoked. If the body is missing or the
+    token doesn't match, every active refresh token for the user is
+    revoked (defensive default).
+    """
+    revoked_specific = False
+    if payload is not None and payload.refresh_token:
+        token_payload = verify_token(payload.refresh_token)
+        if (
+            token_payload is not None
+            and token_payload.get("type") == "refresh"
+            and str(token_payload.get("sub")) == str(current_user.id)
+        ):
+            jti = token_payload.get("jti")
+            if jti is not None:
+                record = TokenService.get_refresh_record(db, jti)
+                if record is not None and record.revoked_at is None:
+                    TokenService.revoke_refresh(db, record)
+                    revoked_specific = True
+    if not revoked_specific:
+        TokenService.revoke_all_refresh_for_user(db, current_user.id)
     return
 
 

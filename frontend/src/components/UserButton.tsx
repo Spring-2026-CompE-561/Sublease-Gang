@@ -10,14 +10,14 @@ import {
 import { User } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { clearTokens, useIsAuthenticated } from "@/lib/auth";
+import { signOut, useIsAuthenticated } from "@/lib/auth";
 
 function UserButton() {
   const router = useRouter();
   const isLoggedIn = useIsAuthenticated();
 
-  function handleSignOut() {
-    clearTokens();
+  async function handleSignOut() {
+    await signOut();
     router.push("/");
   }
 
