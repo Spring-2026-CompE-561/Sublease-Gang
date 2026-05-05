@@ -26,7 +26,7 @@ def create_user(db: Session, user: UserCreate) -> User:
 
 
 def get_user_by_id(db: Session, user_id: int) -> User | None:
-    return db.query(User).filter(User.id == user_id).first()
+    return db.get(User, user_id)
 
 
 def get_user_by_email(db: Session, email: str) -> User | None:
