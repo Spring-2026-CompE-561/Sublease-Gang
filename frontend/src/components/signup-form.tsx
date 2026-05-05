@@ -17,6 +17,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Field,
   FieldError,
   FieldGroup,
@@ -107,6 +115,8 @@ export function SignupForm({
 
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingValues, setPendingValues] = useState<SignupValues | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const firstnameValue = form.watch("firstname");
@@ -140,6 +150,17 @@ export function SignupForm({
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  }
+
+  function handleRequestConfirm(data: SignupValues) {
+    setPendingValues(data);
+    setConfirmOpen(true);
+  }
+
+  async function handleConfirmCreate() {
+    if (!pendingValues) return;
+    setConfirmOpen(false);
+    await onSubmit(pendingValues);
   }
 
   async function onSubmit(data: SignupValues) {
@@ -208,6 +229,7 @@ export function SignupForm({
   }
 
   return (
+    <>
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
@@ -217,7 +239,7 @@ export function SignupForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form id="form-signup" onSubmit={form.handleSubmit(onSubmit)}>
+          <form id="form-signup" onSubmit={form.handleSubmit(handleRequestConfirm)}>
             <FieldGroup>
               <div className="flex items-center gap-6">
                 <div className="flex shrink-0 flex-col items-center gap-2">
@@ -520,5 +542,51 @@ export function SignupForm({
         </CardFooter>
       </Card>
     </div>
+    <Dialog
+      open={confirmOpen}
+      onOpenChange={(open) => {
+        if (form.formState.isSubmitting) return;
+        setConfirmOpen(open);
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Before you create your account</DialogTitle>
+          <DialogDescription>
+            To create your SubLease account, we collect personal information
+            including your name, email, and (if you provide it) a contact phone
+            number. By continuing you agree to our{" "}
+            <Link href="/terms" target="_blank" rel="noopener noreferrer">
+              Terms of Service
+            </Link>{" "}
+            and acknowledge our{" "}
+            <Link href="/privacy" target="_blank" rel="noopener noreferrer">
+              Privacy Policy
+            </Link>
+            , which describe how your information is used and stored.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setConfirmOpen(false)}
+            disabled={form.formState.isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleConfirmCreate}
+            disabled={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting
+              ? "Creating account…"
+              : "I agree, create account"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
