@@ -36,6 +36,8 @@ export function ListingBrowseView() {
 	const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set());
 	const [collegeId, setCollegeId] = useState<number | null>(null);
 	const [collegeOptions, setCollegeOptions] = useState<CollegeFilterOption[]>([]);
+	const [moveIn, setMoveIn] = useState<string | null>(null);
+	const [moveOut, setMoveOut] = useState<string | null>(null);
 	const [mobileOpen, setMobileOpen] = useState(false);
 
 	const [listings, setListings] = useState<BrowseListing[]>([]);
@@ -91,8 +93,10 @@ export function ListingBrowseView() {
 			bedrooms: bedroomFilter,
 			amenities: selectedAmenities,
 			collegeId,
+			moveIn,
+			moveOut,
 		}),
-		[priceRange, sqftRange, bedroomFilter, selectedAmenities, collegeId],
+		[priceRange, sqftRange, bedroomFilter, selectedAmenities, collegeId, moveIn, moveOut],
 	);
 
 	const filtered = useMemo(() => {
@@ -130,6 +134,8 @@ export function ListingBrowseView() {
 		setBedroomFilter(null);
 		setSelectedAmenities(new Set());
 		setCollegeId(null);
+		setMoveIn(null);
+		setMoveOut(null);
 	}
 
 	const filterProps = {
@@ -144,6 +150,10 @@ export function ListingBrowseView() {
 		collegeId,
 		setCollegeId,
 		collegeOptions,
+		moveIn,
+		setMoveIn,
+		moveOut,
+		setMoveOut,
 		onReset: resetFilters,
 	};
 
