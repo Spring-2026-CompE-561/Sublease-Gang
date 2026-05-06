@@ -39,12 +39,14 @@ export default function MyListingsPage() {
 			return;
 		}
 
+		setLoading(true);
+		setError(null);
+
 		try {
 			const me = await fetchApiJson<MeResponse>("/api/v1/users/me", token);
 			const rows = await fetchListingsByHost(me.id, token);
 			setListings(rows);
 			setIsAuthorized(true);
-			setError(null);
 		} catch (e) {
 			if (e instanceof ApiUnauthorizedError) {
 				clearTokens();

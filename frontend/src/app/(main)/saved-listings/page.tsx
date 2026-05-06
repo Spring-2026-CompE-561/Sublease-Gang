@@ -10,12 +10,24 @@ import { ACCESS_TOKEN_KEY } from "@/lib/api";
 
 export default function SavedListingsPage() {
   const router = useRouter();
-  const [hasToken] = useState(() =>
+  const [hasToken, setHasToken] = useState(() =>
     typeof window !== "undefined" && !!localStorage.getItem(ACCESS_TOKEN_KEY)
   );
   const [listings, setListings] = useState<BrowseListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== ACCESS_TOKEN_KEY) return;
+      setHasToken(!!event.newValue);
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   useEffect(() => {
     if (!hasToken) {
