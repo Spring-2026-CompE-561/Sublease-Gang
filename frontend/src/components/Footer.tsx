@@ -3,7 +3,6 @@ import { Separator } from "@/components/ui/separator";
 
 const primaryLinks = [
   { href: "/listings", label: "Browse" },
-  { href: "/map", label: "Map" },
   { href: "/list", label: "List your place" },
   { href: "/about", label: "About" },
 ];

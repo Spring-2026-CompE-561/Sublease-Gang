@@ -11,13 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useState } from "react";
-import {
-  LayoutGrid,
-  MapPin,
-  Menu,
-  MessageCircle,
-  Search,
-} from "lucide-react";
+import { LayoutGrid, Menu, MessageCircle, Search } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import UserButton from "@/components/UserButton";
 import { useRouter } from "next/navigation";
@@ -92,9 +86,6 @@ function DesktopNavbar() {
           <NavIconLink href="/listings" label="Browse">
             <LayoutGrid className="h-5 w-5" />
           </NavIconLink>
-          <NavIconLink href="/map" label="Map">
-            <MapPin className="h-5 w-5" />
-          </NavIconLink>
           <NavIconLink href="/messages" label="Messages">
             <MessageCircle className="h-5 w-5" />
           </NavIconLink>
@@ -154,13 +145,6 @@ function MobileNavbar() {
                   onClick={() => setIsOpen(false)}
                 >
                   Browse listings
-                </Link>
-                <Link
-                  href="/map"
-                  className="rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Map
                 </Link>
                 <Link
                   href="/messages"
