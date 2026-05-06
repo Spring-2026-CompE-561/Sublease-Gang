@@ -21,29 +21,36 @@ export function CollegeCombobox({ value, onChange, invalid }: CollegeComboboxPro
 			.finally(() => setLoading(false));
 	}, []);
 
-	const items = colleges.map((c) => `${c.id}::${c.name}`);
-    const defaultValue = value ? items.find((item) => item.startsWith(`${value}::`)) ?? "" : "";
+const items = colleges.map((c) => ({ id: String(c.id), name: c.name }));
+const defaultValue = value
+    ? colleges.find((c) => String(c.id) === value)?.name ?? ""
+    : "";
 
-	return (
-		<Combobox items={items} defaultValue={defaultValue} onValueChange={(val) => { if (val) onChange(val.split("::")[0]); }}>
-			<ComboboxInput
-				placeholder={loading ? "Loading colleges…" : "Search colleges…"}
-				disabled={loading}
-				aria-invalid={invalid}
-			/>
-			<ComboboxContent>
-				<ComboboxEmpty>No colleges found.</ComboboxEmpty>
-				<ComboboxList>
-					{(item) => {
-                        const [id, name] = item.split("::");
-                        return (
-						<ComboboxItem key={item} value={item}>
-							{item.split("::")[1]}
-						</ComboboxItem>
-                        );
-                    }}
-				</ComboboxList>
-			</ComboboxContent>
-		</Combobox>
-	);
-}
+return (
+    <Combobox
+        items={items.map((c) => c.name)}
+        defaultValue={defaultValue}
+        onValueChange={(val) => {
+            if (val) {
+                const match = colleges.find((c) => c.name === val);
+                if (match) onChange(String(match.id));
+            }
+        }}
+    >
+        <ComboboxInput
+            placeholder={loading ? "Loading colleges…" : "Search colleges…"}
+            disabled={loading}
+            aria-invalid={invalid}
+        />
+        <ComboboxContent>
+            <ComboboxEmpty>No colleges found.</ComboboxEmpty>
+            <ComboboxList>
+                {(name) => (
+                    <ComboboxItem key={name} value={name}>
+                        {name}
+                    </ComboboxItem>
+                )}
+            </ComboboxList>
+        </ComboboxContent>
+    </Combobox>
+)};
