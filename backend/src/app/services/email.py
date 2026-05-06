@@ -32,7 +32,7 @@ def send_password_reset_email(to_email: str, reset_url: str) -> bool:
     params: resend.Emails.SendParams = {
         "from": settings.resend_from_email,
         "to": [to_email],
-        "subject": "Reset your Sublease Gang password",
+        "subject": "Reset your SubLease password",
         "html": (
             "<p>We received a request to reset your password.</p>"
             f'<p><a href="{safe_url}">Reset your password</a></p>'

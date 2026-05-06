@@ -52,7 +52,7 @@ class TestUserServiceAuthenticate:
         with (
             patch("app.services.user.get_user_by_email", return_value=None),
             patch(
-                "app.services.user.verify_password", return_value=False
+                "app.services.user.verify_password", return_value=False,
             ) as verify,
             pytest.raises(ResourceNotFoundError),
         ):

@@ -96,7 +96,6 @@ async def logout(
                     revoked_specific = True
     if not revoked_specific:
         TokenService.revoke_all_refresh_for_user(db, current_user.id)
-    return
 
 
 @router.post("/refresh", response_model=TokenResponse)

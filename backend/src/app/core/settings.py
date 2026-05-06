@@ -96,23 +96,23 @@ class Settings(BaseSettings):
     )
 
     @model_validator(mode="after")
-    def _enforce_secret_key_in_production(self) -> "Settings":
+    def _enforce_secret_key_in_production(self) -> Settings:
         if self.environment != "production":
             return self
         if self.secret_key == _DEFAULT_SECRET_KEY:
             raise ValueError(
                 "SECRET_KEY is set to the default placeholder. "
-                "Set a unique SECRET_KEY in the production environment."
+                "Set a unique SECRET_KEY in the production environment.",
             )
         if len(self.secret_key.encode("utf-8")) < _MIN_SECRET_KEY_BYTES:
             raise ValueError(
                 f"SECRET_KEY must be at least {_MIN_SECRET_KEY_BYTES} bytes "
-                "in production."
+                "in production.",
             )
         return self
 
     @model_validator(mode="after")
-    def _enforce_safe_cors_in_production(self) -> "Settings":
+    def _enforce_safe_cors_in_production(self) -> Settings:
         if self.environment != "production":
             return self
         for origin in self.cors_origins:
@@ -121,17 +121,17 @@ class Settings(BaseSettings):
                 raise ValueError("CORS origins must not be blank in production.")
             if "*" in normalized:
                 raise ValueError(
-                    "Wildcard CORS origins are not allowed in production."
+                    "Wildcard CORS origins are not allowed in production.",
                 )
             if normalized.startswith("http://"):
                 raise ValueError(
                     "Plaintext http:// CORS origins are not allowed in "
-                    "production. Use https://."
+                    "production. Use https://.",
                 )
             if "localhost" in normalized or "127.0.0.1" in normalized:
                 raise ValueError(
                     "localhost/127.0.0.1 CORS origins are not allowed in "
-                    "production."
+                    "production.",
                 )
         return self
 
