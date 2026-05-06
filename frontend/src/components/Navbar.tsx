@@ -47,13 +47,14 @@ function NavIconLink({
           <Link
             href={href}
             aria-label={label}
-            className={buttonVariants({ variant: "ghost", size: "icon" })}
+            className={buttonVariants({ variant: "ghost" })}
           >
             {children}
+            <span className="hidden lg:inline">{label}</span>
           </Link>
         }
       />
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipContent className="lg:hidden">{label}</TooltipContent>
     </Tooltip>
   );
 }
