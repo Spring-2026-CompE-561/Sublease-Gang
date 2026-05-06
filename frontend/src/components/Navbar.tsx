@@ -104,7 +104,6 @@ function DesktopNavbar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  /* eslint-disable react-hooks/set-state-in-effect -- polling unread count */
   useEffect(() => {
     const loadUnreadCount = async () => {
       const token = getAccessToken();
@@ -128,7 +127,6 @@ function DesktopNavbar() {
       }
     };
   }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -180,7 +178,6 @@ function MobileNavbar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  /* eslint-disable react-hooks/set-state-in-effect -- polling unread count */
   useEffect(() => {
     const loadUnreadCount = async () => {
       const token = getAccessToken();
@@ -204,7 +201,6 @@ function MobileNavbar() {
       }
     };
   }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
