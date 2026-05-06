@@ -45,8 +45,8 @@ export default function MapPage() {
 	useEffect(() => {
 		let cancelled = false;
 		fetchBrowseListings()
-			.then((data) => {
-				if (!cancelled) setListings(data);
+			.then((response) => {
+				if (!cancelled) setListings(response.results);
 			})
 			.catch((e) => {
 				console.error("fetchBrowseListings", e);
