@@ -66,7 +66,6 @@ export function ListingsDashboard({ defaultView = "listings" }: ListingsDashboar
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
-	const [totalCount, setTotalCount] = useState(0);
 	const gridRef = useRef<HTMLDivElement>(null);
 	const isFirstRender = useRef(true);
 
@@ -86,22 +85,11 @@ export function ListingsDashboard({ defaultView = "listings" }: ListingsDashboar
 		};
 	}, []);
 
-	// NOTE: Filters and search are applied client-side. Server-side pagination + client-side filtering is incompatible:
-	// if the server returns 12 listings per page and the user filters out 8 of them, only 4 are visible even though more exist.
-	// TODO: Pass filters as query params to fetchBrowseListings for proper server-side filtering.
-	/* eslint-disable react-hooks/set-state-in-effect -- fetch driven by currentPage */
 	useEffect(() => {
 		let cancelled = false;
-		setLoading(true);
-		fetchBrowseListings({
-			limit: LISTINGS_PER_PAGE,
-			offset: (currentPage - 1) * LISTINGS_PER_PAGE,
-		})
+		fetchBrowseListings({ limit: 100 })
 			.then((response) => {
-				if (!cancelled) {
-					setListings(response.results);
-					setTotalCount(response.count);
-				}
+				if (!cancelled) setListings(response.results);
 			})
 			.catch((e) => {
 				console.error("fetchBrowseListings", e);
@@ -113,8 +101,7 @@ export function ListingsDashboard({ defaultView = "listings" }: ListingsDashboar
 		return () => {
 			cancelled = true;
 		};
-	}, [currentPage]);
-	/* eslint-enable react-hooks/set-state-in-effect */
+	}, []);
 
 	useEffect(() => {
 		if (typeof window === "undefined" || !("geolocation" in navigator)) return;
@@ -190,9 +177,10 @@ export function ListingsDashboard({ defaultView = "listings" }: ListingsDashboar
 		gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 	}, [currentPage]);
 
-	const totalPages = Math.max(Math.ceil(totalCount / LISTINGS_PER_PAGE), 1);
+	const totalPages = Math.max(Math.ceil(filtered.length / LISTINGS_PER_PAGE), 1);
 	const safePage = Math.min(currentPage, totalPages);
-	const paginatedListings = filtered;
+	const startIndex = (safePage - 1) * LISTINGS_PER_PAGE;
+	const paginatedListings = filtered.slice(startIndex, startIndex + LISTINGS_PER_PAGE);
 
 	const pins = useMemo(
 		() =>
