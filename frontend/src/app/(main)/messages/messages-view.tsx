@@ -16,6 +16,7 @@ import {
 	isApiUnauthorizedError,
 	MESSAGES_PAGE_SIZE,
 	sendConversationMessage,
+	markConversationAsRead,
 } from "@/lib/conversations";
 import type { Conversation, Message } from "@/types/conversation";
 import { MESSAGE_CONTENT_MAX_LENGTH } from "@/types/conversation";
@@ -194,6 +195,14 @@ export function MessagesView() {
 				pendingScrollToBottomRef.current = true;
 				setMessages(batch);
 				setHasMoreMessages(batch.length === MESSAGES_PAGE_SIZE);
+
+				// Mark messages as read when viewing the conversation
+				try {
+					await markConversationAsRead(token, conversationId);
+				} catch (error) {
+					// Log but don't fail if marking as read fails
+					console.error("Failed to mark conversation as read:", error);
+				}
 			} catch (error) {
 				if (isApiUnauthorizedError(error)) {
 					handleUnauthorized();
