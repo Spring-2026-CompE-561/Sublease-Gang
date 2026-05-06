@@ -35,6 +35,7 @@ class MessageCreate(BaseModel):
 
 class MessageUpdate(BaseModel):
     content: str | None = Field(default=None, max_length=_CONTENT_MAX)
+    read: bool | None = None
 
     @field_validator("content")
     @classmethod
@@ -48,6 +49,7 @@ class MessageUpdate(BaseModel):
 
 class Message(MessageCreate):
     id: int
+    read: bool
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

@@ -16,10 +16,12 @@ import {
 	isApiUnauthorizedError,
 	MESSAGES_PAGE_SIZE,
 	sendConversationMessage,
+	markConversationAsRead,
 } from "@/lib/conversations";
 import type { Conversation, Message } from "@/types/conversation";
 import { MESSAGE_CONTENT_MAX_LENGTH } from "@/types/conversation";
 import { cn } from "@/lib/utils";
+import { formatMessageTimestamp, parseApiDateTime } from "@/lib/datetime";
 
 type MeResponse = { id: number; username: string };
 type ListingTitleResponse = { id: number; title: string };
@@ -194,6 +196,14 @@ export function MessagesView() {
 				pendingScrollToBottomRef.current = true;
 				setMessages(batch);
 				setHasMoreMessages(batch.length === MESSAGES_PAGE_SIZE);
+
+				// Mark messages as read when viewing the conversation
+				try {
+					await markConversationAsRead(token, conversationId);
+				} catch (error) {
+					// Log but don't fail if marking as read fails
+					console.error("Failed to mark conversation as read:", error);
+				}
 			} catch (error) {
 				if (isApiUnauthorizedError(error)) {
 					handleUnauthorized();
@@ -690,12 +700,9 @@ export function MessagesView() {
 																className={`mt-1 block text-[10px] opacity-80 ${
 																	mine ? "text-right" : ""
 																}`}
-																dateTime={m.created_at}
+																dateTime={parseApiDateTime(m.created_at).toISOString()}
 															>
-																{new Date(m.created_at).toLocaleString(undefined, {
-																	dateStyle: "short",
-																	timeStyle: "short",
-																})}
+																{formatMessageTimestamp(m.created_at)}
 															</time>
 														</Card>
 													</li>

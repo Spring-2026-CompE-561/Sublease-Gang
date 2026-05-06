@@ -213,6 +213,10 @@ export interface BrowseFiltersState {
 	bedrooms: number | null;
 	amenities: Set<string>;
 	collegeId: number | null;
+	/** Earliest acceptable move-in (YYYY-MM-DD); listing must be available by this date. */
+	moveIn: string | null;
+	/** Latest acceptable move-out (YYYY-MM-DD); listing must remain available through this date. */
+	moveOut: string | null;
 }
 
 export type CollegeFilterOption = { id: number; label: string };
@@ -272,6 +276,9 @@ export function filterBrowseListings(
 		if (sqft < f.sqftMin || sqft > f.sqftMax) return false;
 		if (f.bedrooms != null && l.bedrooms !== f.bedrooms) return false;
 		if (f.collegeId != null && (l.college_id ?? null) !== f.collegeId) return false;
+		// ISO timestamps and date-input strings both start with YYYY-MM-DD, so lex compare matches calendar order.
+		if (f.moveIn && l.start_date && l.start_date.slice(0, 10) > f.moveIn) return false;
+		if (f.moveOut && l.end_date && l.end_date.slice(0, 10) < f.moveOut) return false;
 		for (const a of f.amenities) {
 			if (!l.amenities.includes(a)) return false;
 		}

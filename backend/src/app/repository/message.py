@@ -1,3 +1,4 @@
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app.models.messages import Message as MessageModel
@@ -65,6 +66,8 @@ def update_message(
         raise PermissionDeniedError("Not allowed to modify this message")
     if payload.content is not None:
         db_message.content = payload.content
+    if payload.read is not None:
+        db_message.read = payload.read
     db.commit()
     db.refresh(db_message)
     return db_message
@@ -78,3 +81,45 @@ def delete_message(db: Session, message_id: int, user_id: int) -> None:
         raise PermissionDeniedError("Not allowed to delete this message")
     db.delete(db_message)
     db.commit()
+
+
+def get_unread_message_count(db: Session, user_id: int) -> int:
+    """Get the count of unread messages not sent by the user."""
+    return (
+        db.query(MessageModel)
+        .filter(
+            and_(
+                MessageModel.sender_id != user_id,
+                MessageModel.read.is_(False),
+            )
+        )
+        .count()
+    )
+
+
+def mark_messages_as_read_in_conversation(
+    db: Session, conversation_id: int, user_id: int
+) -> int:
+    """
+    Mark all unread messages in a conversation as read for messages not sent by the user.
+    
+    Returns the number of messages marked as read.
+    """
+    require_conversation_participant(db, conversation_id, user_id)
+    messages_to_update = (
+        db.query(MessageModel)
+        .filter(
+            and_(
+                MessageModel.conversation_id == conversation_id,
+                MessageModel.sender_id != user_id,
+                MessageModel.read.is_(False),
+            )
+        )
+        .all()
+    )
+    count = len(messages_to_update)
+    for msg in messages_to_update:
+        msg.read = True
+    if count > 0:
+        db.commit()
+    return count

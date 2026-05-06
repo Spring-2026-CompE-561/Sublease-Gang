@@ -10,10 +10,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LayoutGrid,
-  MapPin,
   Menu,
   MessageCircle,
   Search,
@@ -21,6 +20,10 @@ import {
 import { ModeToggle } from "@/components/mode-toggle";
 import UserButton from "@/components/UserButton";
 import { useRouter } from "next/navigation";
+import { getAccessToken } from "@/lib/auth";
+import { fetchUnreadMessageCount } from "@/lib/conversations";
+
+const UNREAD_COUNT_POLL_INTERVAL = 30000; // 30 seconds
 
 export function Navbar() {
   return (
@@ -59,9 +62,70 @@ function NavIconLink({
   );
 }
 
+function NavIconLinkWithBadge({
+  href,
+  label,
+  children,
+  badgeCount,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+  badgeCount: number;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Link
+            href={href}
+            aria-label={label}
+            className={buttonVariants({ variant: "ghost" })}
+          >
+            <div className="relative">
+              {children}
+              {badgeCount > 0 && (
+                <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+              )}
+            </div>
+            <span className="hidden lg:inline">{label}</span>
+          </Link>
+        }
+      />
+      <TooltipContent className="lg:hidden">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 function DesktopNavbar() {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      const token = getAccessToken();
+      if (!token) return;
+
+      try {
+        const count = await fetchUnreadMessageCount(token);
+        setUnreadCount(count);
+      } catch (error) {
+        console.error("Failed to fetch unread count:", error);
+      }
+    };
+
+    loadUnreadCount();
+
+    pollIntervalRef.current = setInterval(loadUnreadCount, UNREAD_COUNT_POLL_INTERVAL);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -93,12 +157,9 @@ function DesktopNavbar() {
           <NavIconLink href="/listings" label="Browse">
             <LayoutGrid className="h-5 w-5" />
           </NavIconLink>
-          <NavIconLink href="/map" label="Map">
-            <MapPin className="h-5 w-5" />
-          </NavIconLink>
-          <NavIconLink href="/messages" label="Messages">
+          <NavIconLinkWithBadge href="/messages" label="Messages" badgeCount={unreadCount}>
             <MessageCircle className="h-5 w-5" />
-          </NavIconLink>
+          </NavIconLinkWithBadge>
           <ModeToggle />
           <UserButton />
         </div>
@@ -111,6 +172,32 @@ function MobileNavbar() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      const token = getAccessToken();
+      if (!token) return;
+
+      try {
+        const count = await fetchUnreadMessageCount(token);
+        setUnreadCount(count);
+      } catch (error) {
+        console.error("Failed to fetch unread count:", error);
+      }
+    };
+
+    loadUnreadCount();
+
+    pollIntervalRef.current = setInterval(loadUnreadCount, UNREAD_COUNT_POLL_INTERVAL);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -158,18 +245,14 @@ function MobileNavbar() {
                   Browse listings
                 </Link>
                 <Link
-                  href="/map"
-                  className="rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Map
-                </Link>
-                <Link
                   href="/messages"
-                  className="rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
+                  className="relative rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
                   onClick={() => setIsOpen(false)}
                 >
                   Messages
+                  {unreadCount > 0 && (
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-red-500" />
+                  )}
                 </Link>
               </nav>
             </div>

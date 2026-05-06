@@ -27,3 +27,10 @@ class Conversation(ConversationCreate):
 
     id: int
     created_at: datetime
+
+
+class UnreadCountResponse(BaseModel):
+    """Response for unread message count."""
+
+    unread_count: int
+
