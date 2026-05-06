@@ -1,9 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Filter, LayoutGrid, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter, LayoutGrid, MapPin } from "lucide-react";
 import {
 	collegeOptionsFromMockListings,
 	fetchBrowseListings,
@@ -31,6 +31,8 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const ListingsMap = dynamic(() => import("@/components/Map"), { ssr: false });
+
+const LISTINGS_PER_PAGE = 12;
 
 type DashboardView = "listings" | "map";
 
@@ -63,6 +65,8 @@ export function ListingsDashboard({ defaultView = "listings" }: ListingsDashboar
 	const [listings, setListings] = useState<BrowseListing[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState<string | null>(null);
+	const [currentPage, setCurrentPage] = useState(1);
+	const gridRef = useRef<HTMLDivElement>(null);
 
 	const [flyTo, setFlyTo] = useState<FlyToTarget | undefined>();
 
@@ -83,8 +87,8 @@ export function ListingsDashboard({ defaultView = "listings" }: ListingsDashboar
 	useEffect(() => {
 		let cancelled = false;
 		fetchBrowseListings()
-			.then((data) => {
-				if (!cancelled) setListings(data);
+			.then((response) => {
+				if (!cancelled) setListings(response.results);
 			})
 			.catch((e) => {
 				console.error("fetchBrowseListings", e);
@@ -157,6 +161,22 @@ export function ListingsDashboard({ defaultView = "listings" }: ListingsDashboar
 			);
 		});
 	}, [collegeLabelById, filters, listings, query]);
+
+	/* eslint-disable react-hooks/set-state-in-effect -- reset to page 1 when filters change */
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [filters, query]);
+	/* eslint-enable react-hooks/set-state-in-effect */
+
+	useEffect(() => {
+		if (gridRef.current) {
+			gridRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+		}
+	}, [currentPage]);
+
+	const totalPages = Math.ceil(filtered.length / LISTINGS_PER_PAGE);
+	const startIndex = (currentPage - 1) * LISTINGS_PER_PAGE;
+	const paginatedListings = filtered.slice(startIndex, startIndex + LISTINGS_PER_PAGE);
 
 	const pins = useMemo(
 		() =>
@@ -318,11 +338,49 @@ export function ListingsDashboard({ defaultView = "listings" }: ListingsDashboar
 						</p>
 					) : (
 						<>
-							<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-								{filtered.map((listing) => (
+							<div ref={gridRef} className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+								{paginatedListings.map((listing) => (
 									<ListingBrowseCard key={listing.id} listing={listing} />
 								))}
 							</div>
+
+							{filtered.length > 0 && totalPages > 1 && (
+								<div className="mt-8 flex items-center justify-center gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+										disabled={currentPage === 1}
+										className="gap-1"
+									>
+										<ChevronLeft className="size-4" />
+										Previous
+									</Button>
+									<div className="flex gap-1">
+										{Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+											<Button
+												key={page}
+												variant={currentPage === page ? "default" : "outline"}
+												size="sm"
+												onClick={() => setCurrentPage(page)}
+												className="min-w-10"
+											>
+												{page}
+											</Button>
+										))}
+									</div>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+										disabled={currentPage === totalPages}
+										className="gap-1"
+									>
+										Next
+										<ChevronRight className="size-4" />
+									</Button>
+								</div>
+							)}
 
 							{listings.length === 0 ? (
 								<p className="rounded-xl border border-dashed py-12 text-center text-muted-foreground">
