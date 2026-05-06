@@ -46,6 +46,27 @@ export async function sendConversationMessage(
 	);
 }
 
+export async function fetchUnreadMessageCount(
+	accessToken: string,
+): Promise<number> {
+	const response = await fetchApiJson<{ unread_count: number }>(
+		`${CONVERSATIONS_LIST_PATH}unread-count`,
+		accessToken,
+	);
+	return response.unread_count;
+}
+
+export async function markConversationAsRead(
+	accessToken: string,
+	conversationId: number,
+): Promise<void> {
+	await postApiJson<{ marked_read_count: number }, Record<string, never>>(
+		`${conversationMessagesPath(conversationId)}/mark-read`,
+		accessToken,
+		{},
+	);
+}
+
 export function isApiUnauthorizedError(
 	error: unknown,
 ): error is ApiUnauthorizedError {

@@ -8,6 +8,7 @@ from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundErr
 from app.schemas.conversation import (
     Conversation,
     ConversationStartRequest,
+    UnreadCountResponse,
 )
 from app.schemas.message import Message, MessageCreate, MessageSend
 from app.services.conversation import ConversationService
@@ -33,6 +34,16 @@ async def list_conversations(
 ):
     """Retrieve all conversations for the current user."""
     return ConversationService.list_for_user(db, current_user.id)
+
+
+@router.get("/unread-count", response_model=UnreadCountResponse)
+async def get_unread_count(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """GET /conversations/unread-count - Get unread message count for the current user."""
+    count = MessageService.get_unread_count(db, current_user.id)
+    return UnreadCountResponse(unread_count=count)
 
 
 @router.post("/", response_model=Conversation, status_code=201)
@@ -109,5 +120,21 @@ async def send_message(
     )
     try:
         return MessageService.create(db, body)
+    except (ResourceNotFoundError, PermissionDeniedError) as e:
+        raise _http_from_repo(e) from e
+
+
+@router.post("/{conversation_id}/messages/mark-read")
+async def mark_messages_as_read(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """POST /conversations/{id}/messages/mark-read - Mark all messages in conversation as read."""
+    try:
+        count = MessageService.mark_conversation_as_read(
+            db, conversation_id, current_user.id
+        )
+        return {"marked_read_count": count}
     except (ResourceNotFoundError, PermissionDeniedError) as e:
         raise _http_from_repo(e) from e
