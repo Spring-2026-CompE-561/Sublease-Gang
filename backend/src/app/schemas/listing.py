@@ -22,22 +22,46 @@ def _validate_image_urls(values: list[str]) -> list[str]:
         if not _IMAGE_URL_RE.match(s):
             raise ValueError(
                 "image_urls must be https URLs, /media/ paths, or "
-                "data:image/(jpeg|png);base64 URIs"
+                "data:image/(jpeg|png);base64 URIs",
             )
     return values
 
 from app.schemas.college import CollegeRead
+
+# Caps on user-provided text. Bounding these defends against oversized
+# payload storage, accidental DB bloat, and stored-XSS payload size.
+_TITLE_MAX = 200
+_DESC_MAX = 5000
+_LOCATION_MAX = 200
+_ROOM_TYPE_MAX = 50
+
+
+def _strip_required(v: str) -> str:
+    s = v.strip()
+    if not s:
+        raise ValueError("cannot be blank")
+    return s
+
+
+def _strip_optional(v: str | None) -> str | None:
+    if v is None:
+        return v
+    s = v.strip()
+    if not s:
+        raise ValueError("cannot be blank")
+    return s
+
 
 class ListingCreate(BaseModel):
     """Schema for creating a new listing."""
 
     model_config = ConfigDict(extra="forbid")
 
-    title: str = Field(..., min_length=1)
-    description: str = Field(..., min_length=1)
+    title: str = Field(..., min_length=1, max_length=_TITLE_MAX)
+    description: str = Field(..., min_length=1, max_length=_DESC_MAX)
     price: float = Field(..., gt=0)
-    location: str = Field(..., min_length=1)
-    room_type: str = Field(..., min_length=1)
+    location: str = Field(..., min_length=1, max_length=_LOCATION_MAX)
+    room_type: str = Field(..., min_length=1, max_length=_ROOM_TYPE_MAX)
     sqft: int = Field(..., gt=0)
     start_date: datetime
     end_date: datetime
@@ -45,6 +69,11 @@ class ListingCreate(BaseModel):
     image_urls: list[str] = Field(..., min_length=1, max_length=12)
     latitude: float
     longitude: float
+
+    @field_validator("title", "description", "location", "room_type")
+    @classmethod
+    def strip_text(cls, v: str) -> str:
+        return _strip_required(v)
 
     @field_validator("image_urls")
     @classmethod
@@ -63,11 +92,11 @@ class ListingUpdate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    title: str | None = None
-    description: str | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=_TITLE_MAX)
+    description: str | None = Field(default=None, min_length=1, max_length=_DESC_MAX)
     price: float | None = None
-    location: str | None = None
-    room_type: str | None = None
+    location: str | None = Field(default=None, min_length=1, max_length=_LOCATION_MAX)
+    room_type: str | None = Field(default=None, min_length=1, max_length=_ROOM_TYPE_MAX)
     sqft: int | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
@@ -76,6 +105,11 @@ class ListingUpdate(BaseModel):
     image_urls: list[str] | None = None
     latitude: float | None = None
     longitude: float | None = None
+
+    @field_validator("title", "description", "location", "room_type")
+    @classmethod
+    def strip_text(cls, v: str | None) -> str | None:
+        return _strip_optional(v)
 
     @field_validator("image_urls")
     @classmethod

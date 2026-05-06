@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+_CONTENT_MAX = 5000
 
 
 class MessageSend(BaseModel):
@@ -8,7 +10,7 @@ class MessageSend(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    content: str
+    content: str = Field(..., max_length=_CONTENT_MAX)
 
     @field_validator("content")
     @classmethod
@@ -21,7 +23,7 @@ class MessageSend(BaseModel):
 class MessageCreate(BaseModel):
     conversation_id: int
     sender_id: int
-    content: str
+    content: str = Field(..., max_length=_CONTENT_MAX)
 
     @field_validator("content")
     @classmethod
@@ -32,7 +34,7 @@ class MessageCreate(BaseModel):
 
 
 class MessageUpdate(BaseModel):
-    content: str | None = None
+    content: str | None = Field(default=None, max_length=_CONTENT_MAX)
 
     @field_validator("content")
     @classmethod

@@ -7,6 +7,20 @@ from app.models.user import User
 from app.repository.exceptions import PermissionDeniedError, ResourceNotFoundError
 from app.schemas.listing import ListingCreate, ListingUpdate
 
+# Backslash-escape the three LIKE-pattern metacharacters before interpolating
+# user input into ilike(). SQLAlchemy already parameterizes the bind value
+# (so this is not an SQLi vector), but unescaped %/_ let users control the
+# pattern itself — a search for "_" would match everything.
+_LIKE_ESCAPE = "\\"
+
+
+def _escape_like(value: str) -> str:
+    return (
+        value.replace(_LIKE_ESCAPE, _LIKE_ESCAPE * 2)
+        .replace("%", _LIKE_ESCAPE + "%")
+        .replace("_", _LIKE_ESCAPE + "_")
+    )
+
 
 def create_listing(db: Session, host_id: int, listing: ListingCreate) -> Listing:
     if db.get(User, host_id) is None:
@@ -87,7 +101,10 @@ def search_listings(
     if college_id is not None:
         query = query.filter(Listing.college_id == college_id)
     if location is not None:
-        query = query.filter(Listing.location.ilike(f"%{location}%"))
+        loc = location.strip()
+        if loc:
+            pattern = f"%{_escape_like(loc)}%"
+            query = query.filter(Listing.location.ilike(pattern, escape=_LIKE_ESCAPE))
     if min_price is not None:
         query = query.filter(Listing.price >= min_price)
     if max_price is not None:
@@ -183,7 +200,7 @@ def update_listing(
     update_data = updates.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_listing, field, value)
-    if "image_urls" in update_data and update_data["image_urls"]:
+    if update_data.get("image_urls"):
         db_listing.thumbnail_url = update_data["image_urls"][0]
     db.commit()
     db.refresh(db_listing)
