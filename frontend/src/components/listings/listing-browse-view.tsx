@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import {
 	collegeOptionsFromMockListings,
 	fetchBrowseListings,
@@ -27,6 +27,8 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 
+const LISTINGS_PER_PAGE = 12;
+
 export function ListingBrowseView() {
 	const searchParams = useSearchParams();
 	const query = searchParams.get("q") ?? "";
@@ -37,6 +39,8 @@ export function ListingBrowseView() {
 	const [collegeId, setCollegeId] = useState<number | null>(null);
 	const [collegeOptions, setCollegeOptions] = useState<CollegeFilterOption[]>([]);
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [currentPage, setCurrentPage] = useState(1);
+	const gridRef = useRef<HTMLDivElement>(null);
 
 	const [listings, setListings] = useState<BrowseListing[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -59,8 +63,8 @@ export function ListingBrowseView() {
 	useEffect(() => {
 		let cancelled = false;
 		fetchBrowseListings()
-			.then((data) => {
-				if (!cancelled) setListings(data);
+			.then((response) => {
+				if (!cancelled) setListings(response.results);
 			})
 			.catch((e) => {
 				console.error("fetchBrowseListings", e);
@@ -73,6 +77,13 @@ export function ListingBrowseView() {
 			cancelled = true;
 		};
 	}, []);
+
+	// Scroll to grid on page change
+	useEffect(() => {
+		if (gridRef.current) {
+			gridRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+		}
+	}, [currentPage]);
 
 	const collegeLabelById = useMemo(() => {
 		const m = new Map<number, string>();
@@ -95,6 +106,11 @@ export function ListingBrowseView() {
 		[priceRange, sqftRange, bedroomFilter, selectedAmenities, collegeId],
 	);
 
+	// Reset to page 1 when filters change
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [filters, query]);
+
 	const filtered = useMemo(() => {
 		const base = filterBrowseListings(listings, filters);
 		const trimmed = query.trim().toLowerCase();
@@ -114,6 +130,12 @@ export function ListingBrowseView() {
 			);
 		});
 	}, [collegeLabelById, filters, listings, query]);
+
+	// Calculate pagination
+	const totalPages = Math.ceil(filtered.length / LISTINGS_PER_PAGE);
+	const startIndex = (currentPage - 1) * LISTINGS_PER_PAGE;
+	const endIndex = startIndex + LISTINGS_PER_PAGE;
+	const paginatedListings = filtered.slice(startIndex, endIndex);
 
 	function toggleAmenity(id: string) {
 		setSelectedAmenities((prev) => {
@@ -206,8 +228,8 @@ export function ListingBrowseView() {
 						</p>
 					) : (
 						<>
-							<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-								{filtered.map((listing) => (
+							<div ref={gridRef} className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+								{paginatedListings.map((listing) => (
 									<ListingBrowseCard key={listing.id} listing={listing} />
 								))}
 							</div>
@@ -221,6 +243,47 @@ export function ListingBrowseView() {
 									No listings match these filters. Try adjusting price or amenities.
 								</p>
 							) : null}
+
+							{/* Pagination controls */}
+							{filtered.length > 0 && totalPages > 1 && (
+								<div className="mt-8 flex items-center justify-center gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+										disabled={currentPage === 1}
+										className="gap-1"
+									>
+										<ChevronLeft className="size-4" />
+										Previous
+									</Button>
+
+									<div className="flex gap-1">
+										{Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+											<Button
+												key={page}
+												variant={currentPage === page ? "default" : "outline"}
+												size="sm"
+												onClick={() => setCurrentPage(page)}
+												className="min-w-10"
+											>
+												{page}
+											</Button>
+										))}
+									</div>
+
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+										disabled={currentPage === totalPages}
+										className="gap-1"
+									>
+										Next
+										<ChevronRight className="size-4" />
+									</Button>
+								</div>
+							)}
 						</>
 					)}
 				</div>
