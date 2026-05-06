@@ -68,6 +68,33 @@ class Settings(BaseSettings):
         ),
     )
 
+    resend_api_key: str = Field(
+        default="",
+        description=(
+            "API key for Resend transactional email. When empty, email sends "
+            "are skipped and logged; auth flows still succeed so local dev "
+            "without a key keeps working."
+        ),
+    )
+
+    resend_from_email: str = Field(
+        default="onboarding@resend.dev",
+        description=(
+            "From address for outbound email. The default is Resend's "
+            "sandbox sender, which only delivers to the address registered "
+            "to your Resend account. Replace with a verified-domain address "
+            "before relying on it in production."
+        ),
+    )
+
+    frontend_base_url: str = Field(
+        default="http://localhost:3000",
+        description=(
+            "Public base URL of the frontend (no trailing slash). Used to "
+            "build links embedded in outbound emails (e.g. password reset)."
+        ),
+    )
+
     @model_validator(mode="after")
     def _enforce_secret_key_in_production(self) -> "Settings":
         if self.environment != "production":
