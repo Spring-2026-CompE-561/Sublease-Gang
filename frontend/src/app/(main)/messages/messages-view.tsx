@@ -21,6 +21,7 @@ import {
 import type { Conversation, Message } from "@/types/conversation";
 import { MESSAGE_CONTENT_MAX_LENGTH } from "@/types/conversation";
 import { cn } from "@/lib/utils";
+import { formatMessageTimestamp, parseApiDateTime } from "@/lib/datetime";
 
 type MeResponse = { id: number; username: string };
 type ListingTitleResponse = { id: number; title: string };
@@ -699,12 +700,9 @@ export function MessagesView() {
 																className={`mt-1 block text-[10px] opacity-80 ${
 																	mine ? "text-right" : ""
 																}`}
-																dateTime={m.created_at}
+																dateTime={parseApiDateTime(m.created_at).toISOString()}
 															>
-																{new Date(m.created_at).toLocaleString(undefined, {
-																	dateStyle: "short",
-																	timeStyle: "short",
-																})}
+																{formatMessageTimestamp(m.created_at)}
 															</time>
 														</Card>
 													</li>
