@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { CheckCircle2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -107,7 +108,9 @@ export function SignupForm({
 
   const [iconFile, setIconFile] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const [registrationDone, setRegistrationDone] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const firstnameValue = form.watch("firstname");
   const initials = firstnameValue
@@ -123,6 +126,15 @@ export function SignupForm({
     setIconPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [iconFile]);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   function handleIconChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -202,9 +214,41 @@ export function SignupForm({
       }
     }
 
-    toast.success("Welcome to SubLease!");
-    router.push("/");
-    router.refresh();
+    setRegistrationDone(true);
+    if (redirectTimeoutRef.current) {
+      clearTimeout(redirectTimeoutRef.current);
+    }
+    redirectTimeoutRef.current = setTimeout(() => {
+      router.push("/");
+      router.refresh();
+    }, 1500);
+  }
+
+  if (registrationDone) {
+    return (
+      <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <CheckCircle2
+              className="size-12 text-emerald-500"
+              aria-hidden
+            />
+            <div className="flex flex-col gap-1">
+              <p className="text-lg font-semibold text-foreground">
+                Account created!
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Welcome to SubLease — taking you to the homepage…
+              </p>
+            </div>
+            <Loader2
+              className="size-5 animate-spin text-muted-foreground"
+              aria-hidden
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
