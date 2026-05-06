@@ -10,21 +10,33 @@ import { ACCESS_TOKEN_KEY } from "@/lib/api";
 
 export default function SavedListingsPage() {
   const router = useRouter();
-  const [isAuthorized] = useState(() =>
+  const [hasToken, setHasToken] = useState(() =>
     typeof window !== "undefined" && !!localStorage.getItem(ACCESS_TOKEN_KEY)
   );
   const [listings, setListings] = useState<BrowseListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-useEffect(() => {
-  if (!isAuthorized) {
-    router.push("/signin");
-  }
-}, [isAuthorized, router]);
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== ACCESS_TOKEN_KEY) return;
+      setHasToken(!!event.newValue);
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   useEffect(() => {
-    if (!isAuthorized) return;
+    if (!hasToken) {
+      router.push("/signin");
+    }
+  }, [hasToken, router]);
+
+  useEffect(() => {
+    if (!hasToken) return;
 
     let cancelled = false;
     const token = localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -45,9 +57,9 @@ useEffect(() => {
     return () => {
       cancelled = true;
     };
-  }, [isAuthorized]);
+  }, [hasToken]);
 
-  if (!isAuthorized) {
+  if (!hasToken) {
     return (
       <main className="flex-1 px-4 py-16 text-center">
         <p className="text-muted-foreground">Redirecting to sign in...</p>

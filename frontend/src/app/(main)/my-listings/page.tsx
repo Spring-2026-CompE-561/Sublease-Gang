@@ -63,6 +63,9 @@ export default function MyListingsPage() {
 	}, [router]);
 
 	useEffect(() => {
+		// fetch-on-mount; setState calls inside loadMyListings happen after await,
+		// not synchronously in the effect body.
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		void loadMyListings();
 	}, [loadMyListings]);
 

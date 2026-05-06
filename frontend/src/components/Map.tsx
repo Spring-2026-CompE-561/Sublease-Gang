@@ -75,13 +75,9 @@ export default function Map({
 		});
 	}, [flyTo]);
 
-	useEffect(() => {
-		if (activeId && !pins.some((p) => p.id === activeId)) {
-			setActiveId(null);
-		}
-	}, [pins, activeId]);
-
-	const active = activeId ? pins.find((p) => p.id === activeId) : null;
+	// derive active pin during render; if pins no longer contain activeId,
+	// active is null and the popup just won't render.
+	const active = activeId ? pins.find((p) => p.id === activeId) ?? null : null;
 
 	return (
 		<MapLibre
