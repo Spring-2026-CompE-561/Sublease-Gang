@@ -13,7 +13,6 @@ import {
 import { useEffect, useRef, useState } from "react";
 import {
   LayoutGrid,
-  MapPin,
   Menu,
   MessageCircle,
   Search,
@@ -157,9 +156,6 @@ function DesktopNavbar() {
           <NavIconLink href="/listings" label="Browse">
             <LayoutGrid className="h-5 w-5" />
           </NavIconLink>
-          <NavIconLink href="/map" label="Map">
-            <MapPin className="h-5 w-5" />
-          </NavIconLink>
           <NavIconLinkWithBadge href="/messages" label="Messages" badgeCount={unreadCount}>
             <MessageCircle className="h-5 w-5" />
           </NavIconLinkWithBadge>
@@ -245,13 +241,6 @@ function MobileNavbar() {
                   onClick={() => setIsOpen(false)}
                 >
                   Browse listings
-                </Link>
-                <Link
-                  href="/map"
-                  className="rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Map
                 </Link>
                 <Link
                   href="/messages"
