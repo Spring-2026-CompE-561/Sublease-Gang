@@ -91,6 +91,8 @@ export function ListingBrowseView() {
 			bedrooms: bedroomFilter,
 			amenities: selectedAmenities,
 			collegeId,
+			moveIn: null,
+			moveOut: null,
 		}),
 		[priceRange, sqftRange, bedroomFilter, selectedAmenities, collegeId],
 	);
