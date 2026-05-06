@@ -4,10 +4,6 @@
  * as local time, causing incorrect message times. We normalize that case to UTC.
  */
 export function parseApiDateTime(value: string): Date {
-	// Fast-path: Date can already parse it (e.g. includes "Z" or an offset).
-	const direct = new Date(value);
-	if (!Number.isNaN(direct.getTime())) return direct;
-
 	// Normalize common "YYYY-MM-DDTHH:mm:ss(.sss)" strings missing timezone to UTC.
 	const looksLikeIso =
 		/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(value);
@@ -15,6 +11,10 @@ export function parseApiDateTime(value: string): Date {
 		const normalized = new Date(`${value}Z`);
 		if (!Number.isNaN(normalized.getTime())) return normalized;
 	}
+
+	// Fast-path: Date can already parse it (e.g. includes "Z" or an offset).
+	const direct = new Date(value);
+	if (!Number.isNaN(direct.getTime())) return direct;
 
 	// Last resort: return invalid date for callers to handle.
 	return direct;
