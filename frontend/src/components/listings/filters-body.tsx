@@ -8,6 +8,7 @@ import {
 } from "@/lib/listings";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -33,6 +34,10 @@ export function FiltersBody({
 	collegeId,
 	setCollegeId,
 	collegeOptions,
+	moveIn,
+	setMoveIn,
+	moveOut,
+	setMoveOut,
 	onReset,
 }: {
 	priceRange: [number, number];
@@ -46,8 +51,13 @@ export function FiltersBody({
 	collegeId: number | null;
 	setCollegeId: (v: number | null) => void;
 	collegeOptions: CollegeFilterOption[];
+	moveIn?: string | null;
+	setMoveIn?: (v: string | null) => void;
+	moveOut?: string | null;
+	setMoveOut?: (v: string | null) => void;
 	onReset: () => void;
 }) {
+	const showTimeFrame = setMoveIn != null && setMoveOut != null;
 	const beds = [0, 1, 2, 3, 4] as const;
 
 	return (
@@ -75,6 +85,40 @@ export function FiltersBody({
 					</SelectContent>
 				</Select>
 			</div>
+
+			{showTimeFrame ? (
+				<div className="space-y-3">
+					<h3 className="font-semibold">Time Frame</h3>
+					<div className="grid grid-cols-2 gap-3">
+						<div className="min-w-0 space-y-1.5">
+							<Label htmlFor="filter-move-in" className="text-sm font-normal text-muted-foreground">
+								Move-in
+							</Label>
+							<Input
+								id="filter-move-in"
+								type="date"
+								className="h-11 w-full min-w-0"
+								value={moveIn ?? ""}
+								max={moveOut ?? undefined}
+								onChange={(e) => setMoveIn?.(e.target.value || null)}
+							/>
+						</div>
+						<div className="min-w-0 space-y-1.5">
+							<Label htmlFor="filter-move-out" className="text-sm font-normal text-muted-foreground">
+								Move-out
+							</Label>
+							<Input
+								id="filter-move-out"
+								type="date"
+								className="h-11 w-full min-w-0"
+								value={moveOut ?? ""}
+								min={moveIn ?? undefined}
+								onChange={(e) => setMoveOut?.(e.target.value || null)}
+							/>
+						</div>
+					</div>
+				</div>
+			) : null}
 
 			<div className="space-y-3">
 				<h3 className="font-semibold">Price Range</h3>
