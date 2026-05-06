@@ -25,6 +25,7 @@ from app.schemas.auth import (
     SignupRequest,
     TokenResponse,
 )
+from app.services.email import send_password_reset_email
 from app.services.token import TokenService
 from app.services.user import UserService
 
@@ -187,6 +188,8 @@ async def forgot_password(
         verify_password(payload.email, DUMMY_PASSWORD_HASH)
         return response
     reset_token = TokenService.issue_reset_token(db, user.id)
+    reset_url = f"{settings.frontend_base_url}/reset-password?token={reset_token}"
+    send_password_reset_email(user.email, reset_url)
     if settings.environment == "development":
         logger.info("Password reset token for user %s: %s", user.id, reset_token)
         response["reset_token"] = reset_token
