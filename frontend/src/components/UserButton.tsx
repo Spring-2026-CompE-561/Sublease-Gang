@@ -26,26 +26,46 @@ function UserButton() {
       <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
         <User />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="center" className="w-auto min-w-0">
         {isLoggedIn ? (
           <>
-            <DropdownMenuItem onClick={() => router.push("/profile")}>
+            <DropdownMenuItem
+              onClick={() => router.push("/profile")}
+              className="justify-center px-4"
+            >
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/my-listings")}>
+            <DropdownMenuItem
+              onClick={() => router.push("/my-listings")}
+              className="justify-center px-4"
+            >
               My Listings
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/saved-listings")}>
+            <DropdownMenuItem
+              onClick={() => router.push("/saved-listings")}
+              className="justify-center px-4"
+            >
               Saved listings
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="justify-center px-4"
+            >
+              Sign out
+            </DropdownMenuItem>
           </>
         ) : (
           <>
-            <DropdownMenuItem onClick={() => router.push("/signin")}>
+            <DropdownMenuItem
+              onClick={() => router.push("/signin")}
+              className="justify-center px-4"
+            >
               Sign in
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/signup")}>
+            <DropdownMenuItem
+              onClick={() => router.push("/signup")}
+              className="justify-center px-4"
+            >
               Sign up
             </DropdownMenuItem>
           </>
