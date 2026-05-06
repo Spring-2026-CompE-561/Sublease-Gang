@@ -255,9 +255,8 @@ export function ListingsDashboard({ defaultView = "listings" }: ListingsDashboar
 						</div>
 						<div className="flex items-center gap-2">
 							<ToggleGroup
-								value={[view]}
-								onValueChange={(values) => {
-									const next = values[0];
+								value={view}
+								onValueChange={(next) => {
 									if (next === "listings" || next === "map") setView(next);
 								}}
 								variant="outline"
