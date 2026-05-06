@@ -4,10 +4,10 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 # Accepts: https URLs, /media/ relative paths, or base64-encoded data URIs
-# whose MIME is one of the four bitmap formats we support. Rejects
-# javascript:, file:, data:image/svg+xml, and unscoped data: URIs.
+# whose MIME is PNG or JPEG. Rejects everything else — javascript:, file:,
+# data:image/svg+xml, data:image/gif, data:image/webp, unscoped data: URIs.
 _IMAGE_URL_RE = re.compile(
-    r"^(?:https?://|/media/|data:image/(?:jpeg|jpg|png|gif|webp);base64,)",
+    r"^(?:https?://|/media/|data:image/(?:jpeg|jpg|png);base64,)",
     re.IGNORECASE,
 )
 
@@ -22,7 +22,7 @@ def _validate_image_urls(values: list[str]) -> list[str]:
         if not _IMAGE_URL_RE.match(s):
             raise ValueError(
                 "image_urls must be https URLs, /media/ paths, or "
-                "data:image/(jpeg|png|gif|webp);base64 URIs"
+                "data:image/(jpeg|png);base64 URIs"
             )
     return values
 
