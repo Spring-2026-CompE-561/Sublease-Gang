@@ -324,20 +324,33 @@ export function toBrowseListing(l: Listing): BrowseListing {
 
 type FetchBrowseOptions = {
 	limit?: number;
+	offset?: number;
 };
+
+export interface FetchBrowseResponse {
+	count: number;
+	results: BrowseListing[];
+}
 
 export async function fetchBrowseListings(
 	options: FetchBrowseOptions = {},
-): Promise<BrowseListing[]> {
+): Promise<FetchBrowseResponse> {
 	const limit = options.limit ?? 100;
+	const offset = options.offset ?? 0;
 	const init: RequestInit =
 		typeof window === "undefined" ? { next: { revalidate: 30 } } : {};
-	const res = await fetch(`${API_BASE_URL}/api/v1/listings/?limit=${limit}`, init);
+	const res = await fetch(
+		`${API_BASE_URL}/api/v1/listings/?limit=${limit}&offset=${offset}`,
+		init,
+	);
 	if (!res.ok) {
 		throw new Error("Failed to load listings");
 	}
-	const data = (await res.json()) as { results: ListingListApiRow[] };
-	return data.results.map((row) => toBrowseListing(listingFromListRow(row)));
+	const data = (await res.json()) as { count: number; results: ListingListApiRow[] };
+	return {
+		count: data.count,
+		results: data.results.map((row) => toBrowseListing(listingFromListRow(row))),
+	};
 }
 
 export async function fetchListingsByHost(
