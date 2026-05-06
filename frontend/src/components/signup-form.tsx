@@ -110,6 +110,7 @@ export function SignupForm({
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [registrationDone, setRegistrationDone] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const firstnameValue = form.watch("firstname");
   const initials = firstnameValue
@@ -125,6 +126,15 @@ export function SignupForm({
     setIconPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [iconFile]);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   function handleIconChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -205,8 +215,10 @@ export function SignupForm({
     }
 
     setRegistrationDone(true);
-    toast.success("Welcome to SubLease!");
-    setTimeout(() => {
+    if (redirectTimeoutRef.current) {
+      clearTimeout(redirectTimeoutRef.current);
+    }
+    redirectTimeoutRef.current = setTimeout(() => {
       router.push("/");
       router.refresh();
     }, 1500);
