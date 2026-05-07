@@ -68,24 +68,51 @@ class Settings(BaseSettings):
         ),
     )
 
+    resend_api_key: str = Field(
+        default="",
+        description=(
+            "API key for Resend transactional email. When empty, email sends "
+            "are skipped and logged; auth flows still succeed so local dev "
+            "without a key keeps working."
+        ),
+    )
+
+    resend_from_email: str = Field(
+        default="onboarding@resend.dev",
+        description=(
+            "From address for outbound email. The default is Resend's "
+            "sandbox sender, which only delivers to the address registered "
+            "to your Resend account. Replace with a verified-domain address "
+            "before relying on it in production."
+        ),
+    )
+
+    frontend_base_url: str = Field(
+        default="http://localhost:3000",
+        description=(
+            "Public base URL of the frontend (no trailing slash). Used to "
+            "build links embedded in outbound emails (e.g. password reset)."
+        ),
+    )
+
     @model_validator(mode="after")
-    def _enforce_secret_key_in_production(self) -> "Settings":
+    def _enforce_secret_key_in_production(self) -> Settings:
         if self.environment != "production":
             return self
         if self.secret_key == _DEFAULT_SECRET_KEY:
             raise ValueError(
                 "SECRET_KEY is set to the default placeholder. "
-                "Set a unique SECRET_KEY in the production environment."
+                "Set a unique SECRET_KEY in the production environment.",
             )
         if len(self.secret_key.encode("utf-8")) < _MIN_SECRET_KEY_BYTES:
             raise ValueError(
                 f"SECRET_KEY must be at least {_MIN_SECRET_KEY_BYTES} bytes "
-                "in production."
+                "in production.",
             )
         return self
 
     @model_validator(mode="after")
-    def _enforce_safe_cors_in_production(self) -> "Settings":
+    def _enforce_safe_cors_in_production(self) -> Settings:
         if self.environment != "production":
             return self
         for origin in self.cors_origins:
@@ -94,17 +121,17 @@ class Settings(BaseSettings):
                 raise ValueError("CORS origins must not be blank in production.")
             if "*" in normalized:
                 raise ValueError(
-                    "Wildcard CORS origins are not allowed in production."
+                    "Wildcard CORS origins are not allowed in production.",
                 )
             if normalized.startswith("http://"):
                 raise ValueError(
                     "Plaintext http:// CORS origins are not allowed in "
-                    "production. Use https://."
+                    "production. Use https://.",
                 )
             if "localhost" in normalized or "127.0.0.1" in normalized:
                 raise ValueError(
                     "localhost/127.0.0.1 CORS origins are not allowed in "
-                    "production."
+                    "production.",
                 )
         return self
 
