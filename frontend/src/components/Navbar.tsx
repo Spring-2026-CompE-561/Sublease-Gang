@@ -20,7 +20,7 @@ import {
 import { ModeToggle } from "@/components/mode-toggle";
 import UserButton from "@/components/UserButton";
 import { useRouter } from "next/navigation";
-import { getAccessToken } from "@/lib/auth";
+import { getAccessToken, useIsAuthenticated } from "@/lib/auth";
 import { fetchUnreadMessageCount } from "@/lib/conversations";
 
 const UNREAD_COUNT_POLL_INTERVAL = 30000; // 30 seconds
@@ -102,6 +102,7 @@ function DesktopNavbar() {
   const [query, setQuery] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isLoggedIn = useIsAuthenticated();
 
   useEffect(() => {
     const loadUnreadCount = async () => {
@@ -157,9 +158,11 @@ function DesktopNavbar() {
           <NavIconLink href="/listings" label="Browse">
             <LayoutGrid className="h-5 w-5" />
           </NavIconLink>
-          <NavIconLinkWithBadge href="/messages" label="Messages" badgeCount={unreadCount}>
-            <MessageCircle className="h-5 w-5" />
-          </NavIconLinkWithBadge>
+          {isLoggedIn && (
+            <NavIconLinkWithBadge href="/messages" label="Messages" badgeCount={unreadCount}>
+              <MessageCircle className="h-5 w-5" />
+            </NavIconLinkWithBadge>
+          )}
           <ModeToggle />
           <UserButton />
         </div>
@@ -174,6 +177,7 @@ function MobileNavbar() {
   const [query, setQuery] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isLoggedIn = useIsAuthenticated();
 
   useEffect(() => {
     const loadUnreadCount = async () => {
@@ -244,16 +248,18 @@ function MobileNavbar() {
                 >
                   Browse listings
                 </Link>
-                <Link
-                  href="/messages"
-                  className="relative rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Messages
-                  {unreadCount > 0 && (
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-red-500" />
-                  )}
-                </Link>
+                {isLoggedIn && (
+                  <Link
+                    href="/messages"
+                    className="relative rounded-lg px-2 py-3 text-base font-medium text-foreground active:bg-muted"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Messages
+                    {unreadCount > 0 && (
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-red-500" />
+                    )}
+                  </Link>
+                )}
               </nav>
             </div>
           </SheetContent>

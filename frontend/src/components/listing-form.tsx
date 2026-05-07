@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { API_BASE_URL, ACCESS_TOKEN_KEY, readApiErrorMessage, postApiJson, ApiUnauthorizedError } from "@/lib/api";
 import type { Listing } from "@/types/listing";
+import { CollegeCombobox } from "@/components/CollegeCombobox";
 
 const MAX_PHOTOS = 12;
 const MAX_IMAGE_BYTES = 1_500_000;
@@ -56,6 +57,7 @@ const formSchema = z.object({
 	price: z.string().min(1, "Price is required"),
 	address: z.string().min(3, "Street address is required"),
 	location: z.string().min(2, "City or area is required"),
+	college_id: z.string().min(1, "College is required"),
 	room_type: z.string().min(1, "Room type is required"),
 	sqft: z
 		.string()
@@ -93,6 +95,7 @@ function defaultsFromListing(listing: Listing): FormValues {
 		price: listing.price != null ? String(listing.price) : "",
 		address,
 		location: city,
+		college_id: listing.college_id != null ? String(listing.college_id) : "",
 		room_type: listing.room_type ?? "",
 		sqft: listing.sqft != null ? String(listing.sqft) : "",
 		start_date: isoToDateInput(listing.start_date),
@@ -158,6 +161,7 @@ export function ListingForm({
 						price: "",
 						address: "",
 						location: "",
+						college_id: "",
 						room_type: "",
 						sqft: "",
 						start_date: "",
@@ -303,6 +307,7 @@ export function ListingForm({
 			description: data.description.trim(),
 			price,
 			location: combinedLocation,
+			college_id: data.college_id,
 			room_type: data.room_type.trim(),
 			sqft: Number(data.sqft),
 			start_date: new Date(data.start_date).toISOString(),
@@ -402,6 +407,25 @@ export function ListingForm({
 											min={1}
 											step={1}
 											placeholder="1200"
+										/>
+										{fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+									</Field>
+								)}
+							/>
+
+							<Controller
+								name="college_id"
+								control={form.control}
+								render={({ field, fieldState }) => (
+									<Field data-invalid={fieldState.invalid} className="sm:col-span-2">
+										<FieldLabel>College</FieldLabel>
+										<CollegeCombobox
+											value={field.value}
+											onChange={(val) => {
+												field.onChange(val);
+												void form.trigger("college_id");
+											}}
+											invalid={fieldState.invalid}
 										/>
 										{fieldState.invalid && <FieldError errors={[fieldState.error]} />}
 									</Field>

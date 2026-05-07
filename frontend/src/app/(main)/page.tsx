@@ -8,7 +8,8 @@ export default async function Home() {
   let featuredListings: BrowseListing[] = [];
   let loadFailed = false;
   try {
-    featuredListings = await fetchBrowseListings({ limit: 4 });
+    const response = await fetchBrowseListings({ limit: 4 });
+    featuredListings = response.results;
   } catch (e) {
     console.error("home featured fetch failed", e);
     loadFailed = true;

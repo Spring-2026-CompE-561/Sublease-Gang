@@ -25,6 +25,7 @@ from app.schemas.auth import (
     SignupRequest,
     TokenResponse,
 )
+from app.services.email import send_password_reset_email
 from app.services.token import TokenService
 from app.services.user import UserService
 
@@ -95,7 +96,6 @@ async def logout(
                     revoked_specific = True
     if not revoked_specific:
         TokenService.revoke_all_refresh_for_user(db, current_user.id)
-    return
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -187,6 +187,11 @@ async def forgot_password(
         verify_password(payload.email, DUMMY_PASSWORD_HASH)
         return response
     reset_token = TokenService.issue_reset_token(db, user.id)
+    # rstrip in case FRONTEND_BASE_URL is misconfigured with a trailing slash —
+    # the docs say "no trailing slash" but defending here keeps the path clean.
+    base = settings.frontend_base_url.rstrip("/")
+    reset_url = f"{base}/reset-password?token={reset_token}"
+    send_password_reset_email(user.email, reset_url)
     if settings.environment == "development":
         logger.info("Password reset token for user %s: %s", user.id, reset_token)
         response["reset_token"] = reset_token
