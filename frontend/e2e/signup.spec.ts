@@ -5,7 +5,8 @@ test('signup: user can register and redirect to home', async ({ page }) => {
   const timestamp = Date.now();
   const testEmail = `testuser+${timestamp}@example.com`;
   const testPassword = 'TestPassword123456';
-  const testUsername = `testuser${timestamp % 1000000}`;
+  // Keep username within backend max_length and reduce collision risk for parallel runs.
+  const testUsername = `testuser${timestamp}`.slice(0, 30);
 
   // Navigate to signup page
   await page.goto('/signup');
@@ -25,5 +26,5 @@ test('signup: user can register and redirect to home', async ({ page }) => {
   await page.waitForURL('/', { timeout: 30000 });
 
   // Verify we're on the home page
-  expect(page.url()).toBe('http://localhost:3000/');
+  expect(new URL(page.url()).pathname).toBe('/');
 });
