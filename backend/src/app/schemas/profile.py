@@ -1,20 +1,36 @@
 import re
 
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
+
+# Caps mirror DB column sizes / DOS-safe upper bounds. Field-level regex still
+# governs the *shape* of the string; max_length is the cheap gate that
+# rejects oversized payloads before regex runs.
+_NAME_MAX = 50
+_USERNAME_MAX = 30
+_DESCRIPTION_MAX = 500
+_PHONE_MAX = 32  # raw input incl. formatting (digits 7-15 enforced by validator)
+_ICON_MAX = 500
 
 
 class ProfileCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     # user_id — comes from JWT, not request body
-    firstname: str
-    lastname: str
-    username: str
-    icon: str | None = None
-    description: str | None = None
+    firstname: str = Field(..., max_length=_NAME_MAX)
+    lastname: str = Field(..., max_length=_NAME_MAX)
+    username: str = Field(..., max_length=_USERNAME_MAX)
+    icon: str | None = Field(default=None, max_length=_ICON_MAX)
+    description: str | None = Field(default=None, max_length=_DESCRIPTION_MAX)
     # Using EmailStr ensures the email is in a valid format
     contact_email: EmailStr | None = None
-    contact_phone: str | None = None
+    contact_phone: str | None = Field(default=None, max_length=_PHONE_MAX)
 
     @field_validator("firstname", "lastname")
     @classmethod
@@ -36,7 +52,7 @@ class ProfileCreate(BaseModel):
         # Alphanumeric + underscores only, 3-30 chars (standard username rules)
         if not re.match(r"^\w{3,30}$", v):
             raise ValueError(
-                "Must be 3-30 characters, letters/numbers/underscores only"
+                "Must be 3-30 characters, letters/numbers/underscores only",
             )
         return v
 
@@ -72,13 +88,13 @@ class ProfileCreate(BaseModel):
 class ProfileUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    firstname: str | None = None
-    lastname: str | None = None
-    username: str | None = None
-    icon: str | None = None
-    description: str | None = None
+    firstname: str | None = Field(default=None, max_length=_NAME_MAX)
+    lastname: str | None = Field(default=None, max_length=_NAME_MAX)
+    username: str | None = Field(default=None, max_length=_USERNAME_MAX)
+    icon: str | None = Field(default=None, max_length=_ICON_MAX)
+    description: str | None = Field(default=None, max_length=_DESCRIPTION_MAX)
     contact_email: EmailStr | None = None
-    contact_phone: str | None = None
+    contact_phone: str | None = Field(default=None, max_length=_PHONE_MAX)
 
     @field_validator("firstname", "lastname")
     @classmethod
@@ -102,7 +118,7 @@ class ProfileUpdate(BaseModel):
             raise ValueError("Cannot be blank")
         if not re.match(r"^\w{3,30}$", v):
             raise ValueError(
-                "Must be 3-30 characters, letters/numbers/underscores only"
+                "Must be 3-30 characters, letters/numbers/underscores only",
             )
         return v
 

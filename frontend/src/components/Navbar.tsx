@@ -148,6 +148,7 @@ function DesktopNavbar() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            maxLength={200}
             placeholder="Search by location, university..."
             className="pl-9 rounded-full bg-muted"
           />
@@ -232,6 +233,7 @@ function MobileNavbar() {
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  maxLength={200}
                   placeholder="Search by location, university..."
                   className="min-w-0 w-full rounded-full bg-muted pl-9"
                   enterKeyHint="search"

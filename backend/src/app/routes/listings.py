@@ -29,17 +29,20 @@ async def create_listing(
 @router.get("/", response_model=dict)
 async def list_listings(
     college_id: int | None = None,
-    location: str | None = None,
+    # Cap text filters: defends against oversized payloads and DoS via huge
+    # LIKE patterns. These flow into ilike() in the repo; wildcard escaping
+    # happens there.
+    location: str | None = Query(None, max_length=200),
     min_price: float | None = None,
     max_price: float | None = None,
-    room_type: str | None = None,
+    room_type: str | None = Query(None, max_length=50),
     min_sqft: int | None = None,
     max_sqft: int | None = None,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     available_only: bool | None = None,
     host_id: int | None = None,
-    sort: str | None = None,
+    sort: str | None = Query(None, max_length=20),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
@@ -95,7 +98,7 @@ async def list_listings(
                 "latitude": float(l.latitude) if l.latitude is not None else None,
                 "longitude": float(l.longitude) if l.longitude is not None else None,
                 "created_at": str(l.created_at) if l.created_at else None,
-            }
+            },
         )
 
     return {"count": count, "limit": limit, "offset": offset, "results": results}
@@ -126,7 +129,7 @@ async def update_listing(
     """Edit an existing listing."""
     try:
         return ListingService.update(
-            db, listing_id, host_id=current_user.id, updates=payload
+            db, listing_id, host_id=current_user.id, updates=payload,
         )
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.detail) from e
