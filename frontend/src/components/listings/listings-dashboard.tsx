@@ -279,9 +279,10 @@ export function ListingsDashboard({ defaultView = "listings" }: ListingsDashboar
 						</div>
 						<div className="flex items-center gap-2">
 							<ToggleGroup
-								value={view}
+								value={[view]}
 								onValueChange={(next) => {
-									if (next === "listings" || next === "map") setView(next);
+									const selected = next[next.length - 1];
+									if (selected === "listings" || selected === "map") setView(selected as DashboardView);
 								}}
 								variant="outline"
 								aria-label="Switch between listings and map view"
