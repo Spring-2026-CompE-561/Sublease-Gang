@@ -21,36 +21,37 @@ export function CollegeCombobox({ value, onChange, invalid }: CollegeComboboxPro
 			.finally(() => setLoading(false));
 	}, []);
 
-const items = colleges.map((c) => ({ id: String(c.id), name: c.name }));
-const defaultValue = value
-    ? colleges.find((c) => String(c.id) === value)?.name ?? ""
-    : "";
+    const items = colleges.map((c) => ({ id: String(c.id), name: c.name }));
+    const defaultValue = value
+        ? colleges.find((c) => String(c.id) === value)?.name ?? ""
+        : "";
 
-return (
-    <Combobox
-        items={items.map((c) => c.name)}
-        defaultValue={defaultValue}
-        onValueChange={(val) => {
-            if (val) {
-                const match = colleges.find((c) => c.name === val);
-                if (match) onChange(String(match.id));
-            }
-        }}
-    >
-        <ComboboxInput
-            placeholder={loading ? "Loading colleges…" : "Search colleges…"}
-            disabled={loading}
-            aria-invalid={invalid}
-        />
-        <ComboboxContent>
-            <ComboboxEmpty>No colleges found.</ComboboxEmpty>
-            <ComboboxList>
-                {(name) => (
-                    <ComboboxItem key={name} value={name}>
-                        {name}
-                    </ComboboxItem>
-                )}
-            </ComboboxList>
-        </ComboboxContent>
-    </Combobox>
-)};
+    return (
+        <Combobox
+            items={items.map((c) => c.name)}
+            defaultValue={defaultValue}
+            onValueChange={(val) => {
+                if (val) {
+                    const match = colleges.find((c) => c.name === val);
+                    if (match) onChange(String(match.id));
+                }
+            }}
+        >
+            <ComboboxInput
+                placeholder={loading ? "Loading colleges…" : "Search colleges…"}
+                disabled={loading}
+                aria-invalid={invalid}
+            />
+            <ComboboxContent>
+                <ComboboxEmpty>No colleges found.</ComboboxEmpty>
+                <ComboboxList>
+                    {(name) => (
+                        <ComboboxItem key={name} value={name}>
+                            {name}
+                        </ComboboxItem>
+                    )}
+                </ComboboxList>
+            </ComboboxContent>
+        </Combobox>
+    );
+}
