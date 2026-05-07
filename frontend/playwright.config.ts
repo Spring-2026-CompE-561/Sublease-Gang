@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
+
 /**
  * NOTE: The backend server (FastAPI at localhost:8000) must be running manually.
  * Playwright will start the frontend dev server, but the backend is not auto-started.
@@ -14,7 +16,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
     trace: 'on-first-retry',
   },
 
@@ -27,7 +29,7 @@ export default defineConfig({
 
   webServer: {
     command: 'bun run dev',
-    url: 'http://localhost:3000',
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
   },
