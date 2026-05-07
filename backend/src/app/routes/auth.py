@@ -187,7 +187,10 @@ async def forgot_password(
         verify_password(payload.email, DUMMY_PASSWORD_HASH)
         return response
     reset_token = TokenService.issue_reset_token(db, user.id)
-    reset_url = f"{settings.frontend_base_url}/reset-password?token={reset_token}"
+    # rstrip in case FRONTEND_BASE_URL is misconfigured with a trailing slash —
+    # the docs say "no trailing slash" but defending here keeps the path clean.
+    base = settings.frontend_base_url.rstrip("/")
+    reset_url = f"{base}/reset-password?token={reset_token}"
     send_password_reset_email(user.email, reset_url)
     if settings.environment == "development":
         logger.info("Password reset token for user %s: %s", user.id, reset_token)
