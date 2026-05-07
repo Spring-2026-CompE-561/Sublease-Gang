@@ -269,9 +269,11 @@ class TestProfileCreate:
             )
 
     def test_description_too_long(self):
+        # max_length=500 on the field rejects oversized descriptions before
+        # the field_validator's manual length check runs.
         with pytest.raises(
             ValidationError,
-            match="Description cannot exceed 500",
+            match="at most 500 characters",
         ):
             ProfileCreate(
                 firstname="John",
@@ -346,3 +348,111 @@ class TestConversationCreate:
     def test_same_user_ids(self):
         with pytest.raises(ValidationError, match="must be different"):
             ConversationCreate(listing_id=1, user_one_id=1, user_two_id=1)
+
+
+# ── Input-length / sanitization defenses (issue #239) ─────────────────────────
+
+
+class TestListingTextLengthCaps:
+    def _defaults(self, **overrides):
+        now = datetime.now(UTC)
+        data = {
+            "title": "Test",
+            "description": "Desc",
+            "price": 100.0,
+            "location": "City",
+            "room_type": "studio",
+            "sqft": 400,
+            "image_urls": ["https://example.com/photo.jpg"],
+            "start_date": now,
+            "end_date": now + timedelta(days=30),
+            "latitude": 40.7,
+            "longitude": -74.0,
+        }
+        data.update(overrides)
+        return data
+
+    def test_title_too_long_rejected(self):
+        with pytest.raises(ValidationError):
+            ListingCreate(**self._defaults(title="x" * 201))
+
+    def test_description_too_long_rejected(self):
+        with pytest.raises(ValidationError):
+            ListingCreate(**self._defaults(description="x" * 5001))
+
+    def test_location_too_long_rejected(self):
+        with pytest.raises(ValidationError):
+            ListingCreate(**self._defaults(location="x" * 201))
+
+    def test_room_type_too_long_rejected(self):
+        with pytest.raises(ValidationError):
+            ListingCreate(**self._defaults(room_type="x" * 51))
+
+    def test_text_fields_are_stripped(self):
+        listing = ListingCreate(
+            **self._defaults(title="  Hello  ", location="  NYC  ")
+        )
+        assert listing.title == "Hello"
+        assert listing.location == "NYC"
+
+    def test_whitespace_only_title_rejected(self):
+        with pytest.raises(ValidationError):
+            ListingCreate(**self._defaults(title="   "))
+
+    def test_update_rejects_too_long(self):
+        with pytest.raises(ValidationError):
+            ListingUpdate(description="x" * 5001)
+
+    def test_update_rejects_whitespace_only(self):
+        with pytest.raises(ValidationError):
+            ListingUpdate(title="   ")
+
+
+class TestMessageContentCap:
+    def test_too_long_rejected(self):
+        with pytest.raises(ValidationError):
+            MessageCreate(conversation_id=1, sender_id=1, content="x" * 5001)
+
+    def test_at_cap_accepted(self):
+        m = MessageCreate(conversation_id=1, sender_id=1, content="x" * 5000)
+        assert len(m.content) == 5000
+
+    def test_update_too_long_rejected(self):
+        with pytest.raises(ValidationError):
+            MessageUpdate(content="x" * 5001)
+
+
+class TestProfileLengthCaps:
+    def test_firstname_too_long_rejected(self):
+        with pytest.raises(ValidationError):
+            ProfileCreate(
+                firstname="A" * 51,
+                lastname="Doe",
+                username="johndoe",
+                contact_email="john@example.com",
+            )
+
+    def test_username_too_long_rejected(self):
+        # 30-char regex cap is the binding constraint; this verifies the
+        # explicit max_length still rejects the same payload.
+        with pytest.raises(ValidationError):
+            ProfileCreate(
+                firstname="John",
+                lastname="Doe",
+                username="a" * 31,
+                contact_email="john@example.com",
+            )
+
+    def test_description_too_long_rejected(self):
+        with pytest.raises(ValidationError):
+            ProfileCreate(
+                firstname="John",
+                lastname="Doe",
+                username="johndoe",
+                description="x" * 501,
+                contact_email="john@example.com",
+            )
+
+    def test_update_firstname_too_long_rejected(self):
+        with pytest.raises(ValidationError):
+            ProfileUpdate(firstname="A" * 51)

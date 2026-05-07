@@ -362,3 +362,57 @@ class TestListingOwnershipWithAuth:
         resp = client.delete(f"/api/v1/listings/{listing_id}", headers=other_headers)
         assert resp.status_code == 403
         assert resp.json()["detail"] == "Not allowed to delete this listing"
+
+
+class TestListingSearchSanitization:
+    """Defense-in-depth coverage for issue #239 (input sanitization)."""
+
+    def test_location_query_too_long_rejected(self, client):
+        # App-level handler maps Pydantic RequestValidationError -> 400.
+        resp = client.get(
+            "/api/v1/listings/", params={"location": "x" * 201}
+        )
+        assert resp.status_code == 400
+
+    def test_room_type_query_too_long_rejected(self, client):
+        resp = client.get(
+            "/api/v1/listings/", params={"room_type": "x" * 51}
+        )
+        assert resp.status_code == 400
+
+    def test_like_wildcard_percent_does_not_match_everything(
+        self, client, make_user, make_listing
+    ):
+        # Without escaping, ilike("%%%") would match any non-null location.
+        # After escaping, "%" is a literal — no listing has that in its location.
+        user = make_user()
+        make_listing(user.id, location="New York")
+        make_listing(user.id, location="Chicago")
+
+        resp = client.get("/api/v1/listings/", params={"location": "%"})
+        data = resp.json()
+        assert data["count"] == 0
+
+    def test_like_wildcard_underscore_does_not_match_everything(
+        self, client, make_user, make_listing
+    ):
+        user = make_user()
+        make_listing(user.id, location="NY")
+        make_listing(user.id, location="LA")
+
+        # Underscore is the LIKE single-char wildcard. After escaping,
+        # it should match literal "_" — no listing has that.
+        resp = client.get("/api/v1/listings/", params={"location": "_"})
+        data = resp.json()
+        assert data["count"] == 0
+
+    def test_blank_location_treated_as_no_filter(
+        self, client, make_user, make_listing
+    ):
+        user = make_user()
+        make_listing(user.id, location="New York")
+        make_listing(user.id, location="Chicago")
+
+        resp = client.get("/api/v1/listings/", params={"location": "   "})
+        data = resp.json()
+        assert data["count"] == 2
