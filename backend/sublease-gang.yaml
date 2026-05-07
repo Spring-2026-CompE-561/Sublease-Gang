@@ -376,7 +376,13 @@ paths:
 
   /auth/forgot_password:
     post:
-      summary: Send email to reset password
+      summary: Request a password-reset email
+      description: |
+        Always returns 200 regardless of whether the email is registered, to
+        prevent account enumeration. When a matching account exists, a reset
+        link is dispatched via email; email-provider failures are logged but
+        not surfaced to the caller. In development the issued reset token is
+        included in the response body for local testing.
       requestBody:
         required: true
         content:
@@ -388,32 +394,37 @@ paths:
               properties:
                 email:
                   type: string
+                  format: email
                   example: "example@mail.com"
       responses:
         "200":
-          description: Successfully sent password reset email
+          description: Request accepted (sent if the email is registered)
           content:
             application/json:
               schema:
                 type: object
+                required: [message]
                 properties:
-                  success:
-                    type: boolean
-                    example: true
-        "400":
-          description: Failed to send password reset email
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
+                  message:
                     type: string
-                    example: "Invalid"
+                    example: "If that email is registered, a reset link has been sent."
+                  reset_token:
+                    type: string
+                    description: Present only when ENVIRONMENT=development, for local testing.
+        "400":
+          description: Invalid input (e.g. malformed email)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /auth/reset_password:
     put:
-      summary: Change current password to new password
+      summary: Reset password using a token from forgot_password
+      description: |
+        Consumes a single-use reset token issued by /auth/forgot_password and
+        sets a new password. After a successful reset, all of the user's
+        active reset tokens and refresh tokens are revoked.
       requestBody:
         required: true
         content:
@@ -421,32 +432,35 @@ paths:
             schema:
               type: object
               required:
+                - token
                 - new_password
               properties:
+                token:
+                  type: string
+                  description: Reset token issued by /auth/forgot_password.
                 new_password:
                   type: string
-                  example: "secret-password"
+                  minLength: 12
+                  maxLength: 128
+                  example: "correct-horse-battery-staple"
       responses:
         "200":
-          description: Successfully changed password
+          description: Password reset
           content:
             application/json:
               schema:
                 type: object
+                required: [message]
                 properties:
-                  success:
-                    type: boolean
-                    example: true
-        "400":
-          description: Failed to change password
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
+                  message:
                     type: string
-                    example: "Invalid input"
+                    example: "Password has been reset successfully."
+        "400":
+          description: Invalid input or invalid/expired reset token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /users:
     post:
       summary: Create a new user account (register)

@@ -202,9 +202,9 @@ The full OpenAPI specification is available in [`backend/sublease-gang.yaml`](ba
 | POST   | `/api/v1/auth/signup`                 | Create a new account             |
 | POST   | `/api/v1/auth/login`                  | Log in                           |
 | POST   | `/api/v1/auth/logout`                 | Log out (authenticated)          |
-| POST   | `/api/v1/auth/refresh`                | Refresh tokens (stub)            |
-| POST   | `/api/v1/auth/forgot_password`        | Request password reset (stub)    |
-| PUT    | `/api/v1/auth/reset_password`         | Reset password (stub)            |
+| POST   | `/api/v1/auth/refresh`                | Refresh tokens                   |
+| POST   | `/api/v1/auth/forgot_password`        | Request password reset email     |
+| PUT    | `/api/v1/auth/reset_password`         | Reset password using token       |
 | POST   | `/api/v1/users/`                      | Create a new user                |
 | GET    | `/api/v1/users/me`                    | Get current user profile         |
 | PATCH  | `/api/v1/users/me`                    | Update current user profile      |
