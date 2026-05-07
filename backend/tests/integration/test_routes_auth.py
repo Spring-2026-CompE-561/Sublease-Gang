@@ -104,7 +104,7 @@ class TestLogout:
         # Sign up once for one session, then log in again to mint a second
         # refresh token (simulating two devices).
         first = self._signup_and_get_tokens(
-            client, email="logout1@example.com", username="logout1"
+            client, email="logout1@example.com", username="logout1",
         )
         client.post(
             "/api/v1/auth/login",
@@ -132,7 +132,7 @@ class TestLogout:
         from app.models.token import Token
 
         first = self._signup_and_get_tokens(
-            client, email="logout2@example.com", username="logout2"
+            client, email="logout2@example.com", username="logout2",
         )
         client.post(
             "/api/v1/auth/login",
@@ -153,15 +153,15 @@ class TestLogout:
         assert active == 0
 
     def test_logout_with_other_users_refresh_token_falls_back_to_revoke_all(
-        self, client, db_session
+        self, client, db_session,
     ):
         from app.models.token import Token
 
         attacker = self._signup_and_get_tokens(
-            client, email="atk@example.com", username="atkuser"
+            client, email="atk@example.com", username="atkuser",
         )
         victim = self._signup_and_get_tokens(
-            client, email="vic@example.com", username="vicuser"
+            client, email="vic@example.com", username="vicuser",
         )
 
         # Attacker tries to log out using the victim's refresh token. Should
@@ -241,7 +241,7 @@ class TestRefresh:
         assert resp.json()["detail"] == "User not found or account disabled"
 
     def test_refresh_token_issued_before_password_change_rejected(
-        self, client, db_session
+        self, client, db_session,
     ):
         from datetime import UTC, datetime, timedelta
 
@@ -300,8 +300,9 @@ class TestRefresh:
         assert followup.status_code == 401
 
     def test_refresh_token_without_jti_rejected(self, client, db_session):
-        import jwt
         from datetime import UTC, datetime, timedelta
+
+        import jwt
 
         from app.core.auth import ALGORITHM, SECRET_KEY
 
@@ -325,8 +326,9 @@ class TestRefresh:
         assert resp.status_code == 401
 
     def test_refresh_token_with_unknown_jti_rejected(self, client, db_session):
-        import jwt
         from datetime import UTC, datetime, timedelta
+
+        import jwt
 
         from app.core.auth import ALGORITHM, SECRET_KEY
 
@@ -395,7 +397,7 @@ class TestForgotPassword:
         assert calls[0][1] == auth_routes.DUMMY_PASSWORD_HASH
 
     def test_production_mode_omits_token_from_response_and_logs(
-        self, client, monkeypatch, caplog
+        self, client, monkeypatch, caplog,
     ):
         from app.routes import auth as auth_routes
 
@@ -415,6 +417,72 @@ class TestForgotPassword:
         # No log record should contain a JWT (three dot-separated base64 segments).
         for record in caplog.records:
             assert record.getMessage().count(".") < 2 or "eyJ" not in record.getMessage()
+
+    def test_registered_email_triggers_send(self, client, monkeypatch):
+        """A known email triggers exactly one email send with the reset URL."""
+        from app.routes import auth as auth_routes
+
+        calls: list[tuple[str, str]] = []
+
+        def spy_send(to_email: str, reset_url: str) -> bool:
+            calls.append((to_email, reset_url))
+            return True
+
+        monkeypatch.setattr(auth_routes, "send_password_reset_email", spy_send)
+        monkeypatch.setattr(
+            auth_routes.settings, "frontend_base_url", "http://localhost:3000",
+        )
+        client.post(
+            "/api/v1/auth/signup",
+            json=_signup_payload(email="send@example.com", username="senduser"),
+        )
+        resp = client.post(
+            "/api/v1/auth/forgot_password",
+            json={"email": "send@example.com"},
+        )
+        assert resp.status_code == 200
+        assert len(calls) == 1
+        to_email, reset_url = calls[0]
+        assert to_email == "send@example.com"
+        assert reset_url.startswith("http://localhost:3000/reset-password?token=")
+        # The token in the URL must match the one returned for dev convenience.
+        assert reset_url.endswith(resp.json()["reset_token"])
+
+    def test_unknown_email_does_not_send(self, client, monkeypatch):
+        """An unknown email must not trigger a send (no enumeration via mail logs)."""
+        from app.routes import auth as auth_routes
+
+        calls: list[tuple[str, str]] = []
+
+        def spy_send(to_email: str, reset_url: str) -> bool:
+            calls.append((to_email, reset_url))
+            return True
+
+        monkeypatch.setattr(auth_routes, "send_password_reset_email", spy_send)
+        resp = client.post(
+            "/api/v1/auth/forgot_password",
+            json={"email": "nobody@example.com"},
+        )
+        assert resp.status_code == 200
+        assert calls == []
+
+    def test_send_failure_does_not_break_response(self, client, monkeypatch):
+        """Even if the email provider fails, the endpoint still returns 200."""
+        from app.routes import auth as auth_routes
+
+        def failing_send(to_email: str, reset_url: str) -> bool:
+            return False
+
+        monkeypatch.setattr(auth_routes, "send_password_reset_email", failing_send)
+        client.post(
+            "/api/v1/auth/signup",
+            json=_signup_payload(email="fail@example.com", username="failuser"),
+        )
+        resp = client.post(
+            "/api/v1/auth/forgot_password",
+            json={"email": "fail@example.com"},
+        )
+        assert resp.status_code == 200
 
 
 class TestResetPassword:
@@ -497,8 +565,9 @@ class TestResetPassword:
         assert leftover.status_code == 400
 
     def test_reset_token_without_jti_rejected(self, client, db_session):
-        import jwt
         from datetime import UTC, datetime, timedelta
+
+        import jwt
 
         from app.core.auth import ALGORITHM, SECRET_KEY
 

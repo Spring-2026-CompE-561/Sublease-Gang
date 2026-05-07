@@ -86,7 +86,7 @@ cd backend
 uv sync --group dev
 ```
 
-Create a `.env` file in the `backend/` directory (optional — defaults are provided):
+Create a `.env` file in the `backend/` directory. Copy `backend/.env.example` for a fully-documented template — defaults are provided so the file is optional, but you'll need real values for any feature that talks to a third-party service.
 
 ```env
 SECRET_KEY=change_me_to_a_secure_32_byte_secret_key
@@ -94,6 +94,22 @@ DATABASE_URL=sqlite:///./sublease_marketplace.db
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ENVIRONMENT=development
 ```
+
+#### Email (Resend)
+
+Password reset emails are sent through [Resend](https://resend.com). To test the flow locally:
+
+1. Get an API key from <https://resend.com/api-keys>.
+2. Add it to `backend/.env`:
+
+   ```env
+   RESEND_API_KEY=re_your_key_here
+   FRONTEND_BASE_URL=http://localhost:3000
+   ```
+
+3. The default sender (`onboarding@resend.dev`) is Resend's sandbox — it only delivers to the email address registered on your Resend account, which is fine for dev. For production, verify a domain in Resend and set `RESEND_FROM_EMAIL` to an address on that domain.
+
+If `RESEND_API_KEY` is empty, the auth flow still works — sends are skipped and a warning is logged, so CI and local-only setups don't need a key.
 
 ### Frontend
 
@@ -186,9 +202,9 @@ The full OpenAPI specification is available in [`backend/sublease-gang.yaml`](ba
 | POST   | `/api/v1/auth/signup`                 | Create a new account             |
 | POST   | `/api/v1/auth/login`                  | Log in                           |
 | POST   | `/api/v1/auth/logout`                 | Log out (authenticated)          |
-| POST   | `/api/v1/auth/refresh`                | Refresh tokens (stub)            |
-| POST   | `/api/v1/auth/forgot_password`        | Request password reset (stub)    |
-| PUT    | `/api/v1/auth/reset_password`         | Reset password (stub)            |
+| POST   | `/api/v1/auth/refresh`                | Refresh tokens                   |
+| POST   | `/api/v1/auth/forgot_password`        | Request password reset email     |
+| PUT    | `/api/v1/auth/reset_password`         | Reset password using token       |
 | POST   | `/api/v1/users/`                      | Create a new user                |
 | GET    | `/api/v1/users/me`                    | Get current user profile         |
 | PATCH  | `/api/v1/users/me`                    | Update current user profile      |
