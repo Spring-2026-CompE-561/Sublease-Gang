@@ -277,8 +277,12 @@ export function filterBrowseListings(
 		if (f.bedrooms != null && l.bedrooms !== f.bedrooms) return false;
 		if (f.collegeId != null && (l.college_id ?? null) !== f.collegeId) return false;
 		// ISO timestamps and date-input strings both start with YYYY-MM-DD, so lex compare matches calendar order.
-		if (f.moveIn && l.start_date && l.start_date.slice(0, 10) > f.moveIn) return false;
-		if (f.moveOut && l.end_date && l.end_date.slice(0, 10) < f.moveOut) return false;
+		if (f.moveIn) {
+			if (!l.end_date || l.end_date.slice(0, 10) < f.moveIn) return false;
+		}
+		if (f.moveOut) {
+			if (!l.start_date || l.start_date.slice(0, 10) > f.moveOut) return false;
+		}
 		for (const a of f.amenities) {
 			if (!l.amenities.includes(a)) return false;
 		}
