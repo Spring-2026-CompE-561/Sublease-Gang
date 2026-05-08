@@ -15,7 +15,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
           type === "month" ||
           type === "time" ||
           type === "week") &&
-          "pr-10",
+          "pr-2",
         className
       )}
       {...props}

@@ -263,7 +263,7 @@ export function ListingsDashboard({ defaultView = "listings" }: ListingsDashboar
 	return (
 		<main className="flex flex-1 flex-col">
 			<div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pb-12 pt-6 md:px-6 lg:flex-row lg:items-start lg:gap-8 lg:px-8">
-				<aside className="hidden shrink-0 lg:block lg:w-64 xl:w-72">
+				<aside className="hidden shrink-0 lg:block lg:w-64 xl:w-88">
 					<Card className="p-5 shadow-sm ring-foreground/10">
 						<h2 className="mb-6 text-lg font-semibold">Filters</h2>
 						<FiltersBody {...filterProps} />
