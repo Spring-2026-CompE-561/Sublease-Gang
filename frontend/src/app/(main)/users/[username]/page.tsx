@@ -61,7 +61,14 @@ export default function PublicUserProfile() {
   }, [router, username]);
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+    const t = window.setTimeout(() => {
+      if (!cancelled) void load();
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
   }, [load]);
 
   // Sign-out only clears localStorage; this page would keep showing cached data
