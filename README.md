@@ -130,6 +130,21 @@ bun run dev
 
 The frontend will be available at **http://localhost:3000**.
 
+### Docker Compose
+
+From the repo root:
+
+```bash
+# Stop and remove containers/networks
+docker compose down
+
+# Rebuild images from scratch
+docker compose build --no-cache
+
+# Start the app stack
+docker compose up
+```
+
 ## Running Tests
 
 ```bash
