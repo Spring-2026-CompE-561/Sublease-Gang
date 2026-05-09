@@ -157,11 +157,11 @@ uv run pytest
 uv run pytest -v
 
 # Run a specific test file
-uv run pytest tests/test_repository.py
+uv run pytest tests/unit/test_repository.py
 
 # Run a specific test class or function
-uv run pytest tests/test_repository.py::TestUserRepository
-uv run pytest tests/test_schemas.py::TestUserCreate::test_valid
+uv run pytest tests/unit/test_repository.py::TestUserRepository
+uv run pytest tests/unit/test_schemas.py::TestUserCreate::test_valid
 ```
 
 Tests use an **in-memory SQLite database** so no external database setup is required.
